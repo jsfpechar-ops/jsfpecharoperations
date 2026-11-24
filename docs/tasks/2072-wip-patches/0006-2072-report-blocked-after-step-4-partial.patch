@@ -1,0 +1,75 @@
+From f4cf902672d16b18a5f886e4f02326280506d0b4 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 24 Nov 2026 22:07:26 +0000
+Subject: [PATCH 06/10] 2072 report: blocked after step 4 partial
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
+---
+ docs/tasks/2072-report.md | 42 ++++++++++++++++++++-------------------
+ 1 file changed, 22 insertions(+), 20 deletions(-)
+
+diff --git a/docs/tasks/2072-report.md b/docs/tasks/2072-report.md
+index 2275cbc..2c8952c 100644
+--- a/docs/tasks/2072-report.md
++++ b/docs/tasks/2072-report.md
+@@ -1,34 +1,36 @@
+-# 2072 report: Validate and store required guest passport photos
++# 2072 report: required guest passport photo save
+ 
+ Status: blocked
+-Branch: claude/nice-hawking-fw98ct (fast-forwarded to origin, includes 2065, 2069, 2070, 2071)
++Executor: Haiku 5.5 (continuation) | Branch: worktree-agent-aa90d5d2cd22cdaf8 (no push, no PR)
+ 
+-## Commits
++## Done
+ 
+-- `29791cf` 2072 step 1: exposes `passportphotos.Prepare` and `passportphotos.SavePrepared`. `Save` keeps its behaviour and calls both.
++- Step B (multipart parse): `handleGuestFormSave` parses multipart bodies with `ParseMultipartForm(maxPDFBytes + 1024)` only when `r.MultipartForm` is nil, else `ParseForm`.
++- Step 1 (earlier commit 29791cf): `passportphotos.Prepare` and `SavePrepared`.
++- Passport rule: `go/internal/web/guest/passport_required.go` has `passportRequired` (Python `guest_needs_passport_photo`), `passportUploadText` (cs, de, es, uk map) and `guestDataDir`. `passportphotos.Has` added.
++- Step 2: the rule is evaluated after normalisation with stored nationality, entered_by and identity_verified_at for an existing guest. `passport_photo` is read via `r.FormFile`, `readUploadLimited`, then `Prepare` before any write. Absent with no existing stamped file gives `passport_photo_missing`.
++- Step 3: after the row write and before audit, hook and redirect, `SavePrepared` runs and then `passport_photo_at` is stamped. `SavePrepared` now writes `<id><ext>.enc.tmp` and renames it, so a failed replacement keeps the old file.
++- Step 4 (partial): `TestPassportRequired` (10 cases) and `TestGuestSavePassportPhoto` (encrypted storage, mode 0600, Has, failed replacement keeps prior photo).
+ 
+-## Steps
++## Not done (Left)
+ 
+-1. Done. Photo package exposes prepare and save-prepared. Build passes.
+-2. Not done. `handleGuestFormSave` has no passport handling yet. Go has no equivalent of `guest_needs_passport_photo` (Python `reporting.py:409`), and no `passport_photo` multipart read or `passport_photo_missing` issue. Implementing it needs the Python helpers `guest_is_reportable`, `_guest_entered_by` and `guest_identity_verified`, which I did not read. Stopped at the tool-call cap rather than guess filing logic.
+-3. Not done. Depends on step 2.
+-4. Not done. `TestGuestSavePassportPhoto` not written.
++- HTTP-level `TestGuestSavePassportPhoto` cases: required+no file (422), bad content (422), valid upload (303 and hook 1), not required (ignored), existing stamped guest, and I/O failure through `handleGuestFormSave`.
++- 390 px missing-photo screenshot. No browser work was done.
++- Multipart upload tests.
+ 
+-## Command results
++## Test results
+ 
+-- `go build ./...` from `go/`: exit 0, no output.
+-- `go test ./internal/web/guest/... ./internal/web/stays/... -count=1` with `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/guest_test` (PostgreSQL accepting connections): `ok` for guest (4.98s) and stays (2.11s). Skips not counted; no new tests added.
+-- `go test ./internal/passportphotos/` and the `GuestSavePassportPhoto` run were not executed (no new tests exist).
++- `go build ./...`: pass.
++- `go test ./internal/web/guest/... ./internal/passportphotos/... ./internal/web/stays/... -count=1`: pass (guest, passportphotos, stays all ok).
++- `-v` run: 3 SKIP lines (`TestClaimOpsSignedOutRedirects`, `TestGuestEditSignedOutRedirects`, `TestGuestLifecycleSignedOutRedirects`). These are pre-existing tests this change does not touch; not checked against the base branch.
+ 
+ ## Deviations
+ 
+-Done: steps 1 to 1. Left: steps 2 to 4.
+-
+-## Questions
+-
+-- Step 2 needs the Go port of the Python passport-photo policy helpers (`guest_is_reportable`, `_guest_entered_by`, `guest_identity_verified`). Confirm the approach, or hand to a session with a larger budget.
+-- Brief anchor `form_save.go:113` (`form := postForm(r)`) is now at line 119. `postForm` takes `*http.Request` and returns a string map, so the file part needs `r.FormFile` or equivalent, not `postForm`.
++- Step 4 is partial (see Left). The brief asked for the HTTP cases; they were not written.
++- The Prepare message map covers cs, de, es, uk as the brief says. Python's `PASSPORT_UPLOAD_MESSAGES` also has `fr`, so French guests get English refusals. Left as a parity gap.
++- `ParseMultipartForm` is not wrapped in `http.MaxBytesReader` on the header-token path, matching `draft_scan.go`. The CSRF path already has a body limit.
+ 
+ ## Owner steps left
+ 
+-None until steps 2 to 4 are done.
++1. Decide on the `fr` refusal text.
++2. Review the next session's HTTP test results and the 390 px screenshot.
+-- 
+2.43.0
+

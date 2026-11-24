@@ -1,0 +1,39 @@
+From 71e028d48cf39838d840523d308797bf5d27fe58 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 24 Nov 2026 22:09:12 +0000
+Subject: [PATCH 09/10] 2072 size: cap multipart body in guest form save
+
+Wrap r.Body with http.MaxBytesReader (11 MiB, mirrors hostweb csrfMaxMultipart)
+before ParseMultipartForm on the header-token path.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
+---
+ go/internal/web/guest/form_save.go | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/go/internal/web/guest/form_save.go b/go/internal/web/guest/form_save.go
+index 43c3881..52072bf 100644
+--- a/go/internal/web/guest/form_save.go
++++ b/go/internal/web/guest/form_save.go
+@@ -86,12 +86,17 @@ func guestFormSaveHandler(d saveDeps) http.HandlerFunc {
+ 	}
+ }
+ 
++// guestMaxMultipart mirrors hostweb csrfMaxMultipart (a 10 MiB photo plus the
++// form fields). Keep the two values equal.
++const guestMaxMultipart = 11 << 20
++
+ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter, r *http.Request) error {
+ 	if d.pool == nil {
+ 		return errors.New("guest form save: nil pool")
+ 	}
+ 	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+ 		if r.MultipartForm == nil {
++			r.Body = http.MaxBytesReader(w, r.Body, guestMaxMultipart)
+ 			if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
+ 				return err
+ 			}
+-- 
+2.43.0
+
