@@ -53,13 +53,41 @@ type guestSaveRow struct {
 	restrictedAt string
 	signaturePNG string
 	lastErrors   string
+	surname      string
+	firstName    string
+	birthDate    string
+	nationality  string
+	docNumber    string
+	visaNumber   string
+	resStreet    string
+	resCity      string
+	resCountry   string
+	purpose      string
+	note         string
 	stayFrom     string
 	stayTo       string
-	nationality  string
 	enteredBy    string
 	// identityVerifiedAt and passportPhotoAt are stored timestamps ("" when unset).
 	identityVerifiedAt string
 	passportPhotoAt    string
+}
+
+func (g *guestSaveRow) ubyGuest() ubyport.Guest {
+	return ubyport.Guest{
+		StayFrom:    g.stayFrom,
+		StayTo:      g.stayTo,
+		Surname:     g.surname,
+		FirstName:   g.firstName,
+		BirthDate:   g.birthDate,
+		Nationality: g.nationality,
+		DocNumber:   g.docNumber,
+		VisaNumber:  g.visaNumber,
+		ResStreet:   g.resStreet,
+		ResCity:     g.resCity,
+		ResCountry:  g.resCountry,
+		Purpose:     g.purpose,
+		Note:        g.note,
+	}
 }
 
 // guestResMeta is loaded by brief 1721 stay helpers.
@@ -225,7 +253,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 			return err
 		}
 	}
-	payload := buildSavePayload(values, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing, signFor)
+	payload := buildSavePayload(values, res, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing, signFor)
 	var savedID int64
 	if existing != nil {
 		ok, err := updateGuestSaveRow(ctx, d, existing, payload)
@@ -418,7 +446,7 @@ func existingSig(g *guestSaveRow) string {
 	return g.signaturePNG
 }
 
-func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow, signFor map[string]any) map[string]any {
+func buildSavePayload(v validation.GuestRow, res guestResMeta, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow, signFor map[string]any) map[string]any {
 	p := map[string]any{
 		"surname": v.Surname, "first_name": v.FirstName, "birth_date": v.BirthDate,
 		"nationality": v.Nationality, "doc_number": v.DocNumber, "visa_number": v.VisaNumber,
@@ -439,10 +467,6 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 	}
 	p["submit_state"] = st
 	p["last_errors"] = nil
-	if existing != nil && existing.submitState == "blocked" && strings.Contains(existing.lastErrors, "duplicate") {
-		delete(p, "submit_state")
-		delete(p, "last_errors")
-	}
 	if child {
 		// guest.py:2587 — empty signFor adds nothing, so edits keep an earlier link.
 		for k, val := range signFor {
@@ -455,29 +479,86 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 		p["signed_for_at"] = nil
 		p["signed_for_wording"] = nil
 	}
+	if existing != nil {
+		proposed := ubyport.Guest{
+			StayFrom:    stayFrom,
+			StayTo:      stayTo,
+			Surname:     v.Surname,
+			FirstName:   v.FirstName,
+			BirthDate:   v.BirthDate,
+			Nationality: v.Nationality,
+			DocNumber:   v.DocNumber,
+			VisaNumber:  v.VisaNumber,
+			ResStreet:   v.ResStreet,
+			ResCity:     v.ResCity,
+			ResCountry:  v.ResCountry,
+			Purpose:     v.Purpose,
+			Note:        v.Note,
+		}
+		ubyRes := ubyport.Reservation{DateFrom: res.dateFrom, DateTo: res.dateTo}
+		if ubyport.EditKeepsDuplicateBlock(existing.submitState, existing.lastErrors, existing.ubyGuest(), proposed, ubyRes) {
+			delete(p, "submit_state")
+			delete(p, "last_errors")
+		} else if ubyport.GuestCorrectionResetsAttempts(existing.submitState) {
+			p["submit_attempts"] = 0
+		}
+	}
 	return p
 }
 
 func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, id, resID int64) (*guestSaveRow, error) {
 	var g guestSaveRow
-	var sigEnc string
-	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''), COALESCE(signature_png,''),
-		COALESCE(signature_png_enc,''), COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,''),
-		COALESCE(nationality,''), COALESCE(entered_by,''), COALESCE(identity_verified_at::text,''), COALESCE(passport_photo_at::text,'')
+	var birthEnc, docEnc, visaEnc, streetEnc, cityEnc, sigEnc string
+	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''),
+		COALESCE(surname,''), COALESCE(first_name,''),
+		COALESCE(birth_date,''), COALESCE(birth_date_enc,''),
+		COALESCE(nationality,''),
+		COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+		COALESCE(visa_number,''), COALESCE(visa_number_enc,''),
+		COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_country,''), COALESCE(purpose,''), COALESCE(note,''),
+		COALESCE(stay_from,''), COALESCE(stay_to,''),
+		COALESCE(signature_png,''), COALESCE(signature_png_enc,''),
+		COALESCE(last_errors,''), COALESCE(entered_by,''),
+		COALESCE(identity_verified_at::text,''), COALESCE(passport_photo_at::text,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2`, id, resID).
-		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &sigEnc, &g.lastErrors, &g.stayFrom, &g.stayTo,
-			&g.nationality, &g.enteredBy, &g.identityVerifiedAt, &g.passportPhotoAt)
+		Scan(&g.id, &g.submitState, &g.restrictedAt,
+			&g.surname, &g.firstName,
+			&g.birthDate, &birthEnc,
+			&g.nationality,
+			&g.docNumber, &docEnc,
+			&g.visaNumber, &visaEnc,
+			&g.resStreet, &streetEnc,
+			&g.resCity, &cityEnc,
+			&g.resCountry, &g.purpose, &g.note,
+			&g.stayFrom, &g.stayTo,
+			&g.signaturePNG, &sigEnc,
+			&g.lastErrors, &g.enteredBy,
+			&g.identityVerifiedAt, &g.passportPhotoAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plain, err := decryptGuestField(getenv, now, sigEnc, g.signaturePNG)
-	if err != nil {
-		return nil, err
+	for _, f := range []struct {
+		dst *string
+		enc string
+	}{
+		{&g.birthDate, birthEnc},
+		{&g.docNumber, docEnc},
+		{&g.visaNumber, visaEnc},
+		{&g.resStreet, streetEnc},
+		{&g.resCity, cityEnc},
+		{&g.signaturePNG, sigEnc},
+	} {
+		plain, derr := decryptGuestField(getenv, now, f.enc, *f.dst)
+		if derr != nil {
+			return nil, derr
+		}
+		*f.dst = plain
 	}
-	g.signaturePNG = plain
 	return &g, nil
 }
 
@@ -497,7 +578,7 @@ func decryptGuestField(getenv func(string) string, now func() time.Time, token, 
 }
 
 func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow, payload map[string]any) (bool, error) {
-	cutoff := float64(d.now().Unix()) - float64(ubyport.SubmissionClaimTTL)
+	cutoff := float64(d.now().Unix()) - ubyport.SubmissionClaimTTL.Seconds()
 	enc, err := encryptSaveFields(d.getenv, payload)
 	if err != nil {
 		return false, err
@@ -514,7 +595,10 @@ func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow,
 		AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $1 AND claimed_at >= $3) RETURNING id`
 	var id int64
 	if err := d.pool.QueryRow(ctx, q, args...).Scan(&id); err != nil {
-		return false, nil
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
 	}
 	return id == existing.id, nil
 }
