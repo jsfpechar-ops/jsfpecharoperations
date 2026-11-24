@@ -200,6 +200,12 @@ def main() -> int:
 
     jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
     jobs += list(table_cases(refs, seed, py, go))
+    for name, path, persona, group in parity_cases.MODAL_CASES:
+        for lang in ("cs", "en"):
+            filled = fill(path, refs, seed)
+            sep = "&" if "?" in filled else "?"
+            pc, gc = (py["host"], go["h1"]) if persona == "host" else (py["admin"], go["admin"])
+            jobs.append((f"{name}-{lang}", f"{filled}{sep}lang={lang}", pc, gc, group))
 
     rows = []
     for name, path, py_cookie, go_cookie, group in jobs:
@@ -208,26 +214,18 @@ def main() -> int:
         out_dir = OUT / name
         if out_dir.exists():
             shutil.rmtree(out_dir)
-        try:
-            for r in shots.run_case(
-                name=name, path=path, out_dir=out_dir, py_base=py_base, go_base=go_base,
-                widths=widths, cookie_name="ubyhost_session",
-                py_cookie_value=py_cookie, go_cookie_value=go_cookie, pre_sql=PRE_SQL,
-            ):
-                rows.append({
-                    "case": name, "path": path, "group": group, "width": r.width,
-                    "verdict": r.verdict, "max_delta": r.max_delta, "diff_pixels": r.diff_pixels,
-                    "note": r.note, "side_png": str(r.side_png), "diff_png": str(r.diff_png),
-                })
-                print(f"{name:22} {r.width:5} {r.verdict:9} max_delta={r.max_delta} "
-                      f"diff_px={r.diff_pixels} {r.note}")
-        except Exception as exc:
-            note = str(exc)[:200]
-            rows.append({
-                "case": name, "path": path, "group": group, "width": 0, "verdict": "error",
-                "max_delta": None, "diff_pixels": None, "note": note, "side_png": None, "diff_png": None,
-            })
-            print(f"{name:22} ERROR {note}")
+        base_name = name.rsplit("-", 1)[0]
+        pre = PRE_SQL_MODAL if name.startswith("two-factor-modal") else PRE_SQL
+        for r in run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre):
+            verdict = r["verdict"]
+            accepted = verdict == "visible" and base_name in parity_cases.ACCEPTED
+            if accepted:
+                verdict = "accepted"
+                r["note"] = parity_cases.ACCEPTED[base_name]
+            rows.append({"case": name, "path": path, "group": group, "width": r["width"], "verdict": verdict,
+                         "max_delta": r["max_delta"], "diff_pixels": r["diff_pixels"], "note": r["note"],
+                         "side_png": r["side_png"], "diff_png": r["diff_png"]})
+            print(f"{name:22} {r['width']:5} {verdict:9} diff_px={r['diff_pixels']} {r['note'][:120]}")
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "probe.json").write_text(json.dumps({"db": "parity_run", "rows": rows}, indent=1))
 
@@ -250,13 +248,18 @@ def main() -> int:
     lines.append("")
     lines.append("Not identical:")
     for r in rows:
-        if r["verdict"] != "identical":
+        if r["verdict"] not in ("identical", "accepted"):
             lines.append(f"- {r['case']} {r['width']} {('ERR' if r['verdict'] == 'error' else r['verdict'])} {r['side_png']}")
+    lines.append("")
+    lines.append("Accepted (deliberate, not failures):")
+    for r in rows:
+        if r["verdict"] == "accepted":
+            lines.append(f"- {r['case']} {r['width']} {r['note']}")
     report = OUT / f"report-{'-'.join(sorted(groups))}.md"
     report.write_text("\n".join(lines) + "\n")
     print(f"report: {report}")
 
-    tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible", "error")}
+    tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible", "accepted", "error")}
     print(json.dumps({"rows": len(rows), "verdicts": tally}))
     return 1 if tally["visible"] or tally["error"] else 0
 
