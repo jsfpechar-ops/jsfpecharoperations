@@ -311,6 +311,7 @@ func handleRemoveConfirm(ctx context.Context, d formPageDeps, w http.ResponseWri
 			CSRFToken:     csrf,
 			GuestEndonyms: GuestEndonyms,
 			Host:          formPagesHost(ctx, d.pool, apt.ID),
+			PrivacyURL:    GuestLink(link, 0, "/privacy") + LangQuery(lang, ""),
 		},
 		ReservationID: res.id,
 		GuestID:       guest.id,
@@ -568,12 +569,48 @@ func liveFormGuests(ctx context.Context, pool *pgxpool.Pool, resID int64) (int, 
 	return n, err
 }
 
+// completeFormGuests counts the live guests of a reservation that are complete
+// or filed by hand: the Go form of Python reporting.reservation_progress["filled"].
+func completeFormGuests(ctx context.Context, pool *pgxpool.Pool, res formResRow, now time.Time) int {
+	rows, err := pool.Query(ctx, `
+		SELECT COALESCE(nationality,''), submit_state, COALESCE(manual_filed_at,''),
+		       COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date,''),
+		       COALESCE(doc_number,''), COALESCE(visa_number,''),
+		       COALESCE(res_street,''), COALESCE(res_city,''), COALESCE(res_country,''),
+		       COALESCE(purpose,''), COALESCE(note,''), COALESCE(stay_from,''), COALESCE(stay_to,''),
+		       COALESCE(signature_png,'')
+		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, res.id)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		var g validation.GuestRow
+		var nat, state, manual string
+		if err := rows.Scan(&nat, &state, &manual,
+			&g.FirstName, &g.Surname, &g.BirthDate, &g.DocNumber, &g.VisaNumber,
+			&g.ResStreet, &g.ResCity, &g.ResCountry, &g.Purpose, &g.Note, &g.StayFrom, &g.StayTo, &g.SignaturePNG); err != nil {
+			return n
+		}
+		g.Nationality = nat
+		if (state == "sent" && manual != "") || validation.GuestIsComplete(g, res.dateFrom, res.dateTo, now) {
+			n++
+		}
+	}
+	return n
+}
+
 func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r *http.Request, apt *Apartment, link string, res formResRow, guest *formGuestRow, lang, mode string) (formView, error) {
 	csrf, err := mintGuestPageCSRF(w, r, d.getenv, d.now())
 	if err != nil {
 		return formView{}, err
 	}
 	prog := formPagesProgress(ctx, d.pool, res)
+	personNumber := 0
+	if guest == nil {
+		personNumber = completeFormGuests(ctx, d.pool, res, d.now()) + 1
+	}
 	formPath := GuestLink(link, res.id, "/new")
 	editing := false
 	if guest != nil {
@@ -610,7 +647,7 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 		BackURL:       back,
 		DatesLink:     formPagesDatesLink(back, editing, formPagesCanPick(apt)),
 		HideBack:      formPagesCanPick(apt) && !editing,
-		PersonNumber:  prog.filled + 1,
+		PersonNumber:  personNumber,
 		StayFromLabel: formPagesDateLabel(stayFrom, lang),
 		StayToLabel:   formPagesDateLabel(stayTo, lang),
 		NightsLabel:   formPagesNights(stayFrom, stayTo, lang),
