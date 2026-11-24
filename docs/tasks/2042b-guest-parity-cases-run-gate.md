@@ -1,6 +1,6 @@
 # 2042b: V2 visual parity, guest pages: harness cookies, cases, seed, run (2042c inspects and adds the gate)
 
-Status: todo
+Status: blocked
 Depends on: 2042 steps 1-4 (done on this branch: `extra_cookies` in `App/scripts/go_page_parity_screenshots.py`, `scripts/e2e/seed_parity_guest.py` written), 2045 | Base commit: HEAD | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 100k tokens (stop at 25 calls; see section 8). Run order: 2042b, then 2042c.
 
