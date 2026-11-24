@@ -3,6 +3,7 @@ package guest
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1352,4 +1354,604 @@ func TestGuestSaveValidateIssuesPartySizeOnNew(t *testing.T) {
 	if !found {
 		t.Fatal("first guest save must require party_size when undeclared")
 	}
+}
+
+func TestCertainlyAtLeastAge(t *testing.T) {
+	arrival := time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC)
+	cases := []struct {
+		name  string
+		birth string
+		when  *time.Time
+		years int
+		want  bool
+	}{
+		{"nil when", "01012000", nil, 18, false},
+		{"exact 18th birthday", "20062008", &arrival, 18, true},
+		{"day before 18th birthday", "21062008", &arrival, 18, false},
+		{"partial unknown month and day 00002008 -> 31.12.2008 (17)", "00002008", &arrival, 18, false},
+		{"partial unknown month and day 00002007 -> 31.12.2007 (18)", "00002007", &arrival, 18, true},
+		{"partial unknown day 00062008 -> 30.06.2008 (17)", "00062008", &arrival, 18, false},
+		{"partial unknown day 00052008 -> 31.05.2008 (18)", "00052008", &arrival, 18, true},
+		{"leap-day partial 00022008 -> 29.02.2008 (18)", "00022008", &arrival, 18, true},
+		{"leap-day exact 29022008 (18)", "29022008", &arrival, 18, true},
+		{"leap-day non-leap 29022007 invalid", "29022007", &arrival, 18, false},
+		{"invalid empty", "", &arrival, 18, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := validation.CertainlyAtLeastAge(c.birth, c.when, c.years); got != c.want {
+				t.Fatalf("CertainlyAtLeastAge(%q, %v, %d) = %v, want %v", c.birth, c.when, c.years, got, c.want)
+			}
+		})
+	}
+}
+
+func TestIsValidSignature(t *testing.T) {
+	var sigPNG bytes.Buffer
+	if err := png.Encode(&sigPNG, image.NewRGBA(image.Rect(0, 0, 8, 8))); err != nil {
+		t.Fatal(err)
+	}
+	valid := "data:image/png;base64," + base64.StdEncoding.EncodeToString(sigPNG.Bytes())
+	if !validation.IsValidSignature(valid) {
+		t.Fatal("expected valid PNG data URL to pass IsValidSignature")
+	}
+	for _, bad := range []string{"", "   ", "imported", "data:image/png;base64,!!!notbase64!!!", "data:text/plain;base64,aGVsbG8="} {
+		if validation.IsValidSignature(bad) {
+			t.Fatalf("expected %q to fail IsValidSignature", bad)
+		}
+	}
+}
+
+func TestSignForWhoMissingAllLanguages(t *testing.T) {
+	want := map[string]string{
+		"en": "Choose the adult who is signing.",
+		"cs": "Vyberte dospělého, který podepisuje.",
+		"de": "Wählen Sie die unterschreibende erwachsene Person.",
+		"es": "Elija al adulto que firma.",
+		"fr": "Choisissez l'adulte signataire.",
+		"uk": "Виберіть дорослого, що підписує.",
+	}
+	for lang, exp := range want {
+		if got := signForWhoMissingText(lang); got != exp {
+			t.Fatalf("lang %s: got %q want %q", lang, got, exp)
+		}
+	}
+	if got := signForWhoMissingText("zz"); got != want["en"] {
+		t.Fatalf("fallback lang: got %q want %q", got, want["en"])
+	}
+}
+
+func TestGuestSaveChildSigner(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	keys, err := secure.LoadDataKeys(testDataEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	stamp := "2026-01-01T00:00:00Z"
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
+
+	var sigPNG bytes.Buffer
+	if err := png.Encode(&sigPNG, image.NewRGBA(image.Rect(0, 0, 8, 8))); err != nil {
+		t.Fatal(err)
+	}
+	validSig := "data:image/png;base64," + base64.StdEncoding.EncodeToString(sigPNG.Bytes())
+
+	type signCols struct {
+		guestID     sql.NullInt64
+		role        sql.NullString
+		at          sql.NullString
+		wording     sql.NullString
+		submitState string
+		attempts    int
+		lastErrors  sql.NullString
+		signedAt    sql.NullString
+		sigEnc      sql.NullString
+	}
+	readSignCols := func(t *testing.T, id int64) signCols {
+		t.Helper()
+		var c signCols
+		if err := pool.QueryRow(ctx, `SELECT signed_for_guest_id, signed_for_role, signed_for_at, signed_for_wording,
+			submit_state, submit_attempts, last_errors, signed_at, signature_png_enc
+			FROM guest WHERE id = $1`, id).Scan(
+			&c.guestID, &c.role, &c.at, &c.wording,
+			&c.submitState, &c.attempts, &c.lastErrors, &c.signedAt, &c.sigEnc,
+		); err != nil {
+			t.Fatalf("readSignCols(%d): %v", id, err)
+		}
+		return c
+	}
+
+	type stayEnv struct {
+		userID, aptID, resID int64
+		tok                  string
+		getenv               func(string) string
+		mux                  *http.ServeMux
+		hooks                *passportHookCount
+		csrf                 string
+		csrfCookie           string
+	}
+	newStay := func(t *testing.T, offset int64) stayEnv {
+		t.Helper()
+		base := time.Now().UnixNano()%1000000000 + 8100000 + offset*100
+		userID, aptID, resID := base, base+1, base+2
+		tok := fmt.Sprintf("childsig%d", base)
+		mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+			VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("cs%d@example.test", base), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at, passport_photo_policy)
+			VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4, 'off')`, aptID, userID, tok, stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+			VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $4)`, resID, aptID, fmt.Sprintf("cs-%d", resID), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
+			VALUES ($1, 'claimed', '', 1, $2, $2)`, resID, stamp)
+		t.Cleanup(func() {
+			bg := context.Background()
+			_, _ = pool.Exec(bg, `DELETE FROM guest WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation_claim WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation WHERE id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM apartment WHERE id = $1`, aptID)
+			_, _ = pool.Exec(bg, `DELETE FROM user_account WHERE id = $1`, userID)
+		})
+		getenv := func(k string) string {
+			switch k {
+			case "UBYHOST_GUEST_PIN":
+				return "0"
+			case "UBYHOST_MAIL_BACKEND":
+				return "disabled"
+			}
+			return testDataEnv(k)
+		}
+		hooks := &passportHookCount{}
+		mux := http.NewServeMux()
+		RegisterStayClaim(mux, pool, getenv, now, wrap, nil)
+		RegisterFormPages(mux, pool, getenv, now, wrap)
+		RegisterFormSave(mux, pool, getenv, now, wrap, hooks)
+		getRec := httptest.NewRecorder()
+		mux.ServeHTTP(getRec, httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d/claim?lang=en", tok, resID), nil))
+		csrf := extractPageCSRF(getRec.Body.String())
+		cookie := csrfCookie(getRec.Result().Cookies())
+		if csrf == "" || cookie == "" {
+			t.Fatalf("csrf %q cookie %q status %d", csrf, cookie, getRec.Code)
+		}
+		return stayEnv{userID, aptID, resID, tok, getenv, mux, hooks, csrf, cookie}
+	}
+
+	seedGuest := func(t *testing.T, resID int64, first, surname, birth, sig, state string, attempts int, lastErr string, archived bool, signedForID *int64, signedForRole, signedForAt, signedForWording string) int64 {
+		t.Helper()
+		enc, err := secure.GuestWriteValues(keys, map[string]any{
+			"birth_date": birth, "doc_number": "DOC12345", "visa_number": "",
+			"res_street": "Main 1", "res_city": "Berlin", "signature_png": sig,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var arch any
+		if archived {
+			arch = stamp
+		}
+		var sfID, sfRole, sfAt, sfWord any
+		if signedForID != nil {
+			sfID, sfRole, sfAt, sfWord = *signedForID, signedForRole, signedForAt, signedForWording
+		}
+		var le any
+		if lastErr != "" {
+			le = lastErr
+		}
+		var id int64
+		if err := pool.QueryRow(ctx, `INSERT INTO guest (
+			reservation_id, is_lead, surname, first_name, nationality, res_country, purpose, note,
+			stay_from, stay_to, submit_state, submit_attempts, last_errors, created_at, updated_at,
+			birth_date_enc, doc_number_enc, visa_number_enc, res_street_enc, res_city_enc, signature_png_enc,
+			archived_at, signed_for_guest_id, signed_for_role, signed_for_at, signed_for_wording
+		) VALUES ($1,0,$2,$3,'DEU','DEU','99','','2026-06-20','2026-06-22',$4,$5,$6,$7,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+		RETURNING id`,
+			resID, surname, first, state, attempts, le, stamp,
+			enc["birth_date_enc"], enc["doc_number_enc"], enc["visa_number_enc"],
+			enc["res_street_enc"], enc["res_city_enc"], enc["signature_png_enc"],
+			arch, sfID, sfRole, sfAt, sfWord,
+		).Scan(&id); err != nil {
+			t.Fatalf("seedGuest: %v", err)
+		}
+		return id
+	}
+
+	postForm := func(t *testing.T, se stayEnv, lang string, owned []int64, vals url.Values) *httptest.ResponseRecorder {
+		t.Helper()
+		vals.Set("_csrf", se.csrf)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/l/%s/%d/save?lang=%s", se.tok, se.resID, lang), strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: se.csrfCookie})
+		if len(owned) > 0 {
+			ownRec := httptest.NewRecorder()
+			rememberOwnedGuestIDs(ownRec, se.getenv, owned)
+			for _, c := range ownRec.Result().Cookies() {
+				req.AddCookie(c)
+			}
+		}
+		rec := httptest.NewRecorder()
+		se.mux.ServeHTTP(rec, req)
+		return rec
+	}
+
+	baseChildForm := func() url.Values {
+		return url.Values{
+			"surname":     {"Novak"},
+			"first_name":  {"Lukas"},
+			"birth_date":  {"10.05.2016"},
+			"nationality": {"DEU"},
+			"doc_number":  {"CHILD123"},
+			"res_street":  {"Main 1"},
+			"res_city":    {"Berlin"},
+			"res_country": {"DEU"},
+			"purpose":     {"99"},
+			"legal_ack":   {"1"},
+			"party_size":  {"10"},
+		}
+	}
+
+	baseAdultForm := func() url.Values {
+		return url.Values{
+			"surname":     {"Novak"},
+			"first_name":  {"Anna"},
+			"birth_date":  {"10.05.1990"},
+			"nationality": {"DEU"},
+			"doc_number":  {"ADULT123"},
+			"res_street":  {"Main 1"},
+			"res_city":    {"Berlin"},
+			"res_country": {"DEU"},
+			"purpose":     {"99"},
+			"signature":   {validSig},
+			"legal_ack":   {"1"},
+			"party_size":  {"10"},
+		}
+	}
+
+	latestGuestID := func(t *testing.T, resID int64) int64 {
+		t.Helper()
+		var id int64
+		if err := pool.QueryRow(ctx, `SELECT id FROM guest WHERE reservation_id = $1 ORDER BY id DESC LIMIT 1`, resID).Scan(&id); err != nil {
+			t.Fatalf("latestGuestID: %v", err)
+		}
+		return id
+	}
+
+	t.Run("1_zero_eligible_signers", func(t *testing.T) {
+		se := newStay(t, 1)
+		rec := postForm(t, se, "en", nil, baseChildForm())
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+		}
+		cid := latestGuestID(t, se.resID)
+		c := readSignCols(t, cid)
+		if c.submitState != "pending" || c.guestID.Valid || c.role.Valid || c.at.Valid || c.wording.Valid || c.signedAt.Valid {
+			t.Fatalf("unexpected cols: %+v", c)
+		}
+		// With child_sign_role=parent and no signed_by when 0 signers -> still saves with NULL link.
+		f2 := baseChildForm()
+		f2.Set("first_name", "Mila")
+		f2.Set("child_sign_role", "parent")
+		rec2 := postForm(t, se, "en", []int64{cid}, f2)
+		if rec2.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d", rec2.Code)
+		}
+		c2 := readSignCols(t, latestGuestID(t, se.resID))
+		if c2.guestID.Valid || c2.role.Valid || c2.at.Valid || c2.wording.Valid {
+			t.Fatalf("expected NULL link with 0 signers: %+v", c2)
+		}
+	})
+
+	t.Run("2_one_eligible_adult_signer", func(t *testing.T) {
+		se := newStay(t, 2)
+		adultID := seedGuest(t, se.resID, "Anna", "Novak", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+
+		f := baseChildForm()
+		f.Set("signed_by", fmt.Sprintf("%d", adultID))
+		f.Set("child_sign_role", "parent")
+		rec := postForm(t, se, "en", []int64{adultID}, f)
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+		}
+		childID := latestGuestID(t, se.resID)
+		c := readSignCols(t, childID)
+		if !c.guestID.Valid || c.guestID.Int64 != adultID || c.role.String != "parent" || c.at.String == "" || c.wording.String != signForWordingVersion || c.submitState != "pending" {
+			t.Fatalf("unexpected linked child cols: %+v", c)
+		}
+		sigPlain, _ := decryptGuestField(se.getenv, now, c.sigEnc.String, "")
+		if sigPlain != "" {
+			t.Fatalf("expected empty child signature, got %q", sigPlain)
+		}
+
+		// Child edit without signed_by / child_sign_role preserves existing 4 columns.
+		edit := baseChildForm()
+		edit.Set("guest_id", fmt.Sprintf("%d", childID))
+		edit.Set("first_name", "LukasEdited")
+		recEdit := postForm(t, se, "en", []int64{adultID, childID}, edit)
+		if recEdit.Code != http.StatusSeeOther {
+			t.Fatalf("edit want 303, got %d: %s", recEdit.Code, recEdit.Body.String())
+		}
+		cEdit := readSignCols(t, childID)
+		if !cEdit.guestID.Valid || cEdit.guestID.Int64 != adultID || cEdit.role.String != "parent" || cEdit.at.String != c.at.String || cEdit.wording.String != signForWordingVersion {
+			t.Fatalf("edit lost link: got %+v, want %+v", cEdit, c)
+		}
+
+		// 1 eligible signer with child_sign_role=parent and empty signed_by -> saves with NULL link (no 422).
+		f3 := baseChildForm()
+		f3.Set("first_name", "Ema")
+		f3.Set("child_sign_role", "parent")
+		rec3 := postForm(t, se, "en", []int64{adultID, childID}, f3)
+		if rec3.Code != http.StatusSeeOther {
+			t.Fatalf("want 303 with 1 signer and empty signed_by, got %d", rec3.Code)
+		}
+		c3 := readSignCols(t, latestGuestID(t, se.resID))
+		if c3.guestID.Valid || c3.role.Valid || c3.at.Valid || c3.wording.Valid {
+			t.Fatalf("expected NULL link: %+v", c3)
+		}
+	})
+
+	t.Run("3_multiple_eligible_adult_signers", func(t *testing.T) {
+		se := newStay(t, 3)
+		adult1 := seedGuest(t, se.resID, "Anna", "Novak", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+		adult2 := seedGuest(t, se.resID, "Petr", "Novak", "15081988", validSig, "pending", 0, "", false, nil, "", "", "")
+		owned := []int64{adult1, adult2}
+
+		// Missing signed_by with role=parent -> 422 EN.
+		f := baseChildForm()
+		f.Set("child_sign_role", "parent")
+		rec := postForm(t, se, "en", owned, f)
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("want 422, got %d", rec.Code)
+		}
+		body := rec.Body.String()
+		for _, want := range []string{
+			`id="signed_by-error"`,
+			`Choose the adult who is signing.`,
+			`id="signed_by"`,
+			`aria-invalid="true"`,
+			`name="child_sign_role" value="parent" checked`,
+			`<div id="u15-block">`,
+			`<div id="sig-block" hidden>`,
+		} {
+			if !strings.Contains(body, want) {
+				t.Fatalf("422 body missing %q", want)
+			}
+		}
+		var count int
+		if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM guest WHERE reservation_id = $1`, se.resID).Scan(&count); err != nil || count != 2 {
+			t.Fatalf("expected 2 rows (child not inserted), got %d (err %v)", count, err)
+		}
+
+		// Same request in Czech -> Czech message.
+		recCS := postForm(t, se, "cs", owned, f)
+		if recCS.Code != http.StatusUnprocessableEntity || !strings.Contains(recCS.Body.String(), "Vyberte dospělého, který podepisuje.") {
+			t.Fatalf("want 422 with Czech message, got %d", recCS.Code)
+		}
+
+		// Bogus echo values on 422 are NOT echoed.
+		fBogus := baseChildForm()
+		fBogus.Set("surname", "") // force 422
+		fBogus.Set("signed_by", "1 OR 1")
+		fBogus.Set("child_sign_role", "boss")
+		fBogus.Set("sign_for_role", "boss")
+		recBogus := postForm(t, se, "en", owned, fBogus)
+		if recBogus.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("want 422 for bogus echo, got %d", recBogus.Code)
+		}
+		bb := recBogus.Body.String()
+		if strings.Contains(bb, "1 OR 1") || strings.Contains(bb, `value="boss" checked`) {
+			t.Fatalf("bogus echo values leaked into 422 HTML")
+		}
+
+		// Empty child_sign_role and empty signed_by -> 303, NULL link.
+		fNone := baseChildForm()
+		fNone.Set("first_name", "NoRole")
+		recNone := postForm(t, se, "en", owned, fNone)
+		if recNone.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d", recNone.Code)
+		}
+		cNone := readSignCols(t, latestGuestID(t, se.resID))
+		if cNone.guestID.Valid {
+			t.Fatalf("expected NULL link, got %+v", cNone)
+		}
+
+		// Valid signed_by=adult2 + child_sign_role=responsible_adult -> 303, linked to adult2.
+		fOK := baseChildForm()
+		fOK.Set("first_name", "LinkedTwo")
+		fOK.Set("signed_by", fmt.Sprintf("%d", adult2))
+		fOK.Set("child_sign_role", "responsible_adult")
+		recOK := postForm(t, se, "en", owned, fOK)
+		if recOK.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d", recOK.Code)
+		}
+		cOK := readSignCols(t, latestGuestID(t, se.resID))
+		if !cOK.guestID.Valid || cOK.guestID.Int64 != adult2 || cOK.role.String != "responsible_adult" || cOK.wording.String != signForWordingVersion {
+			t.Fatalf("unexpected linked cols: %+v", cOK)
+		}
+	})
+
+	t.Run("4_ineligible_signers_silently_dropped", func(t *testing.T) {
+		se := newStay(t, 4)
+		other := newStay(t, 5)
+		otherAdult := seedGuest(t, other.resID, "Other", "Stay", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+		unownedAdult := seedGuest(t, se.resID, "Unowned", "Adult", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+		teen17 := seedGuest(t, se.resID, "Teen", "Seventeen", "21062008", validSig, "pending", 0, "", false, nil, "", "", "")
+		archivedAdult := seedGuest(t, se.resID, "Arch", "Adult", "10051990", validSig, "pending", 0, "", true, nil, "", "", "")
+		importedAdult := seedGuest(t, se.resID, "Imp", "Adult", "10051990", "imported", "pending", 0, "", false, nil, "", "", "")
+		validAdult := seedGuest(t, se.resID, "Valid", "Adult", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+		owned := []int64{otherAdult, teen17, archivedAdult, importedAdult, validAdult}
+
+		badCases := []struct {
+			name, signer, role string
+		}{
+			{"other reservation", fmt.Sprintf("%d", otherAdult), "parent"},
+			{"unowned adult", fmt.Sprintf("%d", unownedAdult), "parent"},
+			{"17yo signed", fmt.Sprintf("%d", teen17), "parent"},
+			{"archived adult", fmt.Sprintf("%d", archivedAdult), "parent"},
+			{"imported sig", fmt.Sprintf("%d", importedAdult), "parent"},
+			{"invalid role", fmt.Sprintf("%d", validAdult), "boss"},
+			{"non-numeric", "abc", "parent"},
+		}
+		for i, bc := range badCases {
+			f := baseChildForm()
+			f.Set("first_name", fmt.Sprintf("Child%d", i))
+			f.Set("signed_by", bc.signer)
+			f.Set("child_sign_role", bc.role)
+			rec := postForm(t, se, "en", owned, f)
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("%s: want 303, got %d", bc.name, rec.Code)
+			}
+			c := readSignCols(t, latestGuestID(t, se.resID))
+			if c.guestID.Valid || c.role.Valid || c.at.Valid || c.wording.Valid {
+				t.Fatalf("%s: expected NULL link, got %+v", bc.name, c)
+			}
+		}
+	})
+
+	t.Run("5_child_ages_out_on_birth_date_correction", func(t *testing.T) {
+		se := newStay(t, 6)
+		adultID := seedGuest(t, se.resID, "Anna", "Novak", "10051990", validSig, "pending", 0, "", false, nil, "", "", "")
+		childID := seedGuest(t, se.resID, "Lukas", "Novak", "10052016", "", "pending", 0, "", false, &adultID, "parent", stamp, signForWordingVersion)
+		owned := []int64{adultID, childID}
+
+		// Edit to age 16 without signature -> 422, prior link remains intact.
+		f422 := baseChildForm()
+		f422.Set("guest_id", fmt.Sprintf("%d", childID))
+		f422.Set("birth_date", "10.05.2010")
+		rec422 := postForm(t, se, "en", owned, f422)
+		if rec422.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("want 422 when aging out without signature, got %d", rec422.Code)
+		}
+		cStill := readSignCols(t, childID)
+		if !cStill.guestID.Valid || cStill.guestID.Int64 != adultID || cStill.role.String != "parent" {
+			t.Fatalf("422 mutated prior link: %+v", cStill)
+		}
+
+		// Same edit with valid drawn signature -> 303, signature + signed_at saved, 4 signed_for_* cleared.
+		fOK := baseChildForm()
+		fOK.Set("guest_id", fmt.Sprintf("%d", childID))
+		fOK.Set("birth_date", "10.05.2010")
+		fOK.Set("signature", validSig)
+		recOK := postForm(t, se, "en", owned, fOK)
+		if recOK.Code != http.StatusSeeOther {
+			t.Fatalf("want 303 with signature, got %d: %s", recOK.Code, recOK.Body.String())
+		}
+		cCleared := readSignCols(t, childID)
+		if cCleared.guestID.Valid || cCleared.role.Valid || cCleared.at.Valid || cCleared.wording.Valid {
+			t.Fatalf("expected signed_for_* cleared to NULL, got %+v", cCleared)
+		}
+		if !cCleared.signedAt.Valid || cCleared.signedAt.String == "" {
+			t.Fatalf("expected signed_at populated, got %+v", cCleared)
+		}
+		sigPlain, _ := decryptGuestField(se.getenv, now, cCleared.sigEnc.String, "")
+		if sigPlain != validSig {
+			t.Fatalf("expected stored signature to match validSig")
+		}
+	})
+
+	t.Run("6_adult_signs_for_selected_children", func(t *testing.T) {
+		se := newStay(t, 7)
+		firstAdult := seedGuest(t, se.resID, "First", "Adult", "10051985", validSig, "pending", 0, "", false, nil, "", "", "")
+		unsignedChild := seedGuest(t, se.resID, "Unsigned", "Child", "10052016", "", "pending", 0, "", false, nil, "", "", "")
+		filedChild := seedGuest(t, se.resID, "Filed", "Child", "10052017", "", "sent", 2, "kept", false, nil, "", "", "")
+		teen16 := seedGuest(t, se.resID, "Teen", "Sixteen", "10052010", validSig, "pending", 0, "", false, nil, "", "", "")
+		unownedChild := seedGuest(t, se.resID, "Unowned", "Child", "10052016", "", "pending", 0, "", false, nil, "", "", "")
+		archivedChild := seedGuest(t, se.resID, "Archived", "Child", "10052016", "", "pending", 0, "", true, nil, "", "", "")
+		alreadyLinked := seedGuest(t, se.resID, "Linked", "Child", "10052016", "", "pending", 0, "", false, &firstAdult, "parent", "then", "old")
+
+		owned := []int64{unsignedChild, filedChild, teen16, archivedChild, alreadyLinked}
+
+		// GET /new with pending child and 0 owned adults renders #sign-for-children WITHOUT hidden.
+		getNew := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d/new?lang=en", se.tok, se.resID), nil)
+		ownRec := httptest.NewRecorder()
+		rememberOwnedGuestIDs(ownRec, se.getenv, []int64{unsignedChild})
+		for _, c := range ownRec.Result().Cookies() {
+			getNew.AddCookie(c)
+		}
+		newRec := httptest.NewRecorder()
+		se.mux.ServeHTTP(newRec, getNew)
+		if newRec.Code != http.StatusOK {
+			t.Fatalf("GET /new want 200, got %d", newRec.Code)
+		}
+		if !strings.Contains(newRec.Body.String(), `<div class="g-field" id="sign-for-children" role="radiogroup" aria-labelledby="sign-for-children-text">`) {
+			t.Fatalf("GET /new did not render visible #sign-for-children")
+		}
+
+		// 17-year-old posting sign_for_ids + role=parent links nobody.
+		f17 := baseAdultForm()
+		f17.Set("first_name", "Seventeen")
+		f17.Set("birth_date", "21.06.2008")
+		f17["sign_for_ids"] = []string{fmt.Sprintf("%d", unsignedChild)}
+		f17.Set("sign_for_role", "parent")
+		rec17 := postForm(t, se, "en", owned, f17)
+		if rec17.Code != http.StatusSeeOther {
+			t.Fatalf("17yo want 303, got %d", rec17.Code)
+		}
+		if c := readSignCols(t, unsignedChild); c.guestID.Valid {
+			t.Fatalf("17yo should not link child: %+v", c)
+		}
+
+		// Adult posting sign_for_ids with empty sign_for_role links nobody.
+		fNoRole := baseAdultForm()
+		fNoRole.Set("first_name", "NoRoleAdult")
+		fNoRole["sign_for_ids"] = []string{fmt.Sprintf("%d", unsignedChild)}
+		recNoRole := postForm(t, se, "en", owned, fNoRole)
+		if recNoRole.Code != http.StatusSeeOther {
+			t.Fatalf("adult no role want 303, got %d", recNoRole.Code)
+		}
+		if c := readSignCols(t, unsignedChild); c.guestID.Valid {
+			t.Fatalf("empty role should not link child: %+v", c)
+		}
+
+		// Adult posting all IDs (+ duplicate + "x") with role=responsible_adult.
+		se.hooks.onComplete = 0
+		fAdult := baseAdultForm()
+		fAdult.Set("first_name", "SignerAdult")
+		fAdult["sign_for_ids"] = []string{
+			fmt.Sprintf("%d", unsignedChild),
+			fmt.Sprintf("%d", unsignedChild),
+			"x",
+			fmt.Sprintf("%d", filedChild),
+			fmt.Sprintf("%d", teen16),
+			fmt.Sprintf("%d", unownedChild),
+			fmt.Sprintf("%d", archivedChild),
+			fmt.Sprintf("%d", alreadyLinked),
+		}
+		fAdult.Set("sign_for_role", "responsible_adult")
+		recAdult := postForm(t, se, "en", owned, fAdult)
+		if recAdult.Code != http.StatusSeeOther {
+			t.Fatalf("adult want 303, got %d: %s", recAdult.Code, recAdult.Body.String())
+		}
+		adultID := latestGuestID(t, se.resID)
+		if se.hooks.onComplete != 1 {
+			t.Fatalf("expected runCompletion hook to fire once, got %d", se.hooks.onComplete)
+		}
+
+		// Unsigned owned active child linked.
+		cU := readSignCols(t, unsignedChild)
+		if !cU.guestID.Valid || cU.guestID.Int64 != adultID || cU.role.String != "responsible_adult" || cU.at.String == "" || cU.wording.String != signForWordingVersion {
+			t.Fatalf("unsignedChild not linked properly: %+v", cU)
+		}
+		// Filed owned child linked WITHOUT touching filing columns.
+		cF := readSignCols(t, filedChild)
+		if !cF.guestID.Valid || cF.guestID.Int64 != adultID || cF.role.String != "responsible_adult" || cF.at.String == "" || cF.wording.String != signForWordingVersion {
+			t.Fatalf("filedChild not linked properly: %+v", cF)
+		}
+		if cF.submitState != "sent" || cF.attempts != 2 || cF.lastErrors.String != "kept" {
+			t.Fatalf("filedChild filing columns mutated: %+v", cF)
+		}
+		// 16yo, unowned, archived stay NULL.
+		for name, id := range map[string]int64{"teen16": teen16, "unownedChild": unownedChild, "archivedChild": archivedChild} {
+			if c := readSignCols(t, id); c.guestID.Valid {
+				t.Fatalf("%s should stay NULL, got %+v", name, c)
+			}
+		}
+		// Already-linked keeps (firstAdult, 'parent', 'then', 'old').
+		cA := readSignCols(t, alreadyLinked)
+		if !cA.guestID.Valid || cA.guestID.Int64 != firstAdult || cA.role.String != "parent" || cA.at.String != "then" || cA.wording.String != "old" {
+			t.Fatalf("alreadyLinked mutated: %+v", cA)
+		}
+	})
 }

@@ -256,6 +256,36 @@ func certainlyUnderAge(raw string, when time.Time, years int) bool {
 	return age < years
 }
 
+func certainlyAtLeastAge(raw string, when time.Time, years int) bool {
+	if len(raw) != 8 || !isASCIIDigits(raw) {
+		return false
+	}
+	day, _ := strconv.Atoi(raw[0:2])
+	month, _ := strconv.Atoi(raw[2:4])
+	year, _ := strconv.Atoi(raw[4:8])
+	if year == 0 {
+		return false
+	}
+	if month == 0 {
+		month = 12
+	}
+	if month < 1 || month > 12 {
+		return false
+	}
+	if day == 0 {
+		day = time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
+	}
+	birth, ok := roundTrip(year, month, day)
+	if !ok {
+		return false
+	}
+	age := when.Year() - birth.Year()
+	if when.Month() < birth.Month() || (when.Month() == birth.Month() && when.Day() < birth.Day()) {
+		age--
+	}
+	return age >= years
+}
+
 // validateBirthDate is validation.validate_birth_date. today is Python date.today().
 func validateBirthDate(s string, stayFrom *time.Time, today time.Time) []Issue {
 	const field = "birth_date"
