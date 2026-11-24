@@ -23,10 +23,12 @@ func pageSet(names ...string) *template.Template {
 }
 
 var (
-	claimSet   = pageSet("templates/claim.tmpl")
-	confirmSet = pageSet("templates/confirm.tmpl")
-	unavailSet = pageSet("templates/unavailable.tmpl")
-	guideSet   = pageSet("templates/guide.tmpl")
+	claimSet    = pageSet("templates/claim.tmpl")
+	confirmSet  = pageSet("templates/confirm.tmpl")
+	unavailSet  = pageSet("templates/unavailable.tmpl")
+	guideSet    = pageSet("templates/guide.tmpl")
+	staySet     = pageSet("templates/stay.tmpl")
+	assignedSet = pageSet("templates/assigned.tmpl")
 )
 
 // unavailableTitles is guest.py _unavailable's titles table.
@@ -172,17 +174,6 @@ func (v confirmView) T(key string, kv ...any) string { return v.Page.T(key, kv..
 
 // GetLang lets render set the guest language cookie.
 func (v confirmView) GetLang() string { return v.Lang }
-
-// assignedView is guest/assigned.html: the stay was claimed on another device.
-type assignedView struct {
-	Page
-	StayFrom, StayTo string
-}
-
-func (v assignedView) T(key string, kv ...any) string { return v.Page.T(key, kv...) }
-
-// GetLang lets render set the guest language cookie.
-func (v assignedView) GetLang() string { return v.Lang }
 
 // canPickOtherStays is guest.py _can_pick_other_stays.
 func canPickOtherStays(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, now func() time.Time) bool {
