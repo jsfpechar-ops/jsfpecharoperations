@@ -18,22 +18,24 @@ func env(m map[string]string) func(string) (string, bool) {
 
 func TestConfigFromEnvSwitches(t *testing.T) {
 	for _, c := range []struct {
-		vars map[string]string
-		dry  bool
+		vars  map[string]string
+		dry   bool
+		warn  bool
 	}{
-		{map[string]string{}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1"}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "staging"}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "production"}, false},
-		{map[string]string{"UBYHOST_GO_RETENTION_APPLY": "1"}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_GO_RETENTION_APPLY": "0"}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "TRUE", "UBYHOST_GO_RETENTION_APPLY": "1"}, true},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_GO_RETENTION_APPLY": "1"}, false},
-		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "yes", "UBYHOST_GO_RETENTION_APPLY": "true"}, false},
+		{map[string]string{}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1"}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "staging"}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "production"}, false, true},
+		{map[string]string{"UBYHOST_GO_RETENTION_APPLY": "1"}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_GO_RETENTION_APPLY": "0"}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "TRUE", "UBYHOST_GO_RETENTION_APPLY": "1"}, true, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_GO_RETENTION_APPLY": "1"}, false, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "yes", "UBYHOST_GO_RETENTION_APPLY": "true"}, false, false},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "production", "UBYHOST_GO_RETENTION_APPLY": "1"}, false, false},
 	} {
 		cfg, err := ConfigFromEnv(env(c.vars))
-		if err != nil || cfg.DryRun != c.dry {
-			t.Errorf("%v: DryRun %v (%v), want %v", c.vars, cfg.DryRun, err, c.dry)
+		if err != nil || cfg.DryRun != c.dry || cfg.WarnGoRetentionApplyUnset != c.warn {
+			t.Errorf("%v: DryRun %v warn %v (%v), want dry %v warn %v", c.vars, cfg.DryRun, cfg.WarnGoRetentionApplyUnset, err, c.dry, c.warn)
 		}
 	}
 	cfg, err := ConfigFromEnv(env(map[string]string{}))

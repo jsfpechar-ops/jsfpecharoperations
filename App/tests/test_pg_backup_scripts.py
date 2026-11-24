@@ -264,6 +264,44 @@ def test_restore_refuses_on_postgresql_env(tmp_path):
     assert "pg-restore.sh" in result.stderr
 
 
+def test_rollback_prod_defaults_to_dry_run_without_confirm(tmp_path):
+    """Merged #1316: manual rollback must change nothing unless ROLLBACK_CONFIRM=yes."""
+    repo = tmp_path / "repo"
+    lightsail = repo / "deploy" / "lightsail"
+    scripts = lightsail / "scripts"
+    scripts.mkdir(parents=True)
+    repo_scripts = repo / "scripts"
+    repo_scripts.mkdir(parents=True)
+    shutil.copy(ROOT / "scripts" / "rollback-prod.sh", repo_scripts / "rollback-prod.sh")
+    shutil.copy(SCRIPTS / "rollback-schema-prep.sh", scripts / "rollback-schema-prep.sh")
+    (lightsail / ".env").write_text(PG_ENV, encoding="utf-8")
+    (lightsail / ".deployed-sha").write_text("deadbeef\n", encoding="utf-8")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "stub.log"
+    docker = bindir / "docker"
+    docker.write_text(DOCKER_STUB, encoding="utf-8")
+    docker.chmod(0o755)
+    env = {
+        "PATH": f"{bindir}:{os.environ['PATH']}",
+        "STUB_LOG": str(log),
+        "PG_RUNNING": "1",
+    }
+    result = subprocess.run(
+        ["bash", str(repo_scripts / "rollback-prod.sh")],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout + result.stderr
+    assert "dry-run" in out.lower()
+    assert "ROLLBACK_CONFIRM=yes" in out
+    assert "Would:" in out
+    assert "compose up" not in calls(log)
+
+
 def test_rollback_schema_prep_dry_run_reports_drop(tmp_path):
     root = tmp_path / "deploy/lightsail"
     scripts = root / "scripts"

@@ -103,6 +103,21 @@ func TestAccessReplaceClearRenumber(t *testing.T) {
 	}
 }
 
+func TestAccessClearMiddleOfThreeRenumber(t *testing.T) {
+	w := newGuideCardWorld(t)
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"gate"}, "code": {"A1"}})
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"building_entrance"}, "code": {"B2"}})
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"garage"}, "code": {"C3"}})
+	rec := accessPost(t, w, url.Values{"action": {"clear"}, "position": {"2"}})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("clear middle of three: %d", rec.Code)
+	}
+	got := accessPositions(t, w)
+	if len(got) != 2 || got[0] != 1 || got[1] != 2 {
+		t.Fatalf("after clearing position 2 got %v, want [1 2]", got)
+	}
+}
+
 func TestAccessClearThreeCodesRenumber(t *testing.T) {
 	w := newGuideCardWorld(t)
 	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"gate"}, "code": {"A1"}})
