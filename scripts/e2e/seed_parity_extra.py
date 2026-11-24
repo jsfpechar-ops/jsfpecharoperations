@@ -85,12 +85,40 @@ def privacy(out, owner, apt):
 
 def submission(out, owner, apt):
     now = db.utcnow()
-    out["submission_id"] = db.insert("submission", {
-        "apartment_id": apt, "created_at": now, "state": "draft",
+    ids = [r["id"] for r in db.query(
+        "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "WHERE r.apartment_id = ? ORDER BY g.id LIMIT 2", (apt,))]
+    if not ids:
+        raise RuntimeError("no guests for the apartment; not seeded")
+    guests = json.dumps(ids)
+    endpoint = "https://example.invalid/e2e"
+    out["submission_ok"] = db.insert("submission", {
+        "apartment_id": apt, "created_at": now, "mode": "completion_immediate", "state": "ok",
+        "guest_ids": guests, "endpoint": endpoint, "finished_at": now,
+        "pseudo_stamp": "E2E-STAMP-0001", "receipt_pdf": "E2E-RECEIPT", "header_errors": "",
+        "record_errors": json.dumps(["" for _ in ids]),
     })
-    out["submission_sent"] = db.insert("submission", {
-        "apartment_id": apt, "created_at": now, "finished_at": now, "state": "sent",
+    out["submission_error"] = db.insert("submission", {
+        "apartment_id": apt, "created_at": now, "mode": "auto", "state": "error",
+        "guest_ids": guests, "endpoint": endpoint, "finished_at": now,
+        "pseudo_stamp": "E2E-STAMP-0002", "header_errors": "",
+        "record_errors": json.dumps(["E2E record problem"] + ["" for _ in ids[1:]]),
     })
+    out["submission_transport"] = db.insert("submission", {
+        "apartment_id": apt, "created_at": now, "mode": "completion_immediate",
+        "state": "transport_error", "guest_ids": guests, "endpoint": endpoint,
+        "finished_at": now, "error_text": "E2E connection refused",
+    })
+    out["submission_running"] = db.insert("submission", {
+        "apartment_id": apt, "created_at": now, "mode": "completion_immediate",
+        "state": "running", "guest_ids": guests, "endpoint": endpoint,
+    })
+    # Legacy row: only the early columns; mode, guest_ids and the rest stay NULL (brief 2051 fix).
+    out["submission_legacy"] = db.insert("submission", {
+        "apartment_id": apt, "created_at": now, "state": "ok", "finished_at": now,
+    })
+    out["submission_id"] = out["submission_error"]
+    out["submission_sent"] = out["submission_ok"]
 
 
 def invite(out, owner, apt):
