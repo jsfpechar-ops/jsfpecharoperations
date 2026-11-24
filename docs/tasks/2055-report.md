@@ -103,3 +103,23 @@ Status: done. Item (1) only; item (2) was already in commit `6399f9f`.
 - Test callers: `csrf_forms_test.go`, `party_claim_start_test.go`, `pick_http_test.go` pass `nil` for the new argument.
 - Verification (fresh DB `guest_test`): `go build ./...` passes in `go/`. `go test ./internal/web/guest/... ./internal/doorcodes/... ./cmd/ubyhost-web/...` passes, including `TestConfirmClaimAppliesDeclaredGuests`, `TestStayOverviewMailOnHonorsClaimCookie` and `TestConfirmClaimRace`.
 - Deviations: a `ViewForStay` error is logged and the card is hidden, so the page still renders (Python would return 500). The door-code CSS (`.g-door-code`) and the 390 px screenshot were not checked; they belong to Chunk C item 8.
+
+## Chunk B (run 5)
+
+Status: partial. Items (a), (c), (d), (e) done; (b) not done.
+
+- `42fbebe` (a) Turnstile on the assigned resend form: `assigned.tmpl` draws the `cf-turnstile` widget and loads api.js only when `RequireTurnstile && TurnstileSiteKey`, as Python `require_turnstile and turnstile_site_key`. The server check on the resend POST already existed (`party.go`, guest_claim, `claim_error=bot`) and is unchanged. Without JS the form still posts its fields; the widget is inert, as in Python. Unconfigured or non-production: the widget is hidden and `turnstile.Verify` passes, as Python. Test: `go/internal/web/guest/assigned_turnstile_test.go`.
+- `39b5be6` (e) birth date on stay rows: `validation.DisplayBirthDate` matches Python `display_birth_date` (normalise, DD.MM.YYYY, else stripped value). Test: `go/internal/validation/birth_display_test.go`.
+- `4be9b9a` (c) guide link: `stay.tmpl` shows `g-guide-link` (`data-guide-link`) when `GuideLive`, set from `ai.LeonProgressOf(items).Live`. A store error hides the link only. Test: `go/internal/web/guest/stay_guide_link_test.go` (render only; the DB items path is not covered).
+- `8d58337` (d) assigned last-sent line: `claimLastSent` takes MAX(sent_at) over `claim` and `claim_resend` in `email_outbox` and renders `assigned_last_sent`. Python applies `date_cz` to a datetime; Go uses the DB session date. Test: `go/internal/web/guest/assigned_last_sent_test.go`.
+- (b) duplicate warnings: NOT done. `formPagesDupWarnings` (`form_pages.go`) is a stub returning nil, and the guest `i18n.json` has no `dup_what_doc` / `dup_what_person` keys (Python: `App/app/i18n.py`). Needs its own run.
+
+Verification (`UBYHOST_TEST_DATABASE_URL` = guest_test):
+- `go build ./...` passes. `go test ./internal/web/guest/... ./internal/turnstile/... ./cmd/ubyhost-web/...` and `./internal/validation/` pass.
+- Skips, not caused by Chunk B: `TestConfirmClaimRace`, `TestConfirmClaimAppliesDeclaredGuests`, `TestStayOverviewMailOnHonorsClaimCookie`, `TestStayPeopleSignatureCompleteness` skip with "needs migrated Postgres schema" on guest_test. Belongs to Chunk C item 8.
+- `TestDoorCodesJobIssuesCodeThroughHandler` failed once in a combined run, then passed alone. Probably DB sharing between packages; not investigated.
+- No 390 px screenshots or layout lint in this chunk (Chunk C).
+
+Deviations:
+- Commit trailers use Co-Authored-By Claude Haiku 5.5, the attribution given by the harness, not Opus 5.5 as the brief text said.
+- `gofmt` realigned struct and literal fields in `stay_view.go`.
