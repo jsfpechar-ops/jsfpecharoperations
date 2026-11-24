@@ -944,10 +944,6 @@ func formPagesDateLabel(iso, lang string) string {
 // formPagesNights is nights_label.
 func formPagesNights(from, to, lang string) string { return pickNightsLabel(lang, from, to) }
 
-func formPagesDupWarnings(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, lang string) ([]dupWarning, error) {
-	return nil, nil
-}
-
 func formPagesDeletePhoto(ctx context.Context, pool *pgxpool.Pool, guestID int64) error { return nil }
 
 func formPagesSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, aptID, resID int64) error {
