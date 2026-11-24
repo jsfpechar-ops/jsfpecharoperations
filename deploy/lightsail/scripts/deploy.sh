@@ -165,8 +165,17 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 2044: .deploy-in-progress exists only while a deploy has not finished. If it is
+# already there, the last run failed part-way: keep the rollback copies it made.
+KEEP_ROLLBACK_COPIES=0
+if [ -f .deploy-in-progress ]; then
+  KEEP_ROLLBACK_COPIES=1
+  echo "NOTE: previous deploy did not finish; keeping existing rollback copies" >&2
+fi
+git rev-parse HEAD > .deploy-in-progress
+
 # 0710: keep the running Caddyfile for rollback.
-if [ -f caddy/Caddyfile.active ]; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && [ -f caddy/Caddyfile.active ]; then
   cp caddy/Caddyfile.active caddy/Caddyfile.previous
 fi
 
@@ -298,11 +307,11 @@ if ubyhost_app_service >/dev/null; then
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
 
-if docker image inspect ubyhost:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost:local >/dev/null 2>&1; then
   docker tag ubyhost:local ubyhost:previous
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
-if docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   docker tag ubyhost-go:local ubyhost-go:previous
   echo "Kept the running Go image as ubyhost-go:previous for rollback."
 fi
