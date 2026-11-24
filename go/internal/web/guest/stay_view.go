@@ -5,6 +5,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/turnstile"
@@ -116,6 +117,50 @@ func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *sc
 		out = append(out, p)
 	}
 	return out, filled, rows.Err()
+}
+
+// stayGuestSelect lists the columns stayPeople reads: plain and encrypted pairs, as reporting.guest_dict does.
+const stayGuestSelect = `id, COALESCE(first_name,''), COALESCE(surname,''), COALESCE(nationality,''),
+	COALESCE(birth_date::text,''), COALESCE(birth_date_enc,''), COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+	COALESCE(visa_number,''), COALESCE(visa_number_enc,''), COALESCE(res_street,''), COALESCE(res_street_enc,''),
+	COALESCE(res_city,''), COALESCE(res_city_enc,''), COALESCE(res_country,''), COALESCE(purpose,''),
+	COALESCE(note,''), COALESCE(stay_from::text,''), COALESCE(stay_to::text,''), COALESCE(submit_state,''),
+	COALESCE(restricted_at::text,''), COALESCE(signature_png,''), COALESCE(signature_png_enc,'')`
+
+// stayGuestCols is one row of stayGuestSelect, still encrypted where the column is.
+type stayGuestCols struct {
+	ID                                       int64
+	First, Surname, Nat                      string
+	BirthP, BirthE, DocP, DocE, VisaP, VisaE string
+	StreetP, StreetE, CityP, CityE           string
+	Country, Purpose                         string
+	Note, StayFrom, StayTo                   string
+	Submit, Restricted                       string
+	SigP, SigE                               string
+}
+
+func (c *stayGuestCols) scanArgs() []any {
+	return []any{&c.ID, &c.First, &c.Surname, &c.Nat, &c.BirthP, &c.BirthE, &c.DocP, &c.DocE, &c.VisaP, &c.VisaE,
+		&c.StreetP, &c.StreetE, &c.CityP, &c.CityE, &c.Country, &c.Purpose, &c.Note, &c.StayFrom, &c.StayTo,
+		&c.Submit, &c.Restricted, &c.SigP, &c.SigE}
+}
+
+// validationRow decrypts the encrypted columns (plain wins when there is no token) into the row GuestIsComplete reads.
+func (c stayGuestCols) validationRow(getenv func(string) string, now func() time.Time) (validation.GuestRow, error) {
+	row := validation.GuestRow{Surname: c.Surname, FirstName: c.First, Nationality: c.Nat, ResCountry: c.Country,
+		Purpose: c.Purpose, Note: c.Note, StayFrom: c.StayFrom, StayTo: c.StayTo}
+	for _, p := range []struct {
+		token, plain string
+		dst          *string
+	}{{c.BirthE, c.BirthP, &row.BirthDate}, {c.DocE, c.DocP, &row.DocNumber}, {c.VisaE, c.VisaP, &row.VisaNumber},
+		{c.StreetE, c.StreetP, &row.ResStreet}, {c.CityE, c.CityP, &row.ResCity}, {c.SigE, c.SigP, &row.SignaturePNG}} {
+		v, err := decryptGuestField(getenv, now, p.token, p.plain)
+		if err != nil {
+			return row, err
+		}
+		*p.dst = v
+	}
+	return row, nil
 }
 
 func joinNonEmpty(sep string, parts ...string) string {
