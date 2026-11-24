@@ -72,6 +72,13 @@ func TestStayPageClaimedDeclaredTwoOneDone(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d?lang=en", tok, resID), nil)
 	req.SetPathValue("token", tok)
 	req.SetPathValue("reservation_id", fmt.Sprintf("%d", resID))
+	// The duplicate warning only names guests this device saved, so the request
+	// carries the signed owned cookie listing both guests.
+	owned := httptest.NewRecorder()
+	rememberOwnedGuestIDs(owned, getenv, []int64{resID*10 + 0, resID*10 + 1})
+	for _, c := range owned.Result().Cookies() {
+		req.AddCookie(c)
+	}
 	rec := httptest.NewRecorder()
 	d.stayOverview(rec, req)
 	if rec.Code != http.StatusOK {
@@ -85,5 +92,9 @@ func TestStayPageClaimedDeclaredTwoOneDone(t *testing.T) {
 	}
 	if strings.Contains(body, `id="door-code"`) || strings.Contains(body, "g-door-code") {
 		t.Errorf("door-code card shown before all declared guests are in")
+	}
+	// The host has no live guide in this fixture, so the guide link stays hidden.
+	if strings.Contains(body, "data-guide-link") {
+		t.Errorf("guide link shown while the guide is not live")
 	}
 }
