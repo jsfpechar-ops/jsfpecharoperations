@@ -62,7 +62,7 @@ func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *sc
 	rows, err := d.pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date::text,''),
 		COALESCE(nationality,''), COALESCE(doc_number,''), COALESCE(visa_number,''), COALESCE(res_street,''),
 		COALESCE(res_city,''), COALESCE(res_country,''), COALESCE(purpose,''), COALESCE(submit_state,''),
-		COALESCE(restricted_at::text,'')
+		COALESCE(restricted_at::text,''), COALESCE(signature_png,'')
 		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY is_lead DESC, id`, stay.id)
 	if err != nil {
 		return nil, 0, err
@@ -74,13 +74,14 @@ func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *sc
 	filled := 0
 	for rows.Next() {
 		var id int64
-		var first, surname, birth, nat, doc, visa, street, city, country, purpose, submit, restricted string
-		if err := rows.Scan(&id, &first, &surname, &birth, &nat, &doc, &visa, &street, &city, &country, &purpose, &submit, &restricted); err != nil {
+		var first, surname, birth, nat, doc, visa, street, city, country, purpose, submit, restricted, sig string
+		if err := rows.Scan(&id, &first, &surname, &birth, &nat, &doc, &visa, &street, &city, &country, &purpose, &submit, &restricted, &sig); err != nil {
 			return nil, 0, err
 		}
 		complete := validation.GuestIsComplete(validation.GuestRow{
 			Surname: surname, FirstName: first, BirthDate: birth, Nationality: nat, DocNumber: doc,
 			VisaNumber: visa, ResStreet: street, ResCity: city, ResCountry: country, Purpose: purpose,
+			SignaturePNG: sig,
 		}, stay.dateFrom, stay.dateTo, today)
 		sent := submit == formSubmitSent
 		mine := owned[id]
