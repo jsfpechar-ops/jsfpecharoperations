@@ -516,18 +516,24 @@ func TestDecryptGuestFieldEmptyUsesPlain(t *testing.T) {
 	}
 }
 
-// synthJPEG is a synthetic 64x64 JPEG; no real passport image is used.
-func synthJPEG(t *testing.T) []byte {
+// synthJPEGSeed is a synthetic 64x64 JPEG parameterized by pixel multiplier; no real passport image is used.
+func synthJPEGSeed(t *testing.T, mult uint8) []byte {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
 	for i := range img.Pix {
-		img.Pix[i] = uint8(i * 7)
+		img.Pix[i] = uint8(i) * mult
 	}
 	var buf bytes.Buffer
 	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80}); err != nil {
 		t.Fatal(err)
 	}
 	return buf.Bytes()
+}
+
+// synthJPEG is a synthetic 64x64 JPEG; no real passport image is used.
+func synthJPEG(t *testing.T) []byte {
+	t.Helper()
+	return synthJPEGSeed(t, 7)
 }
 
 func TestPassportRequired(t *testing.T) {
@@ -620,12 +626,15 @@ func TestPassportUploadTextAllLanguages(t *testing.T) {
 	}
 }
 
-type passportHookCount struct{ calls int }
+type passportHookCount struct {
+	onComplete int
+	notify     int
+}
 
-func (h *passportHookCount) OnRegistrationComplete(context.Context, int64) { h.calls++ }
+func (h *passportHookCount) OnRegistrationComplete(context.Context, int64) { h.onComplete++ }
 
 func (h *passportHookCount) MaybeNotifyCompletion(context.Context, int64, int64, bool) error {
-	h.calls++
+	h.notify++
 	return nil
 }
 
@@ -763,11 +772,262 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 					t.Fatalf("stored photo does not decrypt to a JPEG (ok=%v)", ok)
 				}
 			}
-			if (hooks.calls > 0) != c.wantHook {
-				t.Fatalf("completion hook calls = %d, want hook=%v", hooks.calls, c.wantHook)
+			if c.wantHook {
+				if hooks.onComplete != 1 || hooks.notify != 1 {
+					t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+				}
+			} else if hooks.onComplete != 0 || hooks.notify != 0 {
+				t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
 			}
 		})
 	}
+}
+
+func TestGuestSavePassportPhotoExistingGuestHTTP(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	keys, err := secure.LoadDataKeys(testDataEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	stamp := "2026-01-01T00:00:00Z"
+	prevPhotoStamp := "2026-06-15T10:00:00Z"
+	hostVerifiedStamp := "2026-06-15T09:00:00Z"
+	nowTime := time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)
+	nowS := nowTime.Format(time.RFC3339)
+	now := func() time.Time { return nowTime }
+	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
+	var sigPNG bytes.Buffer
+	if err := png.Encode(&sigPNG, image.NewRGBA(image.Rect(0, 0, 8, 8))); err != nil {
+		t.Fatal(err)
+	}
+	signature := "data:image/png;base64," + base64.StdEncoding.EncodeToString(sigPNG.Bytes())
+	origJPG := synthJPEGSeed(t, 7)
+	newJPG := synthJPEGSeed(t, 13)
+
+	seedAndPost := func(t *testing.T, offset int64, photoAt, verifiedAt *string, seedPhoto bool, postNat string, upload []byte) (*httptest.ResponseRecorder, string, int64, []byte, []byte, *passportHookCount) {
+		t.Helper()
+		base := time.Now().UnixNano()%1000000000 + 9400000 + offset*10
+		userID, aptID, resID, guestID := base, base+1, base+2, base+3
+		tok := fmt.Sprintf("passportexist%d", base)
+		mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+			VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("pe%d@example.test", base), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at, passport_photo_policy)
+			VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4, 'required_foreign')`, aptID, userID, tok, stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+			VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $4)`, resID, aptID, fmt.Sprintf("pe-%d", resID), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
+			VALUES ($1, 'claimed', '', 1, $2, $2)`, resID, stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO guest (id, reservation_id, created_at, updated_at, first_name, surname, nationality,
+			res_country, purpose, is_lead, entered_by, submit_state, stay_from, stay_to, passport_photo_at, identity_verified_at)
+			VALUES ($1, $2, $3, $3, 'Guest', 'Synthetic', 'DEU', 'CZE', '99', 1, 'guest', 'pending', '2026-06-20', '2026-06-22', $4, $5)`,
+			guestID, resID, stamp, photoAt, verifiedAt)
+		t.Cleanup(func() {
+			bg := context.Background()
+			_, _ = pool.Exec(bg, `DELETE FROM guest WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation_claim WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation WHERE id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM apartment WHERE id = $1`, aptID)
+			_, _ = pool.Exec(bg, `DELETE FROM user_account WHERE id = $1`, userID)
+		})
+		dir := t.TempDir()
+		var origDiskBytes, origPlain []byte
+		if seedPhoto {
+			body, ext, err := passportphotos.Prepare(origJPG, "image/jpeg")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := passportphotos.SavePrepared(dir, keys, guestID, body, ext); err != nil {
+				t.Fatal(err)
+			}
+			origPlain = body
+			origDiskBytes, err = os.ReadFile(filepath.Join(passportphotos.PhotosDir(dir), fmt.Sprintf("%d%s.enc", guestID, ext)))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		getenv := func(k string) string {
+			switch k {
+			case "UBYHOST_DATA_DIR":
+				return dir
+			case "UBYHOST_GUEST_PIN":
+				return "0"
+			case "UBYHOST_MAIL_BACKEND":
+				return "console"
+			}
+			return testDataEnv(k)
+		}
+		hooks := &passportHookCount{}
+		mux := http.NewServeMux()
+		RegisterStayClaim(mux, pool, getenv, now, wrap, nil)
+		RegisterFormSave(mux, pool, getenv, now, wrap, hooks)
+		getRec := httptest.NewRecorder()
+		mux.ServeHTTP(getRec, httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d/claim?lang=en", tok, resID), nil))
+		csrf := extractPageCSRF(getRec.Body.String())
+		csrfCook := csrfCookie(getRec.Result().Cookies())
+		if csrf == "" || csrfCook == "" {
+			t.Fatalf("csrf token %q, cookie %q, GET status %d", csrf, csrfCook, getRec.Code)
+		}
+		ownRec := httptest.NewRecorder()
+		rememberOwnedGuestIDs(ownRec, getenv, []int64{guestID})
+
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		for k, v := range map[string]string{
+			"_csrf": csrf, "guest_id": fmt.Sprintf("%d", guestID),
+			"surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990",
+			"nationality": postNat, "doc_number": "SYNTHETIC-DOC", "res_street": "Test Street",
+			"res_city": "Test City", "res_country": "CZE", "purpose": "99", "signature": signature,
+			"legal_ack": "1",
+		} {
+			if err := mw.WriteField(k, v); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if upload != nil {
+			part, err := mw.CreatePart(textproto.MIMEHeader{
+				"Content-Disposition": {`form-data; name="passport_photo"; filename="passport.jpg"`},
+				"Content-Type":        {"image/jpeg"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := part.Write(upload); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := mw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/l/%s/%d/save?lang=en", tok, resID), &buf)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: csrfCook})
+		for _, ck := range ownRec.Result().Cookies() {
+			req.AddCookie(ck)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec, dir, guestID, origDiskBytes, origPlain, hooks
+	}
+
+	t.Run("stamped with file on disk and no new upload", func(t *testing.T) {
+		rec, dir, guestID, origDiskBytes, _, hooks := seedAndPost(t, 1, &prevPhotoStamp, nil, true, "DEU", nil)
+		if rec.Code != http.StatusSeeOther {
+			body := rec.Body.String()
+			if len(body) > 200 {
+				body = body[:200] + "..."
+			}
+			t.Fatalf("status = %d, want 303; body: %s", rec.Code, body)
+		}
+		diskBytes, err := os.ReadFile(filepath.Join(passportphotos.PhotosDir(dir), fmt.Sprintf("%d.jpg.enc", guestID)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(diskBytes, origDiskBytes) {
+			t.Fatal("existing photo bytes changed on edit without upload")
+		}
+		var stampAt string
+		if err := pool.QueryRow(ctx, `SELECT COALESCE(passport_photo_at::text, '') FROM guest WHERE id = $1`, guestID).Scan(&stampAt); err != nil {
+			t.Fatal(err)
+		}
+		if stampAt != prevPhotoStamp {
+			t.Fatalf("passport_photo_at = %q, want %q", stampAt, prevPhotoStamp)
+		}
+		if hooks.onComplete != 1 || hooks.notify != 1 {
+			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		}
+	})
+
+	t.Run("stamped with file deleted on disk and CZE posted", func(t *testing.T) {
+		rec, _, _, _, _, hooks := seedAndPost(t, 2, &prevPhotoStamp, nil, false, "CZE", nil)
+		if rec.Code != http.StatusUnprocessableEntity {
+			body := rec.Body.String()
+			if len(body) > 200 {
+				body = body[:200] + "..."
+			}
+			t.Fatalf("status = %d, want 422; body: %s", rec.Code, body)
+		}
+		wantMsg := stringsCatalog.T("en", "passport_photo_missing", nil)
+		if !strings.Contains(rec.Body.String(), wantMsg) {
+			t.Fatalf("422 body missing %q", wantMsg)
+		}
+		if hooks.onComplete != 0 || hooks.notify != 0 {
+			t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
+		}
+	})
+
+	t.Run("existing guest replaces photo with new valid jpeg", func(t *testing.T) {
+		rec, dir, guestID, origDiskBytes, origPlain, hooks := seedAndPost(t, 3, &prevPhotoStamp, nil, true, "DEU", newJPG)
+		if rec.Code != http.StatusSeeOther {
+			body := rec.Body.String()
+			if len(body) > 200 {
+				body = body[:200] + "..."
+			}
+			t.Fatalf("status = %d, want 303; body: %s", rec.Code, body)
+		}
+		encPath := filepath.Join(passportphotos.PhotosDir(dir), fmt.Sprintf("%d.jpg.enc", guestID))
+		fi, err := os.Stat(encPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fi.Mode().Perm() != 0o600 {
+			t.Fatalf("photo file mode = %04o, want 0600", fi.Mode().Perm())
+		}
+		diskBytes, err := os.ReadFile(encPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.HasPrefix(diskBytes, []byte{0xFF, 0xD8, 0xFF}) {
+			t.Fatal("stored photo on disk has plaintext JPEG header")
+		}
+		if bytes.Equal(diskBytes, origDiskBytes) {
+			t.Fatal("replacement photo bytes equal original bytes")
+		}
+		wantNewPlain, _, err := passportphotos.Prepare(newJPG, "image/jpeg")
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotPlain, _, ok := passportphotos.Read(dir, keys, guestID)
+		if !ok || !bytes.HasPrefix(gotPlain, []byte{0xFF, 0xD8, 0xFF}) {
+			t.Fatalf("replaced photo does not decrypt to a JPEG (ok=%v)", ok)
+		}
+		if !bytes.Equal(gotPlain, wantNewPlain) {
+			t.Fatal("decrypted replacement photo does not match prepared new JPEG")
+		}
+		if bytes.Equal(gotPlain, origPlain) {
+			t.Fatal("decrypted replacement photo matches original JPEG")
+		}
+		var stampAt string
+		if err := pool.QueryRow(ctx, `SELECT COALESCE(passport_photo_at::text, '') FROM guest WHERE id = $1`, guestID).Scan(&stampAt); err != nil {
+			t.Fatal(err)
+		}
+		if stampAt != nowS {
+			t.Fatalf("passport_photo_at = %q, want %q", stampAt, nowS)
+		}
+		if hooks.onComplete != 1 || hooks.notify != 1 {
+			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		}
+	})
+
+	t.Run("host-verified existing guest needs no photo", func(t *testing.T) {
+		rec, dir, guestID, _, _, hooks := seedAndPost(t, 4, nil, &hostVerifiedStamp, false, "DEU", nil)
+		if rec.Code != http.StatusSeeOther {
+			body := rec.Body.String()
+			if len(body) > 200 {
+				body = body[:200] + "..."
+			}
+			t.Fatalf("status = %d, want 303; body: %s", rec.Code, body)
+		}
+		if passportphotos.Has(dir, guestID) {
+			t.Fatal("host-verified guest unexpectedly has photo on disk")
+		}
+		if hooks.onComplete != 1 || hooks.notify != 1 {
+			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		}
+	})
 }
 
 func TestGuestSaveValidateIssuesLegalAckOnEdit(t *testing.T) {
