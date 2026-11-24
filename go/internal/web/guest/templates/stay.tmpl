@@ -91,6 +91,15 @@
   {{end}}
 {{end}}
 
+{{if .DupWarnings}}
+  <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+    <strong>{{.T "dup_warning_title"}}</strong>
+    {{range .DupWarnings}}
+      <p style="margin:6px 0 0">{{.Name}}: {{$.T "dup_warning_body" "what" .What}}</p>
+    {{end}}
+  </div>
+{{end}}
+
 {{range .Mine}}
   <details class="g-card g-summary">
     <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</summary>

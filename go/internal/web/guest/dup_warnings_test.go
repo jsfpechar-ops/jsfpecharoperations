@@ -1,7 +1,9 @@
 package guest
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -81,5 +83,33 @@ func TestDupWarningsFor(t *testing.T) {
 				t.Errorf("got %+v, want %+v", got, tc.want)
 			}
 		})
+	}
+}
+
+// TestStayDupWarningRender: the stay page shows the duplicate block only when
+// there is a warning (stay.html dup_warnings).
+func TestStayDupWarningRender(t *testing.T) {
+	for _, withDup := range []bool{true, false} {
+		view := stayView{
+			Page:     Page{Lang: "en"},
+			StayFrom: "2026-06-01",
+			StayTo:   "2026-06-05",
+			Base:     "/l/tok/5",
+			LangQ:    "?lang=en",
+		}
+		if withDup {
+			view.DupWarnings = []dupWarning{{Name: "Jan Novák", What: "document number"}}
+		}
+		var buf bytes.Buffer
+		if err := staySet.ExecuteTemplate(&buf, "guest.base", view); err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		out := buf.String()
+		if got := strings.Contains(out, "data-dup-warning"); got != withDup {
+			t.Errorf("withDup=%v: block present = %v", withDup, got)
+		}
+		if withDup && !strings.Contains(out, "Jan Novák: Another person in this stay has the same document number.") {
+			t.Errorf("warning line missing from render")
+		}
 	}
 }

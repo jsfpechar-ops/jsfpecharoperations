@@ -19,6 +19,7 @@ import (
 type stayView struct {
 	Page
 	GuideLive        bool
+	DupWarnings      []dupWarning
 	StayFrom, StayTo string
 	CanPickOther     bool
 	BackURL          string
@@ -145,8 +146,10 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 	base := guestPath(token, stay.id)
 	langQ := langQuery(lang)
 	guideLive := d.guideLive(ctx, apt)
+	dups, _ := formPagesDupWarnings(ctx, d.pool, stay.id, formPagesOwnedIDs(r, d.getenv), lang)
 	view := stayView{
 		GuideLive:        guideLive,
+		DupWarnings:      dups,
 		Page:             page,
 		StayFrom:         stay.dateFrom,
 		StayTo:           stay.dateTo,
