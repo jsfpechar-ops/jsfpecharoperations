@@ -39,7 +39,12 @@ import go_page_parity_screenshots as shots  # noqa: E402
 import parity_cases  # noqa: E402
 
 # One-shot state both stacks clear on first use (the security prompt banner).
-PRE_SQL = ["UPDATE user_account SET two_factor_prompted_at = NULL"]
+# Default: mark the prompt as shown so no modal covers a page. The modal case alone clears it.
+PRE_SQL = ["UPDATE user_account SET two_factor_prompted_at = now()::text WHERE two_factor_prompted_at IS NULL"]
+PRE_SQL_MODAL = ["UPDATE user_account SET two_factor_prompted_at = NULL"]
+# Leon needs the feature, a key, and an entitled owner (the seed host is billing 'active'). Same for both stacks.
+# The key is fake: a GET render never calls the AI provider (client is created lazily).
+AI_ENV = {"UBYHOST_AI_FEATURES": "leon", "UBYHOST_ANTHROPIC_API_KEY": "parity-fake-key-not-used"}
 
 
 def free_port() -> int:
@@ -96,6 +101,8 @@ def main() -> int:
             return True
         return any(name == pat or (pat.endswith("*") and name.startswith(pat[:-1])) for pat in only)
 
+    audit.ENV.update(AI_ENV)
+    audit.PIN_ENV.update(AI_ENV)
     seed, refs = audit.seed_db()
     py_port, go_port = free_port(), free_port()
     db_url = f"{audit.PG}/parity_run"
