@@ -14,6 +14,6 @@ import (
 
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
-		guest.RegisterFormSave(mux, pool, os.Getenv, time.Now, m.wrap, nil)
+		guest.RegisterFormSave(mux, pool, os.Getenv, time.Now, m.wrap, completionHooks(pool))
 	})
 }
