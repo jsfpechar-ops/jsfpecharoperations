@@ -73,3 +73,21 @@ Commits: `9c5467e 2055 step 2` (i18n keys), `ecca932 2055 step 3` (stay.tmpl, as
 - Items 2, 3, 4, 5, 7, 8: NOT DONE (budget). Not started.
 - Tests run: `go test ./internal/validation/` ok. Guest DB tests and layout lint not re-run in this run. The 3 skipped guest DB tests from run 2 are still open.
 - Screenshots: none taken in this run.
+
+## Chunk A (run 4)
+
+Status: partial. Item (2) done; item (1) not started (executor tool cap reached).
+
+- Commit `6399f9f` (step 2, completeness): `go/internal/web/guest/stay_view.go` `stayPeople` now selects `signature_png` and passes it as `SignaturePNG` to `validation.GuestIsComplete`. Python `guest_is_complete` = `guest_issues` (validate_guest + `guest_signature_issue`, allow_imported=True, under-15 exemption). Go `validation.GuestIssues` already implements that rule; the stay page was the only path that left the signature out. New DB test `go/internal/web/guest/stay_people_signature_test.go` (no signature = incomplete, signed = complete, filled = 1).
+- Item (1) door-code card: NOT done. Remaining steps for the next run:
+  1. Add `doorCodes` (interface with `ViewForStay(ctx, reservationID, apartmentID int64) (*doorcodes.Shown, error)`, as `staydetail/types.go` DoorCodeViewer) to `stayClaimDeps` in `go/internal/web/guest/stay_claim.go` (struct ~line 46). Constructor at `stay_claim.go:81`; second literal at `go/internal/web/guest/party.go:409`. Wire the `*doorcodes.Service` in `go/cmd/ubyhost-web/` the way `register_web_staydetail.go:32` builds it.
+  2. In `stayOverview` (`stay_claim.go:152`) call `ViewForStay`, pass the result through `renderStayPage` (`stay_view.go:126`) into `stayView`, and render a `#door-code` card in `go/internal/web/guest/templates/stay.tmpl` after the people section.
+  3. States, from Python `App/app/templates/guest/stay.html:67-83`: `issued` shows PIN, times, first-use deadline; `failed` shows the failed text; any other state shows the preparing text. Go `Shown` states are `issued`, `failed`, `preparing`, `waiting`, `delayed`; `waiting` and `delayed` map to the preparing text.
+  4. One DB or render test per state.
+- Verification run in this worktree:
+  - `go build ./...`: passes.
+  - `go test -v -count=1 ./internal/web/guest/... ./internal/doorcodes/...`: doorcodes, doorcodes/cleaning, doorcodes/wire pass. 0 skipped. `guest` package has 3 failing tests, all from the same cause: `apartment_owner_user_id_fkey`. `TestConfirmClaimAppliesDeclaredGuests`, `TestStayOverviewMailOnHonorsClaimCookie`, `TestConfirmClaimRace` insert apartments with owner_user_id 1, and `layout_test` has no `user_account` row 1. These tests used to skip because the schema was not migrated. Not caused by the step 2 change. Fix belongs to Chunk C item 8 (migrate `layout_test` via the Go helper and seed the owner).
+- Deviations:
+  - Item (1) not done (see above).
+  - `layout_test` is partly migrated from my attempt to call `migrateGuestPool` in the new test. That helper is not idempotent (baseline re-run failed on `ubyhost_invoice_delete_guard`). I removed the call. The owner or Chunk C must reset or finish that DB.
+  - Test fixtures follow the stored formats: `birth_date` is `DDMMYYYY` text, purpose code `03`.
