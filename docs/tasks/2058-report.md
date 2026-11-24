@@ -25,8 +25,9 @@ Continuation 2 stopped at the 25-call checkpoint after step 2 (the step 3 one-li
 - Step 1: done.
 - Step 2 (a) titles and topic groups: done. (b) apartment by id: already in 4d43a5b. (c) Leon gate: done, not yet tested.
 - Step 3 QR Leon URL: done.
-- Step 4 Leon block in `guide.tmpl`: NOT done.
-- Step 5 new tests: NOT done.
+- Step 4 Leon block in `guide.tmpl`: done (commit d01c234, `2058 step 4`). Template build ok; not yet run through a page test.
+- Step A/B (continuation 3): A done (d01c234). B was already in 83fc074: `guide_view.go:86` passes `/g/{token}/leon`.
+- Step 5 new tests: partial. `ai/leon_titles_test.go` (title tests) passes and is committed. `guest/guide_page_test.go` has the groupCards test (passes) and two DB tests for the QR page (cs titles, Leon off; Leon on). Both DB tests return 404 with an empty body. Cause not found yet (apartmentByGuideToken or unavailable path). The file is NOT committed.
 - Step 6 two 2056 tests: NOT done.
 - Step 7 final checks: partial (see below).
 - Step 8 (this report): done.
@@ -41,7 +42,7 @@ Continuation 2 stopped at the 25-call checkpoint after step 2 (the step 3 one-li
 
 ## Deviations
 
-- `Done: steps 1 to 3. Left: steps 4 to 8.`
+- Continuation 3: `Done: steps 1 to 4 (B in 83fc074), 5a. Left: 5 (guest DB tests, uncommitted), 6, 7, 8.` Status stays blocked. Step 7 (final go test) not run.
 - The `ai` test failure above is an unplanned regression from step 1.
 
 ## Owner steps left
