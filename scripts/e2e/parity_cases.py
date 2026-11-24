@@ -109,6 +109,8 @@ EXTRA_CASES = [
     ("guide-questions-full", "/apartments/{apt}/guide/questions", "host", "F"),
     ("guide-question", "/apartments/{apt}/guide/questions/{question_id}", "host", "F"),
     ("guide-question-answered", "/apartments/{apt}/guide/questions/{question_answered}", "host", "F"),
+    ("guide-question-urgent-unread", "/apartments/{apt}/guide/questions/{question_urgent_unread}", "host", "F"),
+    ("guide-question-dismissed", "/apartments/{apt}/guide/questions/{question_dismissed}", "host", "F"),
     ("guide-quick-done", "/apartments/{apt}/guide/quick/done", "host", "F"),
     ("leon-settings-full", "/apartments/{apt}/leon", "host", "F"),
     ("leon-setup-cards-full", "/apartments/{apt}/leon/setup/cards", "host", "F"),
