@@ -41,8 +41,8 @@ type editStay struct {
 }
 
 // RegisterEditPosts adds dormant POST routes for brief 1731.
-func RegisterEditPosts(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := postDeps{pool, getenv, now}
+func RegisterEditPosts(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, hooks CompletionHooks) {
+	d := postDeps{pool: pool, getenv: getenv, now: now, hooks: hooks}
 	mux.Handle("POST /reservations/{reservation_id}/quick-edit", wrap("/reservations/{reservation_id}/quick-edit", QuickEditHandler(d)))
 	mux.Handle("POST /reservations/{reservation_id}/remove-empty-slot", wrap("/reservations/{reservation_id}/remove-empty-slot", RemoveEmptySlotHandler(d)))
 	mux.Handle("POST /reservations/{reservation_id}/archive", wrap("/reservations/{reservation_id}/archive", ArchiveHandler(d)))
@@ -377,8 +377,11 @@ func RemoveEmptySlotHandler(d postDeps) http.HandlerFunc {
 			serverError(w, err)
 			return
 		}
-		if headcountLeadLive(c.getenv) {
-			// door_codes.on_registration_complete and claim.maybe_notify_completion are still Python-only (accepted diff).
+		if headcountLeadLive(c.getenv) && d.hooks != nil {
+			d.hooks.OnRegistrationComplete(ctx, id)
+			if err := d.hooks.MaybeNotifyCompletion(ctx, id, st.apartmentID, false); err != nil {
+				log.Printf("completion notify failed reservation=%d: %v", id, err)
+			}
 		}
 		c.back(back, editFlash(c.lang, editFlashReservationsSaved), hostweb.Flash{})
 	}
