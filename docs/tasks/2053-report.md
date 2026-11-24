@@ -32,3 +32,23 @@ Branch: claude/nice-hawking-fw98ct (worktree agent-a476ac187200974d5), not pushe
 ## Owner steps left
 
 - None. Orchestrator: run parity step 7 (`PARITY_GROUP=F` cases `guide-questions-full-*`, `guide-question-urgent-unread-*`, `guide-question-dismissed-*`), then open the 390/768/1280 list screenshots and record them in the PR.
+
+## Parity (orchestrator step)
+
+Command (repo root, after `source scripts/e2e/parity_env.sh`): `PARITY_GROUP=F PARITY_ONLY=guide-questions-full-cs,guide-questions-full-en,guide-question-urgent-unread-cs,guide-question-urgent-unread-en,guide-question-dismissed-cs,guide-question-dismissed-en,guide-question-cs,guide-question-en,guide-question-answered-cs,guide-question-answered-en App/.venv/bin/python scripts/e2e/page_parity_visual.py 2>&1 | tail -30`. Last line: `{"rows": 30, "verdicts": {"identical": 30, "invisible": 0, "visible": 0, "accepted": 0, "error": 0}}`. Report: `/var/tmp/parity-visual/report-F.md`.
+
+Per row (cs and en, 390/768/1280 each): all identical, diff_px=0.
+- guide-questions-full (list): identical
+- guide-question: identical
+- guide-question-answered: identical
+- guide-question-urgent-unread: identical
+- guide-question-dismissed: identical
+
+Go status 200 on every detail request and on /sw.js and /offline in the log.
+
+Visible rows: none, so no row side PNG was needed. The list was checked at 390, 768 and 1280 in en (side PNGs, Python left, Go right):
+- 390: both sides show the same five rows in the same order. Question text wraps onto a second line with the stay link beneath. State badges stack (Urgent, Not read by Leon (AI), Waiting on separate lines for the hot-water row). The fixed chat button sits over the last row's right edge.
+- 768: both sides show the same five rows. Date and stay link follow the question on one line, and badges sit in the State column, wrapping only on the hot-water row.
+- 1280: both sides show the same five rows in the same order, with the sidebar, the banner and the list card. Badges stay on one line per row except the hot-water row.
+
+PNG folder: `/var/tmp/parity-visual/_2053/` (list side PNGs at 390, 768, 1280).
