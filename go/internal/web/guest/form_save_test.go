@@ -8,8 +8,11 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"image/png"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"strings"
@@ -168,9 +171,9 @@ func TestGuestWriteEncryption(t *testing.T) {
 	d := saveDeps{pool: pool, getenv: testDataEnv, now: func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }}
 	signature := "data:image/png;base64,AAAA"
 	payload := map[string]any{
-		"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
+		"surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990", "nationality": "",
 		"doc_number": "SYNTHETIC-DOC", "visa_number": "SYNTHETIC-VISA", "res_street": "Test Street", "res_city": "Test City",
-		"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+		"res_country": "CZE", "purpose": "99", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
 		"signature_png": signature, "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 		"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 	}
@@ -266,9 +269,9 @@ func TestGuestSaveNoticeAndHeadcount(t *testing.T) {
 	meta := guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22"}
 	payloadFor := func() map[string]any {
 		return map[string]any{
-			"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
+			"surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990", "nationality": "",
 			"doc_number": "SYNTHETIC-DOC", "visa_number": "", "res_street": "Test Street", "res_city": "Test City",
-			"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+			"res_country": "CZE", "purpose": "99", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
 			"signature_png": "data:image/png;base64,AAAA", "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 			"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 		}
@@ -590,5 +593,172 @@ func TestGuestSavePassportPhoto(t *testing.T) {
 	}
 	if _, _, ok := passportphotos.Read(dir, keys, 4242); !ok {
 		t.Fatal("prior photo lost after failed replacement")
+	}
+}
+
+func TestPassportUploadTextAllLanguages(t *testing.T) {
+	msgs := []string{
+		"Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).",
+		"The uploaded file looks empty.",
+		"The PDF is too large. Use a file under 15 MB.",
+		"The file does not look like a valid PDF.",
+		"The photo is too large. Use a file under 5 MB.",
+		"The file does not look like a valid image.",
+		"The photo has too many pixels. Take it again at the normal camera setting.",
+	}
+	for _, lang := range []string{"en", "cs", "de", "es", "fr", "uk"} {
+		for _, msg := range msgs {
+			got := passportUploadText(lang, msg)
+			if got == "" || (lang != "en" && got == msg) {
+				t.Errorf("%s: %q not translated (got %q)", lang, msg, got)
+			}
+		}
+	}
+}
+
+type passportHookCount struct{ calls int }
+
+func (h *passportHookCount) OnRegistrationComplete(context.Context, int64) { h.calls++ }
+
+func (h *passportHookCount) MaybeNotifyCompletion(context.Context, int64, int64, bool) error {
+	h.calls++
+	return nil
+}
+
+// TestGuestSavePassportPhotoHTTP posts a real multipart form through the mux with
+// the CSRF token and cookie from the claim page, as the browser does.
+func TestGuestSavePassportPhotoHTTP(t *testing.T) {
+	pool := testPool(t)
+	keys, err := secure.LoadDataKeys(testDataEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	stamp := "2026-01-01T00:00:00Z"
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
+	var sigPNG bytes.Buffer
+	if err := png.Encode(&sigPNG, image.NewRGBA(image.Rect(0, 0, 8, 8))); err != nil {
+		t.Fatal(err)
+	}
+	signature := "data:image/png;base64," + base64.StdEncoding.EncodeToString(sigPNG.Bytes())
+	jpg := synthJPEG(t)
+	oversized := append([]byte{0xFF, 0xD8, 0xFF}, make([]byte, 5<<20)...)
+	cases := []struct {
+		name, policy, nationality, ctype string
+		file                             []byte
+		wantStatus, wantRows             int
+		wantPhoto, wantHook              bool
+	}{
+		{"required, no file", "required_foreign", "DEU", "", nil, http.StatusUnprocessableEntity, 0, false, false},
+		{"required, text file", "required_foreign", "DEU", "text/plain", []byte("not a photo"), http.StatusUnprocessableEntity, 0, false, false},
+		{"required, oversized jpeg", "required_foreign", "DEU", "image/jpeg", oversized, http.StatusUnprocessableEntity, 0, false, false},
+		{"required, valid jpeg", "required_foreign", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, true, true},
+		{"off, file ignored", "off", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, false, true},
+		{"czech, no file", "required_foreign", "CZE", "", nil, http.StatusSeeOther, 1, false, true},
+	}
+	for i, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			base := time.Now().UnixNano()%1000000000 + 9300000 + int64(i)*10
+			userID, aptID, resID := base, base+1, base+2
+			tok := fmt.Sprintf("passporthttp%d", base)
+			mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+				VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("ph%d@example.test", base), stamp)
+			mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at, passport_photo_policy)
+				VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4, $5)`, aptID, userID, tok, stamp, c.policy)
+			mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+				VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $4)`, resID, aptID, fmt.Sprintf("ph-%d", resID), stamp)
+			mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
+				VALUES ($1, 'claimed', '', 1, $2, $2)`, resID, stamp)
+			t.Cleanup(func() {
+				bg := context.Background()
+				_, _ = pool.Exec(bg, `DELETE FROM guest WHERE reservation_id = $1`, resID)
+				_, _ = pool.Exec(bg, `DELETE FROM reservation_claim WHERE reservation_id = $1`, resID)
+				_, _ = pool.Exec(bg, `DELETE FROM reservation WHERE id = $1`, resID)
+				_, _ = pool.Exec(bg, `DELETE FROM apartment WHERE id = $1`, aptID)
+				_, _ = pool.Exec(bg, `DELETE FROM user_account WHERE id = $1`, userID)
+			})
+			dir := t.TempDir()
+			getenv := func(k string) string {
+				switch k {
+				case "UBYHOST_DATA_DIR":
+					return dir
+				case "UBYHOST_GUEST_PIN":
+					return "0"
+				case "UBYHOST_MAIL_BACKEND":
+					return "console"
+				}
+				return testDataEnv(k)
+			}
+			hooks := &passportHookCount{}
+			mux := http.NewServeMux()
+			RegisterStayClaim(mux, pool, getenv, now, wrap, nil)
+			RegisterFormSave(mux, pool, getenv, now, wrap, hooks)
+			getRec := httptest.NewRecorder()
+			mux.ServeHTTP(getRec, httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d/claim?lang=en", tok, resID), nil))
+			csrf := extractPageCSRF(getRec.Body.String())
+			cookie := csrfCookie(getRec.Result().Cookies())
+			if csrf == "" || cookie == "" {
+				t.Fatalf("csrf token %q, cookie %q, GET status %d", csrf, cookie, getRec.Code)
+			}
+			var buf bytes.Buffer
+			mw := multipart.NewWriter(&buf)
+			for k, v := range map[string]string{
+				"_csrf": csrf, "surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990",
+				"nationality": c.nationality, "doc_number": "SYNTHETIC-DOC", "res_street": "Test Street",
+				"res_city": "Test City", "res_country": "CZE", "purpose": "99", "signature": signature,
+				"legal_ack": "1", "party_size": "2",
+			} {
+				if err := mw.WriteField(k, v); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if c.file != nil {
+				part, err := mw.CreatePart(textproto.MIMEHeader{
+					"Content-Disposition": {`form-data; name="passport_photo"; filename="passport"`},
+					"Content-Type":        {c.ctype},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := part.Write(c.file); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := mw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/l/%s/%d/save?lang=en", tok, resID), &buf)
+			req.Header.Set("Content-Type", mw.FormDataContentType())
+			req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: cookie})
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != c.wantStatus {
+				t.Fatalf("status = %d, want %d; body: %s", rec.Code, c.wantStatus, rec.Body.String())
+			}
+			var rows, guestID int64
+			var stampAt string
+			if err := pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(MIN(id), 0), COALESCE(MIN(passport_photo_at::text), '') FROM guest WHERE reservation_id = $1`, resID).Scan(&rows, &guestID, &stampAt); err != nil {
+				t.Fatal(err)
+			}
+			if rows != int64(c.wantRows) {
+				t.Fatalf("guest rows = %d, want %d", rows, c.wantRows)
+			}
+			if (stampAt != "") != c.wantPhoto {
+				t.Fatalf("passport_photo_at = %q, want set=%v", stampAt, c.wantPhoto)
+			}
+			if passportphotos.Has(dir, guestID) != c.wantPhoto {
+				t.Fatalf("photo on disk = %v, want %v", !c.wantPhoto, c.wantPhoto)
+			}
+			if c.wantPhoto {
+				plain, _, ok := passportphotos.Read(dir, keys, guestID)
+				if !ok || !bytes.HasPrefix(plain, []byte{0xFF, 0xD8, 0xFF}) {
+					t.Fatalf("stored photo does not decrypt to a JPEG (ok=%v)", ok)
+				}
+			}
+			if (hooks.calls > 0) != c.wantHook {
+				t.Fatalf("completion hook calls = %d, want hook=%v", hooks.calls, c.wantHook)
+			}
+		})
 	}
 }
