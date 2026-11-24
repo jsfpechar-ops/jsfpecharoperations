@@ -16,6 +16,9 @@ Brief 2045 left 23 visible rows. Findings (orchestrator, read-only):
 - **apt-guide-qr: HARNESS.** Go builds the guest link from `hostweb.PublicBase(getenv)` = `UBYHOST_PUBLIC_BASE_URL` (`go/internal/web/ai/guide_qr.go:41`, `go/internal/hostweb/hostweb.go:226`), not from the request host. The harness gives both stacks the Python URL as public base (`scripts/e2e/page_parity_visual.py:196-198`), but replaces only each stack's own base with `<BASE>` (line 121). Go's own base (go_port) never appears in the text, so the Go side keeps `http://127.0.0.1:<py_port>`. The pixels are the same string. No production risk.
 - **admin-customer: REAL, tiny.** The only differing pixels are the back arrow (14x14 px at 1280, x 269-283, y 113-127). Python `App/app/templates/admin_customer.html:14` overrides `ph_back` with `icon('arrow-left', 20)` (stroke 1.75); the Go shell `go/internal/hostweb/layout/shell.html:265` hard-codes `icon "arrow-left" 16` (stroke 2, smaller). The page template `go/internal/web/customers/templates/admin_customer.tmpl` has no override.
 - **dev-ui: HARNESS.** The diff is a CSS spinner caught at a different frame (not anti-aliasing). `dev_ui` is not ported and is deleted with Python (`docs/plans/go-full-move.md:146`). Mark ACCEPTED.
+- **Missing Python keys: WORK, brief 2050.** Owner decision (binding): every function Python has must exist in Go. Classified list in `docs/tasks/2050-port-guest-question-page.md` section 2: 11 `guest_question.*` keys are MISSING-ELEMENT on the question detail page (urgent banner, badges, shown-to-guest line, answer field labels, dismiss help, dismissed banner, Add-to-guide section); `guest_questions.link`, `mail.guest_question.*` and `notification.guest_question.*` are present under another key or file; none dead. Run 2050 after this brief.
+- **OWNER QUESTION (vi): Python host catalogue has `vi`, Go does not.** `App/app/host_i18n.py:17` `LANGUAGES = ("en", "cs", "vi")` (PUBLIC_LANGUAGES = en, cs); `normalise_language` accepts `vi` from `?lang=`, the cookie or the account language, so a host can get Vietnamese host pages (3946 of 5785 keys translated, rest falls back to en; `App/app/host_vi_i18n.py`). No visible language-switcher entry for vi was found in the templates (grep for "Tiếng Việt" empty). Go accepts the `vi` code (`go/internal/hostweb/i18n.json` has an empty `"vi": {}`, `hostweb_test.go:62`) but carries no vi strings, so a vi host sees English. Question for the owner: port the vi catalogue to Go (a separate large brief), or confirm vi is unused and drop it from Python? Not decided here, not in this brief.
+- Also open for the owner: host mails in Go are English only (`go/internal/mail/guest_question_host.go`, `lang := "en"`); Python sends them in the host language.
 
 ## 3. Files (you may touch only these)
 
@@ -42,7 +45,7 @@ cs block:
 - `"flash.error.guest_question_too_long": "Odpověď je příliš dlouhá.",` -> `"flash.error.guest_question_too_long": "Odpověď je příliš dlouhá. Zkraťte ji na 1000 znaků.",`
 - `"flash.error.guest_question_not_answered": "Nejdřív odpovězte."` -> `"flash.error.guest_question_not_answered": "Nejdřív na dotaz odpovězte, pak ho přidejte do průvodce."`
 
-Do not add or remove keys. Python also has these keys that Go lacks (guest_questions.link, guest_question.urgent_banner, shown_to_guest, field.answer, field.answer_help, dismiss_help, dismissed_banner, card.*): list them under Questions in the report, do not add them.
+Do not add or remove keys. The Python keys that Go lacks (guest_question.urgent_banner, shown_to_guest, field.answer, field.answer_help, dismiss_help, dismissed_banner, card.*) are ported in brief 2050 (owner decision, Option 1: everything Python has exists in Go). Do not add them here.
 Check: `cd go && grep -rn "Zamítn\|zobrazí v průvodci" internal/web/guest/*.go | tail -5` expects no output; then `cd go && go test ./internal/web/guest/... 2>&1 | tail -30`. A test that pins an old string: update that expected string to the new Python text (this is the only test edit allowed); other failure: STOP.
 
 ### Step 2: admin-customer back icon size
@@ -92,7 +95,7 @@ Anything under `App/app`, `deploy/`, other Go packages, other templates, goldens
 Anchor not found; golden diff; a test fails twice; a parity row other than the ones above is visible; `go build` fails after step 2.
 
 Checklist (tick in the report):
-- [ ] 12 strings in step 1 changed, no keys added
+- [ ] 12 strings in step 1 changed, no keys added (missing keys: brief 2050)
 - [ ] `go test ./internal/web/guest/...` green
 - [ ] layout and customers Go tests green, goldens untouched
 - [ ] harness compiles
@@ -100,7 +103,7 @@ Checklist (tick in the report):
 - [ ] layout lint browser test green, 0 skipped; 390/768/1280 lines written
 
 ## 9. Report
-`docs/tasks/2049-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, checklist, Deviations, Questions (missing Python keys), `Status: review`. Commit trailers:
+`docs/tasks/2049-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, checklist, Deviations, Questions (the vi finding is already in section 2; list nothing else), `Status: review`. Commit trailers:
 ```
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
