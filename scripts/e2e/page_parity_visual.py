@@ -217,73 +217,80 @@ def main() -> int:
     db_url = f"{audit.PG}/parity_run"
     public = f"http://127.0.0.1:{py_port}"
     _, py_base = audit.start_py(py_port, db_url, public)
-    _, go_base = audit.start_go(go_port, db_url, public)
-    py, go = audit.py_persona_sessions(seed), audit.go_persona_sessions(seed)
+    go_proc, go_base = audit.start_go(go_port, db_url, public)
+    try:
+        py, go = audit.py_persona_sessions(seed), audit.go_persona_sessions(seed)
 
-    jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
-    jobs += list(table_cases(refs, seed, py, go, extra))
-    for name, path, persona, group in parity_cases.MODAL_CASES:
-        for lang in ("cs", "en"):
-            filled = fill(path, refs, seed)
-            sep = "&" if "?" in filled else "?"
-            pc, gc = (py["host"], go["h1"]) if persona == "host" else (py["admin"], go["admin"])
-            jobs.append((f"{name}-{lang}", f"{filled}{sep}lang={lang}", pc, gc, group))
+        jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
+        jobs += list(table_cases(refs, seed, py, go, extra))
+        for name, path, persona, group in parity_cases.MODAL_CASES:
+            for lang in ("cs", "en"):
+                filled = fill(path, refs, seed)
+                sep = "&" if "?" in filled else "?"
+                pc, gc = (py["host"], go["h1"]) if persona == "host" else (py["admin"], go["admin"])
+                jobs.append((f"{name}-{lang}", f"{filled}{sep}lang={lang}", pc, gc, group))
 
-    rows = []
-    for name, path, py_cookie, go_cookie, group in jobs:
-        if group not in groups or not selected(name):
-            continue
-        out_dir = OUT / name
-        if out_dir.exists():
-            shutil.rmtree(out_dir)
-        base_name = name.rsplit("-", 1)[0]
-        pre = PRE_SQL_MODAL if name.startswith("two-factor-modal") else PRE_SQL
-        for r in run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre):
-            verdict = r["verdict"]
-            accepted = verdict == "visible" and base_name in parity_cases.ACCEPTED
-            if accepted:
-                verdict = "accepted"
-                r["note"] = parity_cases.ACCEPTED[base_name]
-            rows.append({"case": name, "path": path, "group": group, "width": r["width"], "verdict": verdict,
-                         "max_delta": r["max_delta"], "diff_pixels": r["diff_pixels"], "note": r["note"],
-                         "side_png": r["side_png"], "diff_png": r["diff_png"]})
-            print(f"{name:22} {r['width']:5} {verdict:9} diff_px={r['diff_pixels']} {r['note'][:120]}")
-    OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "probe.json").write_text(json.dumps({"db": "parity_run", "rows": rows}, indent=1))
+        rows = []
+        for name, path, py_cookie, go_cookie, group in jobs:
+            if group not in groups or not selected(name):
+                continue
+            out_dir = OUT / name
+            if out_dir.exists():
+                shutil.rmtree(out_dir)
+            base_name = name.rsplit("-", 1)[0]
+            pre = PRE_SQL_MODAL if name.startswith("two-factor-modal") else PRE_SQL
+            for r in run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre):
+                verdict = r["verdict"]
+                accepted = verdict == "visible" and base_name in parity_cases.ACCEPTED
+                if accepted:
+                    verdict = "accepted"
+                    r["note"] = parity_cases.ACCEPTED[base_name]
+                rows.append({"case": name, "path": path, "group": group, "width": r["width"], "verdict": verdict,
+                             "max_delta": r["max_delta"], "diff_pixels": r["diff_pixels"], "note": r["note"],
+                             "side_png": r["side_png"], "diff_png": r["diff_png"]})
+                print(f"{name:22} {r['width']:5} {verdict:9} diff_px={r['diff_pixels']} {r['note'][:120]}")
+        OUT.mkdir(parents=True, exist_ok=True)
+        (OUT / "probe.json").write_text(json.dumps({"db": "parity_run", "rows": rows}, indent=1))
 
-    # Markdown report: one line per case, verdict per width, then the non-identical rows with their side image.
-    case_order: list[str] = []
-    cell: dict[str, dict[int, str]] = {}
-    for r in rows:
-        if r["case"] not in cell:
-            case_order.append(r["case"])
-            cell[r["case"]] = {}
-    path_of = {r["case"]: r["path"] for r in rows}
-    lines = ["| case | path | 390 | 768 | 1280 |", "|---|---|---|---|---|"]
-    for r in rows:
-        word = "ERR" if r["verdict"] == "error" else r["verdict"]
-        if r["width"]:
-            cell[r["case"]][r["width"]] = word
-    for case in case_order:
-        cols = [cell[case].get(w, "-") for w in (390, 768, 1280)]
-        lines.append(f"| {case} | {path_of[case]} | {cols[0]} | {cols[1]} | {cols[2]} |")
-    lines.append("")
-    lines.append("Not identical:")
-    for r in rows:
-        if r["verdict"] not in ("identical", "accepted"):
-            lines.append(f"- {r['case']} {r['width']} {('ERR' if r['verdict'] == 'error' else r['verdict'])} {r['side_png']}")
-    lines.append("")
-    lines.append("Accepted (deliberate, not failures):")
-    for r in rows:
-        if r["verdict"] == "accepted":
-            lines.append(f"- {r['case']} {r['width']} {r['note']}")
-    report = OUT / f"report-{'-'.join(sorted(groups))}.md"
-    report.write_text("\n".join(lines) + "\n")
-    print(f"report: {report}")
+        # Markdown report: one line per case, verdict per width, then the non-identical rows with their side image.
+        case_order: list[str] = []
+        cell: dict[str, dict[int, str]] = {}
+        for r in rows:
+            if r["case"] not in cell:
+                case_order.append(r["case"])
+                cell[r["case"]] = {}
+        path_of = {r["case"]: r["path"] for r in rows}
+        lines = ["| case | path | 390 | 768 | 1280 |", "|---|---|---|---|---|"]
+        for r in rows:
+            word = "ERR" if r["verdict"] == "error" else r["verdict"]
+            if r["width"]:
+                cell[r["case"]][r["width"]] = word
+        for case in case_order:
+            cols = [cell[case].get(w, "-") for w in (390, 768, 1280)]
+            lines.append(f"| {case} | {path_of[case]} | {cols[0]} | {cols[1]} | {cols[2]} |")
+        lines.append("")
+        lines.append("Not identical:")
+        for r in rows:
+            if r["verdict"] not in ("identical", "accepted"):
+                lines.append(f"- {r['case']} {r['width']} {('ERR' if r['verdict'] == 'error' else r['verdict'])} {r['side_png']}")
+        lines.append("")
+        lines.append("Accepted (deliberate, not failures):")
+        for r in rows:
+            if r["verdict"] == "accepted":
+                lines.append(f"- {r['case']} {r['width']} {r['note']}")
+        report = OUT / f"report-{'-'.join(sorted(groups))}.md"
+        report.write_text("\n".join(lines) + "\n")
+        print(f"report: {report}")
 
-    tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible", "accepted", "error")}
-    print(json.dumps({"rows": len(rows), "verdicts": tally}))
-    return 1 if tally["visible"] or tally["error"] else 0
+        tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible", "accepted", "error")}
+        print(json.dumps({"rows": len(rows), "verdicts": tally}))
+        return 1 if tally["visible"] or tally["error"] else 0
+    finally:
+        go_proc.terminate()
+        try:
+            go_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            go_proc.kill()
 
 
 if __name__ == "__main__":
