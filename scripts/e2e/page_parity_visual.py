@@ -36,6 +36,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "e2e"))
 sys.path.insert(0, str(APP / "scripts"))
 import page_parity_audit as audit  # noqa: E402
 import go_page_parity_screenshots as shots  # noqa: E402
+import parity_cases  # noqa: E402
 
 # One-shot state both stacks clear on first use (the security prompt banner).
 PRE_SQL = ["UPDATE user_account SET two_factor_prompted_at = NULL"]
@@ -47,7 +48,8 @@ def free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def cases(refs: dict, py: dict, go: dict) -> list[tuple[str, str, str | None, str | None]]:
+# The old 11 rows. They are anonymous or lang-less, so they run only with PARITY_GROUP=L.
+def legacy_cases(refs: dict, py: dict, go: dict) -> list[tuple[str, str, str | None, str | None]]:
     tok, res, guest = refs["token"], refs["reservation_id"], refs["guest_id"]
     return [
         ("home-anon", "/", None, None),
@@ -64,9 +66,36 @@ def cases(refs: dict, py: dict, go: dict) -> list[tuple[str, str, str | None, st
     ]
 
 
+def fill(path: str, refs: dict, seed: dict) -> str:
+    return path.format(
+        apt=refs["apartment_id"], res=refs["reservation_id"], guest=refs["guest_id"],
+        inv=refs["invoice_id"], hinv=seed["host_invoices"][-1], fee_a=seed["fee"]["a"],
+        alfa=seed["alfa"]["id"], tok=refs["token"],
+    )
+
+
+def table_cases(refs: dict, seed: dict, py: dict, go: dict):
+    for name, path, persona, group in parity_cases.CASES:
+        filled = fill(path, refs, seed)
+        if persona == "host":
+            py_cookie, go_cookie = py["host"], go["h1"]
+        else:
+            py_cookie, go_cookie = py["admin"], go["admin"]
+        for lang in ("cs", "en"):
+            sep = "&" if "?" in filled else "?"
+            yield (f"{name}-{lang}", f"{filled}{sep}lang={lang}", py_cookie, go_cookie, group)
+
+
 def main() -> int:
     only = {x for x in os.environ.get("PARITY_ONLY", "").split(",") if x}
+    groups = {g for g in os.environ.get("PARITY_GROUP", "A,B,C,D").split(",") if g}
     widths = tuple(int(w) for w in os.environ.get("PARITY_WIDTHS", "390,768,1280").split(","))
+
+    def selected(name: str) -> bool:
+        if not only:
+            return True
+        return any(name == pat or (pat.endswith("*") and name.startswith(pat[:-1])) for pat in only)
+
     seed, refs = audit.seed_db()
     py_port, go_port = free_port(), free_port()
     db_url = f"{audit.PG}/parity_run"
@@ -75,29 +104,67 @@ def main() -> int:
     _, go_base = audit.start_go(go_port, db_url, public)
     py, go = audit.py_persona_sessions(seed), audit.go_persona_sessions(seed)
 
+    jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
+    jobs += list(table_cases(refs, seed, py, go))
+
     rows = []
-    for name, path, py_cookie, go_cookie in cases(refs, py, go):
-        if only and name not in only:
+    for name, path, py_cookie, go_cookie, group in jobs:
+        if group not in groups or not selected(name):
             continue
         out_dir = OUT / name
         if out_dir.exists():
             shutil.rmtree(out_dir)
-        for r in shots.run_case(
-            name=name, path=path, out_dir=out_dir, py_base=py_base, go_base=go_base,
-            widths=widths, cookie_name="ubyhost_session",
-            py_cookie_value=py_cookie, go_cookie_value=go_cookie, pre_sql=PRE_SQL,
-        ):
+        try:
+            for r in shots.run_case(
+                name=name, path=path, out_dir=out_dir, py_base=py_base, go_base=go_base,
+                widths=widths, cookie_name="ubyhost_session",
+                py_cookie_value=py_cookie, go_cookie_value=go_cookie, pre_sql=PRE_SQL,
+            ):
+                rows.append({
+                    "case": name, "path": path, "group": group, "width": r.width,
+                    "verdict": r.verdict, "max_delta": r.max_delta, "diff_pixels": r.diff_pixels,
+                    "note": r.note, "side_png": str(r.side_png), "diff_png": str(r.diff_png),
+                })
+                print(f"{name:22} {r.width:5} {r.verdict:9} max_delta={r.max_delta} "
+                      f"diff_px={r.diff_pixels} {r.note}")
+        except Exception as exc:
+            note = str(exc)[:200]
             rows.append({
-                "case": name, "path": path, "width": r.width, "verdict": r.verdict,
-                "max_delta": r.max_delta, "diff_pixels": r.diff_pixels, "note": r.note,
+                "case": name, "path": path, "group": group, "width": 0, "verdict": "error",
+                "max_delta": None, "diff_pixels": None, "note": note, "side_png": None, "diff_png": None,
             })
-            print(f"{name:22} {r.width:5} {r.verdict:9} max_delta={r.max_delta} "
-                  f"diff_px={r.diff_pixels} {r.note}")
+            print(f"{name:22} ERROR {note}")
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "probe.json").write_text(json.dumps({"db": "parity_run", "rows": rows}, indent=1))
-    tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible")}
+
+    # Markdown report: one line per case, verdict per width, then the non-identical rows with their side image.
+    case_order: list[str] = []
+    cell: dict[str, dict[int, str]] = {}
+    for r in rows:
+        if r["case"] not in cell:
+            case_order.append(r["case"])
+            cell[r["case"]] = {}
+    path_of = {r["case"]: r["path"] for r in rows}
+    lines = ["| case | path | 390 | 768 | 1280 |", "|---|---|---|---|---|"]
+    for r in rows:
+        word = "ERR" if r["verdict"] == "error" else r["verdict"]
+        if r["width"]:
+            cell[r["case"]][r["width"]] = word
+    for case in case_order:
+        cols = [cell[case].get(w, "-") for w in (390, 768, 1280)]
+        lines.append(f"| {case} | {path_of[case]} | {cols[0]} | {cols[1]} | {cols[2]} |")
+    lines.append("")
+    lines.append("Not identical:")
+    for r in rows:
+        if r["verdict"] != "identical":
+            lines.append(f"- {r['case']} {r['width']} {('ERR' if r['verdict'] == 'error' else r['verdict'])} {r['side_png']}")
+    report = OUT / f"report-{'-'.join(sorted(groups))}.md"
+    report.write_text("\n".join(lines) + "\n")
+    print(f"report: {report}")
+
+    tally = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("identical", "invisible", "visible", "error")}
     print(json.dumps({"rows": len(rows), "verdicts": tally}))
-    return 1 if tally["visible"] else 0
+    return 1 if tally["visible"] or tally["error"] else 0
 
 
 if __name__ == "__main__":
