@@ -1,4 +1,11 @@
 # Guest /l shell (briefs 1720a–d); catalog in i18n.json from App/app/i18n.py keys below.
+leon_sit_broken
+leon_sit_cant_get_in
+leon_sit_checkout
+leon_sit_cold
+leon_sit_emergency
+leon_sit_parking
+leon_sit_trash
 title
 skip_to_form
 language_label
