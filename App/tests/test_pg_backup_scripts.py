@@ -305,6 +305,23 @@ def test_rollback_schema_prep_dry_run_reports_drop(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert "DROP COLUMN" in result.stdout
+    assert "DELETE FROM goose_db_version WHERE version_id = 24" in result.stdout
+
+
+def test_rollback_schema_prep_warns_when_database_url_unset(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    shutil.copy(SCRIPTS / "rollback-schema-prep.sh", scripts / "rollback-schema-prep.sh")
+    env = {"PATH": os.environ["PATH"]}
+    result = subprocess.run(
+        ["bash", "-c", "source scripts/rollback-schema-prep.sh; rollback_drop_guide_import_00024"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "UBYHOST_DATABASE_URL is unset" in result.stderr
 
 
 def test_deploy_defers_remove_orphans_until_go_slot_is_healthy():

@@ -120,7 +120,9 @@ rollback() {
   # shellcheck source=rollback-schema-prep.sh
   # shellcheck disable=SC1091
   source ./scripts/rollback-schema-prep.sh
-  rollback_drop_guide_import_00024 || true
+  if ! rollback_drop_guide_import_00024; then
+    echo "ERROR: schema rollback prep failed; old release may not start" >&2
+  fi
   if [ -n "${PREV_SHA}" ]; then
     git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
   fi
