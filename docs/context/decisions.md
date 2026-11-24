@@ -67,7 +67,7 @@ Append-only.
 - 2026-11-20 [workflow] Deploys staging-first: green main → staging; production manual (force_confirm=DEPLOY). Brief 1865 | owner
 - 2026-11-20 [workflow] CI hardening: deploy timeouts, gitleaks, PR checklist, runbook; protection/reviewers = owner. Brief 1866 | owner
 - 2026-11-21 [ui] Dashboard "What needs you": no police line (failed, overdue, not sent) without UbyPort login; the setup line or onboarding banner is the call to action. Python under go-first exception 3; the Go port carries the rule and collapses overdue lines into one summary. Brief 2000.
-- 2026-11-22 [parity/ux] DOM parity is not UX approval; a UX fix stays Go-only + owner switches `UBYHOST_GO_PATHS`. 2021-2028 | orch
 - 2026-11-21 [ux] Invoice builder Wolt-simple (narrow lane, flat cards, stacked item rows); Generate invoice moves from stay ⋮ menu to stay header, phone too. Brief 2001 | owner
 - 2026-11-22 [product] Entry codes + Notion import: entry-code plan D1-D4 | owner
 - 2026-11-22 [product] 2029 `UBYHOST_PAYMENTS_RETIRED`; D1-D4 in brief; no delete (A6 later) | owner
+- 2026-11-24 [product] Go = Python (Option 1); deploy after `parity_gate.sh` PASS; autopurge off week 1; replaces 11-22 parity/ux. 2040-2064 | owner

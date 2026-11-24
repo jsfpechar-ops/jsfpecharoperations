@@ -1,13 +1,15 @@
 # Status
 
-Updated: 2026-11-22.
+Updated: 2026-11-24.
+
+## Go cutover (11-24)
+- Branch `claude/nice-hawking-fw98ct`: `parity_gate.sh` PASS, audit fail 0. Next: owner OK for PR, then deploy (autopurge off week 1).
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres live. Billing ON. `COMPOSE_PROFILES=walg,monitoring,go`. SQLite rollback: pg-cutover.
 - Payments retired (`UBYHOST_PAYMENTS_RETIRED`); Stripe off; code and data kept. Billing on.
 - Go jobs = queue (billing_snapshot, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
-- Go routes live: [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, reload caddy.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Guest QR 404 without IBAN.
 - Backups: daily pg_dump + WAL-G 7-day PITR.
 
@@ -29,7 +31,6 @@ Updated: 2026-11-22.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
 - Login wording: 1762-1764 (blocked on 1704); after 1760, exact-diff pass first.
-- Stays Go-only: 1855-1858; `/reservations` in `UBYHOST_GO_PATHS` after 1856.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing K-F03, K-F07: AI-reviewed 11-15, not lawyer items (see go-sqlite-final §7); secrets K-S10.
