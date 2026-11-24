@@ -1,0 +1,121 @@
+{{define "content"}}
+{{if .CanPickOther}}
+  <a class="g-back" href="{{.BackURL}}">{{.T "back_to_stays"}}</a>
+{{end}}
+
+<div class="g-card g-stay-summary">
+  <strong>{{date_cz .StayFrom}} &ndash; {{date_cz .StayTo}}</strong>
+  <span>{{nights_label .Lang .StayFrom .StayTo}}</span>
+</div>
+
+{{if .PartyError}}
+  <div class="g-err">{{.T "error_party_size"}}</div>
+{{end}}
+
+{{if .JustRemoved}}
+  <div class="g-card g-saved" role="status">
+    <p class="g-intro" style="margin-bottom:0">{{.T "removed_ok"}}</p>
+  </div>
+{{end}}
+
+{{if not .HasExpected}}
+  <div class="g-card g-question-card">
+    <p class="g-question-kicker">{{.T "stay_dates"}}</p>
+    <h2>{{.T "party_question"}}</h2>
+    <p class="g-intro">{{.T "party_help"}}</p>
+    <form method="post" action="{{.PartyURL}}">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+      <div class="g-field" data-guest-stepper data-less-label="{{.T "tw_fewer"}}" data-more-label="{{.T "tw_more"}}">
+        <label for="party_size">{{.T "party_question"}}</label>
+        <input type="number" id="party_size" name="party_size" min="1" max="60"
+               required inputmode="numeric" autocomplete="off" value="1">
+      </div>
+      <button class="g-btn" type="submit">{{.T "party_confirm"}}</button>
+    </form>
+  </div>
+{{else if and .HasRemaining (le .Remaining 0)}}
+  <div class="g-card">
+    <div class="g-big-ok">
+      <div class="mark">&check;</div>
+      <h2>{{.T "all_done_title"}}</h2>
+      <p class="g-intro">{{.T "all_done_body"}}</p>
+      {{if and .MailEnabled .ClaimEmailMasked}}
+        <p class="g-intro">{{.T "all_done_receipt" "email" .ClaimEmailMasked}}</p>
+      {{end}}
+    </div>
+    {{if .CanRaiseParty}}
+      <form method="post" action="{{.AnotherURL}}">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+        <p class="g-intro">{{.T "someone_missing"}}</p>
+        <p class="g-quiet-action-row">
+          <button class="g-quiet-action" type="submit">{{.T "add_another"}}</button>
+        </p>
+      </form>
+    {{end}}
+  </div>
+{{else}}
+  {{if .JustSaved}}
+    <div class="g-card g-saved">
+      <h2>{{if .JustReported}}{{.T "reported_title"}}{{else}}{{.T "saved_title"}}{{end}}</h2>
+      <p class="g-intro" style="margin-bottom:0">{{if .JustReported}}{{.T "reported_body"}}{{else}}{{.T "saved_body"}}{{end}}</p>
+    </div>
+  {{end}}
+  {{if and .HasExpected (gt .Expected 0)}}
+    <div class="g-card">
+      <div class="g-progress" style="margin-bottom:0">
+        <span>{{.T "people_progress" "done" .Filled "total" .Expected}}</span>
+        <span class="g-bar"><i style="width:{{.Percent}}%"></i></span>
+      </div>
+      {{if gt .Remaining 0}}
+        <p class="g-still-missing">{{.T "still_missing" "n" .Remaining}}</p>
+      {{end}}
+    </div>
+  {{end}}
+  {{if and .HasRemaining (gt .Remaining 0)}}
+    <a class="g-btn" href="{{.NewURL}}">{{.T "add_person"}}</a>
+  {{end}}
+{{end}}
+
+{{range .Mine}}
+  <details class="g-card g-summary">
+    <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</summary>
+    <div class="g-summary-body">
+      <h2>{{$.T "summary_title"}}</h2>
+      {{if .Summary}}
+        <dl class="g-summary-list">
+          <dt>{{$.T "birth_date"}}</dt><dd>{{.Summary.BirthDate}}</dd>
+          <dt>{{$.T "nationality"}}</dt><dd>{{.Summary.Nationality}}</dd>
+          {{if .Summary.DocNumber}}
+            <dt>{{$.T "doc_number"}}</dt><dd>{{.Summary.DocNumber}}</dd>
+          {{end}}
+          <dt>{{$.T "purpose"}}</dt><dd>{{.Summary.Purpose}}</dd>
+          {{if .Summary.Residence}}
+            <dt>{{$.T "residence_title"}}</dt><dd>{{.Summary.Residence}}</dd>
+          {{end}}
+        </dl>
+      {{else}}
+        <p class="g-intro">{{$.T "not_filled"}}</p>
+      {{end}}
+      {{if not .Locked}}
+        <a class="g-btn ghost slim" href="{{$.Base}}/edit/{{.ID}}{{$.LangQ}}">
+          {{if .Complete}}{{$.T "edit"}}{{else}}{{$.T "continue_filling"}}{{end}}
+        </a>
+        {{if .Removable}}
+          <p class="g-quiet-action-row">
+            <a class="g-quiet-action" href="{{$.Base}}/remove/{{.ID}}{{$.LangQ}}" data-remove-person>{{$.T "remove_person"}}</a>
+          </p>
+        {{end}}
+      {{else}}
+        <p class="g-intro" style="margin:12px 0 0">{{if .Sent}}{{$.T "filed_short"}}{{else}}{{$.T "form_locked_short"}}{{end}}</p>
+        {{if $.HostMessageURL}}
+          <a class="g-btn ghost slim" href="{{$.HostMessageURL}}" data-message-host>{{$.T "message_host"}}</a>
+        {{end}}
+      {{end}}
+    </div>
+  </details>
+{{end}}
+
+{{range .Others}}
+  <div class="g-card g-summary g-summary-row">{{$.T "person"}} {{.Index}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</div>
+{{end}}
+{{end}}

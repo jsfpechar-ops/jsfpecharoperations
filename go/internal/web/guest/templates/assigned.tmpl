@@ -1,0 +1,48 @@
+{{define "content"}}
+{{if .CanPickOther}}
+<a class="g-back" href="{{.BackURL}}">{{.T "back_to_stays"}}</a>
+{{end}}
+
+<div class="g-card g-assigned-stay">
+  <p class="g-question-kicker">{{.T "assigned_stay_label"}}</p>
+  <h2>{{.Facility}}</h2>
+  {{if .City}}<p class="g-assigned-location">{{.City}}</p>{{end}}
+  <p class="g-assigned-dates">
+    <strong>{{date_cz .StayFrom}} &ndash; {{date_cz .StayTo}}</strong>
+    <span>{{nights_label .Lang .StayFrom .StayTo}}</span>
+  </p>
+</div>
+
+{{if .ClaimErrorText}}
+  <div class="g-err">{{.ClaimErrorText}}</div>
+{{end}}
+
+<div class="g-card">
+  <h2>{{.T "assigned_title"}}</h2>
+  <p class="g-intro">{{.T "assigned_body"}}</p>
+  <div class="g-private-link-note">
+    <strong>{{.EmailMasked}}</strong>
+  </div>
+  <form method="post" action="{{.ActionURL}}">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <input type="hidden" name="resend" value="1">
+    <input type="hidden" name="party_size" value="{{.DeclaredGuests}}">
+    <div class="g-field">
+      <label for="guest_email_resend">{{.T "claim_email"}}</label>
+      <input type="email" id="guest_email_resend" name="guest_email" required autocomplete="email">
+      <div class="hint">{{.T "tw_email_short"}}</div>
+      <details class="tw-more">
+        <summary>{{.T "tw_email_more"}}</summary>
+        <div class="hint">{{.T "claim_email_help"}}</div>
+        <div class="hint">{{.T "claim_cookie_help"}}
+          {{if .PrivacyURL}}<a href="{{.PrivacyURL}}">{{.T "privacy_link"}}</a>{{end}}
+        </div>
+      </details>
+    </div>
+    <button class="g-btn" type="submit">{{.T "assigned_resend"}}</button>
+  </form>
+</div>
+{{if .CanPickOther}}
+<a class="g-btn ghost" href="{{.NotMineURL}}">{{.T "assigned_not_mine"}}</a>
+{{end}}
+{{end}}
