@@ -28,3 +28,13 @@ Done: steps 1 to 5 (step 5 partly). Left: step 5 DB render test and key test, st
 ## Owner steps left
 
 None yet. Brief 2063 needs the DB render test, key test, browser tests and screenshot before merge.
+
+## Session 2 (step 5 tests)
+
+Status: blocked (TestStayPageFeeBox/on_all_in fails; the other tests pass)
+Done: steps 1 to 5 (step 5: TestBuildFeePanel passing; TestFeeKeysAllLanguages passing; TestStayPageFeeBox written in stay_fee_box_test.go). Left: fix on_all_in, browser and geometry tests, screenshot, PR.
+
+- Test run: TestStayPageFeeBox/on_all_in FAIL ("fee box missing with guest pay on"); /off PASS; /guest_missing PASS. TestFeeKeysAllLanguages PASS.
+- Diagnosis: LoadCompletionFee returns a non-nil fee for the fixture, so the loader is fine. The rendered page shows "Person 1 saved" and the party form, not the all-done state, so FeePanel is never loaded. Likely the headcount Expected/leadReduced rule or the guest fixture (is_lead) in renderFeeBox. Not resolved.
+- Deviation: the new tests are in go/internal/web/guest/stay_fee_box_test.go, not stay_fee_panel_test.go.
+- Owner steps left: none yet.
