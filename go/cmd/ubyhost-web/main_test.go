@@ -216,3 +216,59 @@ func TestDuplicateJobKindFails(t *testing.T) {
 	}()
 	registerJob("push", 1, func(*pgxpool.Pool) jobs.Handler { return nil })
 }
+
+// TestCatchAllBrandedErrors runs the real mux with a nil pool, so any database
+// lookup on an error page would panic. Guest and host paths, 404 and 405, HTML
+// and non-HTML clients, and two guest languages.
+func TestCatchAllBrandedErrors(t *testing.T) {
+	full := newMux(&metrics{counts: map[key]int64{}}, nil)
+	// The full mux sends every /l/ subtree to the guest picker, so the guest
+	// branch of notFound runs on a mux with no guest routes and one dummy GET
+	// route, which gives Allow.
+	guestOnly := http.NewServeMux()
+	guestOnly.Handle("GET /l/{token}/{rest...}", http.NotFoundHandler())
+	guestOnly.Handle("/", notFound(guestOnly))
+	cases := []struct {
+		name, method, path, accept, acceptLang string
+		status                                 int
+		wantBody, wantAllow                    string
+	}{
+		{"guest 404 html cs", http.MethodGet, "/l", "text/html", "cs", http.StatusNotFound, `lang="cs"`, ""},
+		{"guest 404 html en", http.MethodGet, "/l", "text/html", "en", http.StatusNotFound, `lang="en"`, ""},
+		{"guest 404 plain", http.MethodGet, "/l", "", "", http.StatusNotFound, "404 page not found", ""},
+		{"guest 405 html", http.MethodDelete, "/l/synthetic-token/7", "text/html", "cs", http.StatusMethodNotAllowed, `lang="cs"`, "GET"},
+		{"guest 405 plain", http.MethodDelete, "/l/synthetic-token/7", "", "", http.StatusMethodNotAllowed, "", "GET"},
+		{"host 404 html", http.MethodGet, "/nope/synthetic", "text/html", "", http.StatusNotFound, "Page not found", ""},
+		{"host 405 html", http.MethodPost, "/payments", "text/html", "", http.StatusMethodNotAllowed, "Page not found", "GET"},
+		{"host 405 plain", http.MethodPost, "/payments", "", "", http.StatusMethodNotAllowed, "", "GET"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			if c.accept != "" {
+				req.Header.Set("Accept", c.accept)
+			}
+			if c.acceptLang != "" {
+				req.Header.Set("Accept-Language", c.acceptLang)
+			}
+			mux := full
+			if strings.HasPrefix(c.path, "/l") {
+				mux = guestOnly
+			}
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != c.status {
+				t.Fatalf("status %d, want %d", rec.Code, c.status)
+			}
+			if c.wantAllow != "" && !strings.Contains(rec.Header().Get("Allow"), c.wantAllow) {
+				t.Fatalf("Allow %q, want %s", rec.Header().Get("Allow"), c.wantAllow)
+			}
+			if c.accept == "" && rec.Header().Get("Content-Type") == "text/html; charset=utf-8" {
+				t.Fatal("non-HTML client got an HTML error page")
+			}
+			if c.wantBody != "" && !strings.Contains(rec.Body.String(), c.wantBody) {
+				t.Fatalf("body missing %q: %q", c.wantBody, rec.Body.String())
+			}
+		})
+	}
+}
