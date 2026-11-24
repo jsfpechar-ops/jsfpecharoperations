@@ -58,7 +58,7 @@ func TestFormSaveGoldenShape(t *testing.T) {
 
 func TestFormSaveRoutePattern(t *testing.T) {
 	mux := http.NewServeMux()
-	RegisterFormSave(mux, nil, nil, nil, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	RegisterFormSave(mux, nil, nil, nil, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 	_, pattern := mux.Handler(mustRequest("POST", "/l/tok/9/save"))
 	if pattern != "POST /l/{token}/{reservation_id}/save" {
 		t.Fatalf("pattern %q", pattern)
