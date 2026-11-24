@@ -1,51 +1,62 @@
 # 2054 report: functional parity rerun
 
-Status: blocked
+Status: review
 
 ## 1. Files changed
 
 - docs/tasks/2054-report.md (this file). No other tracked file changed.
-- Outside the repo: symlinks `/cursor/stores/bc-6e0cc745-51a8-434b-ae3b-2eb8d63269b1/media` and `.../docs` pointing to `/var/tmp/parity-2054/media` and `/var/tmp/parity-2054/docs` (step 2).
+- Outside the repo: artifacts under /var/tmp/parity-2054/ (audit.out, handlers.json, docs/go-python-parity-audit.json). The /cursor/stores symlinks from step 2 remain in place.
 
 ## 2. Commands (last lines)
 
-- Step 1: `source scripts/e2e/parity_env.sh > /var/tmp/parity_env.log 2>&1; tail -5 ...; pg_isready -h 127.0.0.1 -p 5433; which go`
-  - log: empty; `127.0.0.1:5433 - accepting connections`; `/usr/local/go/bin/go`. OK.
-- Step 2: `mkdir -p ... && ln -sfn ...`
-  - `id -u` prints 0; both symlinks listed. OK.
-- Step 3: `$UBYHOST_E2E_PSQL ... pg_stat_activity where datname like 'parity%'`
-  - `parity_run|4`. A parity database has 4 open connections, so another agent may be running. Brief section 8 says STOP.
-
-Steps 4 to 8 were not run.
+- Step 1 (earlier session, not re-run): env OK, Postgres 127.0.0.1:5433 accepting connections, Go at /usr/local/go/bin/go.
+- Step 2 (earlier session, not re-run): symlinks under /cursor/stores/bc-6e0cc745-.../ present.
+- Step 3 (re-check): `select datname, pid, application_name ... where datname like 'parity%'` returned no rows. Count 0. Leftover `ubyhost-web-parity` processes: 0. OK.
+- Step 4a: `python3 scripts/go_jobs_parity.py`
+  - `15 Python kinds, 15 Go kinds, 0 failing` and exit 0. 2.6 s.
+- Step 4b: `python3 scripts/go_parity_check.py --all --json /var/tmp/parity-2054/handlers.json`
+  - `342/342 Python routes have a Go handler`.
+- Step 5: audit started 2026-11-24 15:04:06 UTC in the background.
+- Step 6: poll finished with the audit output tail:
+  - `{"paths": 137, "rows": 843, "pass": 647, "pass_soft": 14, "accepted": 179, "fail": 3}`
+  - `EXIT 1` (some rows fail; not a crash).
+- Step 7: failing rows read from docs/go-python-parity-audit.json (`lang_rows` 396, `pin_paths` 12).
 
 ## 3. Counts
 
-- Audit (steps 5 to 7): not run.
-- Jobs (step 4): not run.
-- Handlers (step 4): not run.
-- Baseline: fail 0 / 843 rows. Now: not measured.
+- Audit: rows 843, pass 647, pass-soft 14, accepted 179, fail 3.
+- Jobs: 15 of 15 Python job kinds match Go; 0 failing.
+- Handlers: 342 of 342 Python routes have a Go handler. Missing: 0.
+- Runtime: audit about 7.5 min (15:04:06 to 15:11:28 UTC).
+- Baseline: fail 0 / 843 rows. Now: fail 3 / 843 rows. Row count matches the baseline.
 
 ## 4. Failing rows
 
-None measured. No RETIRED rows were classified.
+- FAIL: `/terms/booking`, persona anon, DOM drift (py 200, go 200, body length 526 vs 3836, similarity 0.23).
+- FAIL: `/terms/booking`, persona host, same DOM drift.
+- FAIL: `/terms/booking`, persona admin, same DOM drift.
+
+Not marked RETIRED. The brief marks RETIRED only for routes starting `/booking-sites` and payment routes. `/terms/booking` does not match those prefixes. The owner or orchestrator should decide whether it belongs to the retired booking set.
+
+RETIRED rows: none found in the failing list.
 
 ## 5. Acceptance (section 7)
 
-- [ ] Audit finished: no (blocked at step 3).
-- [ ] Counts reported: no.
-- [ ] Failing rows listed: n/a.
-- [ ] Comparison line: baseline fail 0 / 843 rows; now not measured.
-- [ ] git status shows only this report: to be checked at commit time.
+- [x] Audit finished with a JSON summary line and `EXIT 1` (not a crash).
+- [x] Report lists rows, pass, pass-soft, accepted, fail; job-kind result; handler missing count (0).
+- [x] Every failing row written in plain words, marked FAIL.
+- [x] Comparison line: baseline fail 0 / 843 rows; now fail 3 / 843 rows.
+- [ ] `git status --short` shows only this report (checked before the commit: clean tree).
 
 ## 6. Deviations
 
-Done: steps 1 to 3. Left: steps 4 to 8.
+Done: steps 1 to 8. Step 3 was re-checked after the orchestrator stopped the leftover Go servers; it showed 0 rows.
 
 ## 7. Questions
 
-- Who holds the `parity_run` connections on 127.0.0.1:5433 (4 sessions)? Is it safe to kill them, or should the audit wait?
-- Is it OK to keep the `/cursor/stores/...` symlinks in place for the next run?
+- Is `/terms/booking` a retired booking route? If yes, the three rows should move to RETIRED and the fail count becomes 0.
 
 ## 8. Owner steps left
 
-- Confirm the `parity_run` connections are not in use. Then rerun the brief from step 3 (or ask the orchestrator to do it).
+- Decide on `/terms/booking` (FAIL or RETIRED). No push done here; the orchestrator pushes the branch.
+- Leftover Go parity servers at the end of the run: 0.
