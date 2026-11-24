@@ -882,6 +882,9 @@ func stayLine(row stays.Row, today time.Time, lang string, t func(string, map[st
 		return nyLine{}, false
 	}
 	if status == "ready" || status == "awaiting_verification" {
+		if !files {
+			return nyLine{}, false
+		}
 		mode := r.AutomationMode
 		if mode == "" {
 			mode = "manual"
