@@ -102,12 +102,18 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if requirePin(w, r, d.shell(), token, lang, apt) {
 		return nil
 	}
-	cfg, res, ok := reservationForGuest(ctx, d.pool, apt, resID, d.getenv)
+	cfg, res, status, ok, accessErr := guestSaveReservation(ctx, d, r, apt, resID, token)
+	if accessErr != nil {
+		return accessErr
+	}
 	if !ok {
 		guestUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, resID)
 		return nil
 	}
 	if throttleGuestPost(w, r, d, token, "guest_save", lang) {
+		return nil
+	}
+	if (formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}).formPagesRequireClaim(w, r, apt, formResRow{id: resID, apartmentID: res.apartmentID, ownerUserID: cfg.ownerUserID, status: status, dateFrom: res.dateFrom, dateTo: res.dateTo, declaredGuests: res.declaredGuests, overrideGuests: res.overrideGuests, reducedGuests: res.reducedGuests}, token, lang) {
 		return nil
 	}
 	form := postForm(r)
@@ -203,6 +209,82 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	WithLang(w, d.getenv, lang)
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
+}
+
+// guestSaveReservation follows the picker fast path before its reachback fallback.
+func guestSaveReservation(ctx context.Context, d saveDeps, r *http.Request, apt *Apartment, resID int64, token string) (guestFormCfg, guestResMeta, string, bool, error) {
+	if d.pool == nil || apt == nil || resID <= 0 {
+		return guestFormCfg{}, guestResMeta{}, "", false, nil
+	}
+	pa, found := loadPickApartment(ctx, d.pool, apt.ID)
+	if !found || pa.PermalinkToken != apt.PermalinkToken {
+		return guestFormCfg{}, guestResMeta{}, "", false, nil
+	}
+	today := pragueTodayPick(d.now())
+	visible, err := visibleReservations(ctx, d.pool, pa, today)
+	if err != nil {
+		return guestFormCfg{}, guestResMeta{}, "", false, err
+	}
+	eligible := false
+	for _, row := range visible {
+		if row.ID == resID {
+			eligible = true
+			break
+		}
+	}
+	var cfg guestFormCfg
+	var res guestResMeta
+	var status, source string
+	var locked *time.Time
+	err = d.pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
+		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, r.status, COALESCE(r.source,''), c.guest_access_locked_at, COALESCE(a.default_purpose,'')
+		FROM reservation r JOIN apartment a ON a.id = r.apartment_id LEFT JOIN reservation_claim c ON c.reservation_id = r.id
+		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 AND a.archived_at IS NULL AND a.permalink_token = $3`,
+		resID, apt.ID, apt.PermalinkToken).Scan(&res.apartmentID, &cfg.ownerUserID, &res.dateFrom, &res.dateTo,
+		&res.declaredGuests, &res.overrideGuests, &res.reducedGuests, &status, &source, &locked, &cfg.defaultPurpose)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+		return guestFormCfg{}, guestResMeta{}, "", false, err
+	}
+	owner := (formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}).access().hostOwns(ctx, r, cfg.ownerUserID)
+	if source == "demo" {
+		if !owner || !GuestAccessOpen(status, locked != nil) {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+	} else if !eligible {
+		rd := pa.ReachbackDays
+		reach := validation.NormaliseReachbackDays(&rd)
+		cutoff := today.AddDate(0, 0, -int(reach)).Format("2006-01-02")
+		if locked != nil || res.dateTo < cutoff {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+		if registrationComplete(ctx, d.pool, d.getenv, d.now, pickReservation{ID: resID, DateFrom: res.dateFrom, DateTo: res.dateTo}, today) {
+			ownedIDs := ownedGuestIDs(r, d.getenv)
+			var ownedStay bool
+			if len(ownedIDs) > 0 {
+				if err := d.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM guest WHERE reservation_id = $1 AND id = ANY($2))`, resID, ownedIDs).Scan(&ownedStay); err != nil {
+					return guestFormCfg{}, guestResMeta{}, "", false, err
+				}
+			}
+			if !owner && !ownedStay && !DeviceHoldsClaim(r, d.getenv, resID, guestSaveClaimVersion(ctx, d.pool, resID)) {
+				return guestFormCfg{}, guestResMeta{}, "", false, nil
+			}
+		}
+	}
+	if d.getenv != nil {
+		cfg.noticeVersion = noticeVersion(d.getenv)
+	}
+	return cfg, res, status, true, nil
+}
+
+func guestSaveClaimVersion(ctx context.Context, pool *pgxpool.Pool, resID int64) int64 {
+	claim, err := EnsureClaimRow(ctx, pool, resID, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		return -1
+	}
+	return claim.tokenVersion
 }
 
 func postForm(r *http.Request) map[string]string {
@@ -406,31 +488,6 @@ func throttleGuestPost(w http.ResponseWriter, r *http.Request, d saveDeps, token
 		return true
 	}
 	return false
-}
-
-func reservationForGuest(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, resID int64, getenv func(string) string) (guestFormCfg, guestResMeta, bool) {
-	if pool == nil || apt == nil || resID <= 0 {
-		return guestFormCfg{}, guestResMeta{}, false
-	}
-	var cfg guestFormCfg
-	var res guestResMeta
-	var purpose string
-	err := pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
-		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, COALESCE(a.default_purpose,'')
-		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
-		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
-		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
-		resID, apt.ID, apt.PermalinkToken).Scan(
-		&res.apartmentID, &cfg.ownerUserID, &res.dateFrom, &res.dateTo,
-		&res.declaredGuests, &res.overrideGuests, &res.reducedGuests, &purpose)
-	if err != nil {
-		return guestFormCfg{}, guestResMeta{}, false
-	}
-	cfg.defaultPurpose = purpose
-	if getenv != nil {
-		cfg.noticeVersion = noticeVersion(getenv)
-	}
-	return cfg, res, true
 }
 
 func guestLink(token string, resID int64, lang string) string {

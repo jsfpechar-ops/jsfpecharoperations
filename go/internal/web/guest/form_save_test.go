@@ -2,8 +2,10 @@ package guest
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -65,6 +67,45 @@ func TestFormSaveRoutePattern(t *testing.T) {
 	}
 }
 
+func TestFormSaveAccess(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	getenv := guestTestGetenv(t, strings.Repeat("q", 32))
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	ctx := context.Background()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%8000000000 + 7100000
+	userID, resID := aptID, aptID+1
+	tok := fmt.Sprintf("saveaccess%d", aptID)
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("sa%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4)`, aptID, userID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $4)`, resID, aptID, fmt.Sprintf("save-%d", resID), stamp)
+	d := saveDeps{pool: pool, getenv: getenv, now: now}
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/l/%s/%d/save?lang=en", tok, resID), strings.NewReader(""))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("token", tok)
+	req.SetPathValue("reservation_id", fmt.Sprint(resID))
+	rec := httptest.NewRecorder()
+	if err := handleGuestFormSave(ctx, d, rec, req); err != nil {
+		t.Fatalf("save handler: %v", err)
+	}
+	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), fmt.Sprintf("/l/%s/%d", tok, resID)) {
+		t.Fatalf("missing email claim: status=%d location=%q", rec.Code, rec.Header().Get("Location"))
+	}
+	var guestRows int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM guest WHERE reservation_id = $1`, resID).Scan(&guestRows); err != nil {
+		t.Fatal(err)
+	}
+	if guestRows != 0 {
+		t.Fatalf("claim refusal wrote %d guest rows", guestRows)
+	}
+}
+
 func mustRequest(method, target string) *http.Request {
 	r := httptest.NewRequest(method, target, nil)
 	r.SetPathValue("token", "tok")
@@ -118,31 +159,6 @@ func TestOwnedGuestIDRequiresCookie(t *testing.T) {
 	}
 	if got := ownedGuestID(r, testGuestEnv, map[string]string{"guest_id": "99"}); got != 0 {
 		t.Fatalf("foreign guest_id: got %d want 0", got)
-	}
-}
-
-func TestReservationForGuestNilPool(t *testing.T) {
-	cfg, res, ok := reservationForGuest(t.Context(), nil, &Apartment{ID: 1, PermalinkToken: "tok"}, 9, testGuestEnv)
-	if ok || cfg.ownerUserID != 0 || res.apartmentID != 0 {
-		t.Fatalf("nil pool must fail closed, got ok=%v cfg=%v res=%v", ok, cfg, res)
-	}
-}
-
-func TestReservationForGuestLookupExcludesArchivedAndDemo(t *testing.T) {
-	raw, err := os.ReadFile("form_save.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	body := string(raw)
-	for _, needle := range []string{
-		`r.archived_at IS NULL`,
-		`<> 'demo'`,
-		`r.status = 'active'`,
-		`a.permalink_token = $3`,
-	} {
-		if !strings.Contains(body, needle) {
-			t.Fatalf("reservationForGuest SQL missing %q — save could accept wrong stay", needle)
-		}
 	}
 }
 
