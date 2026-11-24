@@ -20,7 +20,7 @@ pages that need new seed data are brief 2041.
   binaries in `/usr/lib/postgresql/16/bin` (NOT on PATH, no server running), Python 3.13, Chromium
   in `/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`. There is **no** `App/.venv` and the
   `playwright` Python package is not installed. Postgres refuses to run as root, so it starts with
-  `runuser -u postgres`. Verified: initdb + `pg_ctl ... start` on port 5433 works.
+  `runuser -u postgres`. Verified: initdb + `pg_ctl ... start` on port 5433 works, but only with `-E UTF8 --locale=C.utf8` (the container has only C, C.utf8, POSIX locales and LANG is empty; a plain initdb gives SQL_ASCII and `App/app/db_postgres.py:connect` raises ConnectionError). See Step 0b.
 - `scripts/e2e/page_parity_audit.py` reads `UBYHOST_E2E_PG` (default `postgresql://postgres@127.0.0.1:5433`)
   and `UBYHOST_E2E_PSQL`; `seed_db()` returns `(seed, refs)`.
   `seed["h1"|"admin"|"alfa"|...]` hold `id`/`session`; `seed["fee"]["a"]` is a stay-fee apartment id,
@@ -65,6 +65,21 @@ if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev
 fi
 ```
    Then skip the file creation in step 1 (the file already exists) and run only step 1's Run command. Never pipe a `source` into `tail`: a pipe runs it in a subshell and the exports are lost.
+
+   **Step 0b (fourth attempt).** The third attempt stopped at step 2: `App/app/db_postgres.py:connect` refuses a non-UTF8 cluster, and `initdb -D "$PARITY_PG_DIR/data" -A trust -U postgres` (no encoding) made a SQL_ASCII cluster that is now running on 127.0.0.1:5433 from `/var/tmp/parity-pg/data`. Do NOT delete any directory (rm -rf is denied). Edit `scripts/e2e/parity_env.sh` (it already exists; skip step 1's file creation), four changes:
+   a. Replace the line `export PARITY_PG_DIR=/var/tmp/parity-pg` with `export PARITY_PG_DIR=/var/tmp/parity-pg-utf8`.
+   b. Replace the line `    runuser -u postgres -- $PGBIN/initdb -D "$PARITY_PG_DIR/data" -A trust -U postgres >/dev/null` with:
+```
+    runuser -u postgres -- $PGBIN/initdb -D "$PARITY_PG_DIR/data" -A trust -U postgres -E UTF8 --locale=C.utf8 >/dev/null
+```
+   c. Insert these lines immediately BEFORE the line `if ! $PGBIN/pg_isready -q -h 127.0.0.1 -p 5433; then`:
+```
+if $PGBIN/pg_isready -q -h 127.0.0.1 -p 5433 \
+   && [ "$($PGBIN/psql postgresql://postgres@127.0.0.1:5433/postgres -tAc 'SHOW server_encoding' 2>/dev/null)" != "UTF8" ]; then
+  runuser -u postgres -- $PGBIN/pg_ctl -D /var/tmp/parity-pg/data -m fast -w stop >/dev/null 2>&1 || true
+fi
+```
+   d. Add to the end of step 1's Run command: `; $PGBIN/psql postgresql://postgres@127.0.0.1:5433/postgres -tAc 'SHOW server_encoding'`. Expected extra output: `UTF8`. If it prints anything else, stop (section 8).
 
 1. Create `scripts/e2e/parity_env.sh` with exactly this content, then `chmod +x` it:
 ```
