@@ -152,3 +152,19 @@ Status: blocked (tool-call cap reached at 25; steps for layout lint, server and 
 - Guest package with DB: 0 skipped. 4 failures: the new test plus `TestConfirmClaimAppliesDeclaredGuests`, `TestConfirmClaimRace`, `TestStayOverviewMailOnHonorsClaimCookie`. The three older tests were skipped before the migration and now run. They insert `reservation` without `uid` (NOT NULL), so they fail against the real schema. Fix belongs in those tests (not edited per brief).
 - `TestDoorCodesJobIssuesCodeThroughHandler` (in `./cmd/ubyhost-web`): 5 of 5 alone pass; 2 of 2 in the full run pass.
 - Left: layout lint (item 8), Go server start, 390/768/1280 screenshots of stay and assigned pages, guide link assertion (not in test), door-code issued state test, owner steps: fix the three `uid` tests and the dup-warning assertion.
+
+## Chunk C2 (run 7)
+
+Status: blocked (one test still fails; see below).
+
+- `6e6e4ba` `stay_page_test.go`: the dup warning was a test problem, not code. `_duplicate_warnings` and the Go path only list guests this device saved (signed `ubyhost_owned` cookie). The test now sends that cookie for both guests (`rememberOwnedGuestIDs`). It also asserts `data-guide-link` is absent while the guide is not live. `TestStayPageClaimedDeclaredTwoOneDone` passes.
+- Second commit: `stay_claim_cookie_test.go` and `stay_claim_test.go` fixture INSERTs for `reservation` now set `uid` (`'uid-' || $1::bigint::text`) and `updated_at`. Assertions unchanged. `TestConfirmClaimAppliesDeclaredGuests` and `TestConfirmClaimRace` pass.
+- `TestStayOverviewMailOnHonorsClaimCookie` still fails at `stay_claim_cookie_test.go:150`: it expects the body to contain `guest-assigned`, a class that exists in neither the Go nor the Python templates. The page itself is the assigned page. Not changed, per the brief. Owner or orchestrator decision needed: replace the marker with an existing one (for example `g-assigned-stay`) or drop it.
+
+Results (`UBYHOST_TEST_DATABASE_URL` = guest_test, `-count=1`): 366 PASS, 1 FAIL, 3 SKIP.
+- `internal/doorcodes`, `doorcodes/cleaning`, `doorcodes/wire`, `cmd/ubyhost-web`: pass.
+- Skips are env-gated probes in `cmd/ubyhost-web`: `TestJobRunProbe` (needs GO_JOBRUN_DB), `TestRouteProbe` (GO_PROBE_IN), `TestJobProbe` (GO_PROBE_JOBS_OUT). Not run, as the brief said.
+
+Deviations:
+- Commit trailer used Claude Opus 5.5 as the brief text says.
+- The fixture fix needed `$1::bigint::text`, not `$1::text`, because `$1` is also the id column (Postgres type conflict). It needed `updated_at` too (NOT NULL).
