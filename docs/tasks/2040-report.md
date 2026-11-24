@@ -1,53 +1,37 @@
-# 2040 report: executor stopped at step 1 (venv install blocked)
+# 2040 report (executor run, third attempt)
 
 Status: blocked
-Executor: Haiku 5.5 (single chat, stopped under brief section 8)
 
-## Totals
+## Done
 
-- identical: 0, invisible: 0, visible: 0, error: 0
-- Groups run: none (A, B, C, D not run)
-- Missing: all groups. Re-run from step 1 after the blocker below is fixed.
+- Step 0: `scripts/e2e/parity_env.sh` install block split into two pip calls (`requirements.lock`, then `requirements-dev.txt`). Commit `2040 step 0`.
+- Step 1 (run command only, file already existed): Postgres 16 accepting connections on 127.0.0.1:5433; `App/.venv/bin/python` present; import check prints `ok`. `git status` clean apart from the brief's files.
 
-## Files changed
+## Stopped at step 2 (smoke test)
 
-- `scripts/e2e/parity_env.sh` (step 0 edit: install block replaced, commit `2040 step 0`)
-- `docs/tasks/2040-report.md` (this file)
+Command: `source scripts/e2e/parity_env.sh; cd App && PARITY_ONLY=admin-home PARITY_WIDTHS=390 .venv/bin/python ../scripts/e2e/page_parity_visual.py`
+Exit 1. Last lines:
 
-Steps 1 (run part only), 2 to 8 were not completed. Step 1 file creation was skipped because the file already existed (step 0).
+```
+  File "/home/user/jsfpecharoperations/App/app/db.py", line 1904, in apply_postgresql_schema
+    with startup_lock():
+  File "/home/user/jsfpecharoperations/App/app/db.py", line 1556, in startup_lock
+    conn = _open()
+  File "/home/user/jsfpecharoperations/App/app/db.py", line 672, in _open
+    conn = db_postgres.connect(config.DATABASE_URL)
+  File "/home/user/jsfpecharoperations/App/app/db_postgres.py", line 803, in connect
+    raise ConnectionError("Unable to connect to the configured PostgreSQL database") from None
+ConnectionError: Unable to connect to the configured PostgreSQL database
+```
 
-## Commands
+Likely cause (not verified, brief says do not explore): the app reads `config.DATABASE_URL`, while `parity_env.sh` only exports `UBYHOST_E2E_PG`. The brief does not set `DATABASE_URL`.
 
-1. `rm -rf App/.venv` (brief step 0)
-   - Denied by the permission classifier. Not retried, no workaround. The venv from the first attempt was left in place.
-2. `source scripts/e2e/parity_env.sh` (step 1 Run command)
-   - Postgres: `127.0.0.1:5433 - accepting connections` (OK).
-   - Venv install: FAILED. Last lines:
-     ```
-     ERROR: Hashes are required in --require-hashes mode, but they are missing from some requirements. ...
-         pytest==9.2.0 --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
-     [notice] A new release of pip is available: 26.2.2 -> 26.3
-     [notice] To update, run: /home/user/jsfpecharoperations/App/.venv/bin/python3 -m pip install --upgrade pip
-     ```
-   - Import check: `ModuleNotFoundError: No module named 'uvicorn'`.
+## Not done
 
-## Blocker
+- Step 3 (`scripts/e2e/parity_cases.py`), step 4 (probe edits), step 5 (groups A, B, C, D), step 6 (screenshot review), step 7 (this report's full table), step 8 (context_lint and pytest).
+- Verdict counts: identical 0, invisible 0, visible 0, error 0. Groups run: none. Groups missing: A, B, C, D, L.
+- No screenshots taken. `/var/tmp/parity-visual/` not populated by this run.
 
-The step 0 corrected block runs `pip install -r App/requirements.lock -r App/requirements-dev.txt`. `App/requirements.lock` enables `--require-hashes`, and `App/requirements-dev.txt` lists `pytest==9.2.0` without a hash, so pip refuses the install. The brief does not allow editing requirements files, so the executor stopped under section 8.
+## Owner or next-chat steps
 
-Owner decision needed: add the hash for `pytest==9.2.0` (and any other unhashed entries in `App/requirements-dev.txt`) to the dev requirements, or split the dev install out of the `--require-hashes` call in `scripts/e2e/parity_env.sh`.
-
-## Deviations and notes
-
-- Brief step 0 asked for `rm -rf App/.venv`; the permission classifier denied it. The step 0 edit does not depend on the deletion, so it was committed without it. The old venv (incomplete, no uvicorn) remains. Delete it manually before the re-run: `rm -rf App/.venv`.
-- Brief step 1 had `source` piped into `tail` in an earlier attempt; the run here was not piped (output redirected to `/var/tmp/parity_env.log`).
-
-## Questions for the owner
-
-1. How should the unhashed `pytest==9.2.0` in `App/requirements-dev.txt` be handled under `--require-hashes`: add hashes, or install the dev requirements outside the hashed call?
-2. May `App/.venv` be deleted (the denied step 0 command) before the re-run?
-
-## Owner steps left
-
-- Decide question 1 and question 2 above.
-- Re-run brief 2040 from step 1 (`source scripts/e2e/parity_env.sh`), then steps 2 to 8.
+- Decide the DATABASE_URL value for the parity env (or a brief change to `parity_env.sh`), then re-run step 2 before step 3.
