@@ -47,7 +47,7 @@ No other file may change. Never touch `App/app/**`, `go/**`, `scripts/e2e/seed.p
 
 ## 4. Steps
 
-0. **Step 0 (re-run after the first attempt).** The first attempt stopped at step 1 (commit cd75988 already has `scripts/e2e/parity_env.sh`, with a broken install block). Run `rm -rf App/.venv`. In `scripts/e2e/parity_env.sh`, find the anchor line `if [ ! -x App/.venv/bin/python ]; then` and replace that whole block (through its closing `fi`, 4 lines) with exactly:
+0. **Step 0 (third attempt).** The second attempt failed in the install block of `scripts/e2e/parity_env.sh`: `App/requirements.lock` has hashes, so pip enables `--require-hashes` for the whole call, and `App/requirements-dev.txt` has unhashed pins (`pytest==9.2.0`), so one call with both files fails. (`requirements-dev.txt` has no `-r` lines, so it can be installed as is in its own call.) Do not delete `App/.venv`: the guard (import check) reinstalls into the existing venv. In `scripts/e2e/parity_env.sh`, find this current block (the anchor) and replace it, all 5 lines, with the replacement below. Current block:
 ```
 [ -x App/.venv/bin/python ] || python3 -m venv App/.venv
 if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
@@ -55,7 +55,16 @@ if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev
   App/.venv/bin/pip install -q playwright==1.63.0
 fi
 ```
-   Why: the hashed lock file turns on `--require-hashes`, which refuses the unhashed `playwright==1.63.0` in the same call (CI installs it separately), and the old guard skipped the install after a half-failed one. Then skip the file creation in step 1 (the file already exists; its text below is the corrected version) and run only step 1's Run command. Never pipe a `source` into `tail`: a pipe runs it in a subshell and the exports are lost.
+   Replacement block:
+```
+[ -x App/.venv/bin/python ] || python3 -m venv App/.venv
+if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
+  App/.venv/bin/pip install -q -r App/requirements.lock
+  App/.venv/bin/pip install -q -r App/requirements-dev.txt
+  App/.venv/bin/pip install -q playwright==1.63.0
+fi
+```
+   Then skip the file creation in step 1 (the file already exists) and run only step 1's Run command. Never pipe a `source` into `tail`: a pipe runs it in a subshell and the exports are lost.
 
 1. Create `scripts/e2e/parity_env.sh` with exactly this content, then `chmod +x` it:
 ```
