@@ -1,4 +1,4 @@
-# 2040 report: executor stopped at step 1
+# 2040 report: executor stopped at step 1 (venv install blocked)
 
 Status: blocked
 Executor: Haiku 5.5 (single chat, stopped under brief section 8)
@@ -7,41 +7,47 @@ Executor: Haiku 5.5 (single chat, stopped under brief section 8)
 
 - identical: 0, invisible: 0, visible: 0, error: 0
 - Groups run: none (A, B, C, D not run)
-- Missing: all groups. Re-run after the blocker below is fixed.
+- Missing: all groups. Re-run from step 1 after the blocker below is fixed.
 
 ## Files changed
 
-- `scripts/e2e/parity_env.sh` (new, from brief step 1, made executable)
+- `scripts/e2e/parity_env.sh` (step 0 edit: install block replaced, commit `2040 step 0`)
 - `docs/tasks/2040-report.md` (this file)
 
-Steps 3 to 8 were not run.
+Steps 1 (run part only), 2 to 8 were not completed. Step 1 file creation was skipped because the file already existed (step 0).
 
 ## Commands
 
-1. `source scripts/e2e/parity_env.sh` (with `pg_isready`, venv import check)
-   - Last lines:
+1. `rm -rf App/.venv` (brief step 0)
+   - Denied by the permission classifier. Not retried, no workaround. The venv from the first attempt was left in place.
+2. `source scripts/e2e/parity_env.sh` (step 1 Run command)
+   - Postgres: `127.0.0.1:5433 - accepting connections` (OK).
+   - Venv install: FAILED. Last lines:
      ```
-     ERROR: Hashes are required in --require-hashes mode, but they are missing from some requirements.
-         playwright==1.63.0 --hash=sha256:ad21bc07516b187965a7521c5cf0df0bd657b17482eaad74335272d35a2b07de
-     /bin/bash: line 27: /pg_isready: No such file or directory
-     ModuleNotFoundError: No module named 'playwright'
+     ERROR: Hashes are required in --require-hashes mode, but they are missing from some requirements. ...
+         pytest==9.2.0 --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
+     [notice] A new release of pip is available: 26.2.2 -> 26.3
+     [notice] To update, run: /home/user/jsfpecharoperations/App/.venv/bin/python3 -m pip install --upgrade pip
      ```
-   - Postgres did start on 127.0.0.1:5433 (`accepting connections`, checked with the full path to `pg_isready`).
-   - The venv `App/.venv` was created but the pip install failed, so the venv is incomplete.
+   - Import check: `ModuleNotFoundError: No module named 'uvicorn'`.
 
 ## Blocker
 
-`App/requirements.lock` runs under `--require-hashes`. The brief's step 1 installs `playwright==1.63.0` with no hash on the command line, and pip refuses it. Brief section 8 says to stop here. The fix needs an owner decision: add the hash to the lock file, or give the playwright hash/version to pin. The executor does not guess.
+The step 0 corrected block runs `pip install -r App/requirements.lock -r App/requirements-dev.txt`. `App/requirements.lock` enables `--require-hashes`, and `App/requirements-dev.txt` lists `pytest==9.2.0` without a hash, so pip refuses the install. The brief does not allow editing requirements files, so the executor stopped under section 8.
+
+Owner decision needed: add the hash for `pytest==9.2.0` (and any other unhashed entries in `App/requirements-dev.txt`) to the dev requirements, or split the dev install out of the `--require-hashes` call in `scripts/e2e/parity_env.sh`.
 
 ## Deviations and notes
 
-- The brief's step 1 run command pipes `source` into `tail -5`, which runs the script in a subshell. The variables (`$PGBIN` and the rest) were then empty in the calling shell. Run `source` without a pipe, or use `. scripts/e2e/parity_env.sh; ... | tail -n`.
-- Because `App/.venv` exists now, the script's `[ ! -x App/.venv/bin/python ]` check will skip the install on the next run. Delete `App/.venv` before re-running after the fix.
+- Brief step 0 asked for `rm -rf App/.venv`; the permission classifier denied it. The step 0 edit does not depend on the deletion, so it was committed without it. The old venv (incomplete, no uvicorn) remains. Delete it manually before the re-run: `rm -rf App/.venv`.
+- Brief step 1 had `source` piped into `tail` in an earlier attempt; the run here was not piped (output redirected to `/var/tmp/parity_env.log`).
 
 ## Questions for the owner
 
-1. How should `playwright==1.63.0` be pinned under `--require-hashes` (add its hash to `App/requirements.lock`, or allow an unpinned install in the parity script)?
+1. How should the unhashed `pytest==9.2.0` in `App/requirements-dev.txt` be handled under `--require-hashes`: add hashes, or install the dev requirements outside the hashed call?
+2. May `App/.venv` be deleted (the denied step 0 command) before the re-run?
 
 ## Owner steps left
 
-- Decide the question above, then ask for a re-run of brief 2040 from step 1 with `rm -rf App/.venv` first.
+- Decide question 1 and question 2 above.
+- Re-run brief 2040 from step 1 (`source scripts/e2e/parity_env.sh`), then steps 2 to 8.
