@@ -300,13 +300,21 @@ func isASCIIDigits(s string) bool {
 }
 
 // validateResidence is validation.validate_residence.
-func validateResidence(street, city, countryCode string) []Issue {
+func validateResidence(street, city, countryCode, rawStreet, rawCity string) []Issue {
 	var issues []Issue
 	if street == "" {
-		issues = append(issues, Issue{"res_street", "Street and number are required.", severityError})
+		if pyStrip(rawStreet) != "" {
+			issues = append(issues, Issue{"res_street", nonLatinMessage, severityError})
+		} else {
+			issues = append(issues, Issue{"res_street", "Street and number are required.", severityError})
+		}
 	}
 	if city == "" {
-		issues = append(issues, Issue{"res_city", "City is required.", severityError})
+		if pyStrip(rawCity) != "" {
+			issues = append(issues, Issue{"res_city", nonLatinMessage, severityError})
+		} else {
+			issues = append(issues, Issue{"res_city", "City is required.", severityError})
+		}
 	}
 	if countryCode == "" {
 		issues = append(issues, Issue{"res_country", "Country is required.", severityError})
@@ -392,7 +400,7 @@ func validateGuest(g GuestRow, stayFrom, stayTo *time.Time, today time.Time, raw
 		issues = append(issues, Issue{"visa_number", fmt.Sprintf("Visa number must be at most %d characters.", maxVisa), severityError})
 	}
 
-	issues = append(issues, validateResidence(g.ResStreet, g.ResCity, pyUpper(g.ResCountry))...)
+	issues = append(issues, validateResidence(g.ResStreet, g.ResCity, pyUpper(g.ResCountry), rawOf(raw, "res_street"), rawOf(raw, "res_city"))...)
 
 	if g.Purpose == "" {
 		issues = append(issues, Issue{"purpose", "Purpose of stay is required.", severityError})
@@ -619,4 +627,12 @@ func IssuesToText(issues []Issue) string {
 		parts = append(parts, issue.Field+": "+issue.Message)
 	}
 	return strings.Join(parts, "; ")
+}
+
+// rawOf reads one untouched form value; a nil map reads as empty.
+func rawOf(raw map[string]string, field string) string {
+	if raw == nil {
+		return ""
+	}
+	return raw[field]
 }
