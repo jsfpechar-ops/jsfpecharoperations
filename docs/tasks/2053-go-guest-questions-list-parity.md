@@ -1,13 +1,17 @@
 # 2053: Go guest questions list matches Python
 
-Status: ready. Executor: Haiku 5.5 (30 tool calls). Report: `docs/tasks/2053-report.md`.
+Status: todo. Executor: Haiku 5.5 (30 tool calls). Report: `docs/tasks/2053-report.md`.
 Commit trailers on every commit:
 ```
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ```
 
-## 1. Why (facts, already verified)
+## 1. Objective
+
+Make the Go guest questions list render what Python renders (Option 1).
+
+## 2. Context (verified)
 
 2052 parity run: `guide-questions-full` (cs/en x 390/768/1280) differs. Python row = the **guest's message text** as the link (`q.question`, which is `guest_chat_message.text`; the summary is not used in the list), then a grey sub line `date · stay link` (`t('guest_questions.door.<door>')`), and a badge cell: `Urgent` (attention) and `Unread` (neutral) only while open, then one state badge: open "Waiting" (action), answered "Answered" (done), dismissed "Dismissed" (neutral). Go shows the summary, no date, no badges, plain text `stay link · Waiting`.
 
@@ -15,7 +19,7 @@ Data is already loaded: `handoffList` (`go/internal/web/guest/leon_questions.go`
 
 Read first: `AGENTS.md`, `docs/context/executor.md`. Open only the files named here.
 
-## 2. Files
+## 3. Files (you may touch only these)
 
 - `go/internal/web/guest/leon_questions.go` (one small method)
 - `go/internal/web/guest/templates/leon_questions.tmpl` (list rows, ~lines 17-21)
@@ -24,17 +28,17 @@ Read first: `AGENTS.md`, `docs/context/executor.md`. Open only the files named h
 - `scripts/e2e/parity_cases.py` (~109-111)
 - `docs/tasks/2053-report.md` (new)
 
-## 3. Do not touch
+## 5. Do not touch
 
 Python files, the detail page template (`guest_question.html` define), CSS, `lqI18n` strings (unless step 1 finds a mismatch: then STOP), other seed blocks, other parity cases, the ACCEPTED dict in the parity script, `App/`.
 
-## 4. Steps
+## 4. Steps (one commit each: `2053 step k`)
 
 ### Step 1: verify keys match Python (no edit)
 ```
 grep -n "guest_questions.badge\|guest_questions.state\|guest_questions.door" App/app/*i18n*.py | head -30 | cut -c1-160
 ```
-Compare with the Go values listed in section 1 (en and cs). Equal: go on. Different: STOP and ask.
+Compare with the Go values listed in section 2 (en and cs). Equal: go on. Different: STOP and ask.
 
 ### Step 2: day helper
 Anchor: `func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow, error) {` (`grep -nF`). Insert **before** it:
@@ -165,9 +169,9 @@ UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROWSERS_PATH=
 Expect `passed`, `0 skipped`. Then, if `tests/test_layout_lint_browser.py` is in the test-map row for host pages, run it the same way: `0 skipped`. The three parity list screenshots from step 7 count as the per-page screenshots; in the report write "390: ...; 768: ...; 1280: ..." for the list page. Skipped tests mean broken: STOP.
 
 ### Step 9: lint, report, commit
-`python3 scripts/context_lint.py 2>&1 | tail -3` Expect no errors. Write `docs/tasks/2053-report.md` (600 tokens max: files, command tails, section 5 ticked, per-width description, deviations). Mark `Status: review`. Commit `Brief 2053: Go guest questions list parity` with the trailers. Do not push, do not open a PR unless the orchestrator says so.
+`python3 scripts/context_lint.py 2>&1 | tail -3` Expect no errors. Write `docs/tasks/2053-report.md` (600 tokens max: files, command tails, section 7 ticked, per-width description, deviations). Mark `Status: review`. Commit `Brief 2053: Go guest questions list parity` with the trailers. Do not push, do not open a PR unless the orchestrator says so.
 
-## 5. Checklist
+## 7. Acceptance (checklist)
 
 - [ ] link text is the message text (`.Question`), not the summary
 - [ ] sub line `date · stay link` (cs: `odkaz na pobyt`; QR door: `QR page`)
@@ -178,9 +182,17 @@ Expect `passed`, `0 skipped`. Then, if `tests/test_layout_lint_browser.py` is in
 - [ ] layout lint browser tests green, 0 skipped
 - [ ] context_lint clean, report written, commits carry trailers
 
-## 6. Stop and ask
+## 8. Stop and ask
 
 - An anchor is not found verbatim, or a catalogue string differs from Python.
 - `renderHost` or `handoffRow` has a different shape than shown.
 - Parity shows any visible difference you cannot explain from this brief, or the script cannot reseed.
 - A test fails twice, or any test skips.
+
+## 6. Commands
+
+Every command is written in its step; run only those, each ending in `| tail -30`.
+
+## 9. Report
+
+`docs/tasks/2053-report.md`: files changed, command tails, section 7 ticked, per-width description of the list page, deviations, questions, `Status: review`.
