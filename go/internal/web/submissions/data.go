@@ -74,8 +74,8 @@ func LoadList(ctx context.Context, pool *pgxpool.Pool, owner int64) (*ListPage, 
 	return p, rows.Err()
 }
 
-const detailSQL = `SELECT s.id, s.apartment_id, s.created_at, s.mode, s.state, s.guest_ids,
-       s.header_errors, s.record_errors, s.pseudo_stamp, s.finished_at, s.error_text,
+const detailSQL = `SELECT s.id, s.apartment_id, s.created_at, COALESCE(s.mode, ''), s.state, COALESCE(s.guest_ids, ''),
+       s.header_errors, COALESCE(s.record_errors, ''), s.pseudo_stamp, s.finished_at, s.error_text,
        s.endpoint, s.receipt_pdf, s.error_pdf, a.internal_name
   FROM submission s JOIN apartment a ON a.id = s.apartment_id
   WHERE s.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`
