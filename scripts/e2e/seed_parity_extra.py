@@ -89,7 +89,11 @@ def havel_block(out, owner, apt):
 
 
 def privacy(out, owner, apt):
-    raise RuntimeError("no privacy request table or insert helper in the baseline; not seeded")
+    now = db.utcnow()
+    out["dsr_id"] = dsr.create(owner_user_id=owner, received_at=now, channel="email",
+                               request_type="access", subject_kind="guest")
+    dsr.create(owner_user_id=owner, received_at=now, channel="post",
+               request_type="erasure", subject_kind="guest")
 
 
 def submission(out, owner, apt):
