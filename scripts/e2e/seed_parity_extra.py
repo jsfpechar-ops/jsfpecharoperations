@@ -98,11 +98,14 @@ def privacy(out, owner, apt):
 
 def submission(out, owner, apt):
     now = db.utcnow()
-    ids = [r["id"] for r in db.query(
-        "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-        "WHERE r.apartment_id = ? ORDER BY g.id LIMIT 2", (apt,))]
-    if not ids:
+    rows = db.query(
+        "SELECT r.apartment_id, g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id = ? "
+        "ORDER BY r.apartment_id, g.id", (owner,))
+    if not rows:
         raise RuntimeError("no guests for the apartment; not seeded")
+    apt = rows[0]["apartment_id"]
+    ids = [r["id"] for r in rows if r["apartment_id"] == apt][:2]
     guests = json.dumps(ids)
     endpoint = "https://example.invalid/e2e"
     out["submission_ok"] = db.insert("submission", {
