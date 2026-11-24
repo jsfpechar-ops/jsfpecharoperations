@@ -1955,3 +1955,527 @@ func TestGuestSaveChildSigner(t *testing.T) {
 		}
 	})
 }
+
+func TestGuestSaveFilingCorrection(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	keys, err := secure.LoadDataKeys(testDataEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	stamp := "2026-01-01T00:00:00Z"
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
+
+	makeSig := func(w, h int) string {
+		var buf bytes.Buffer
+		if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, w, h))); err != nil {
+			t.Fatal(err)
+		}
+		return "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	}
+	sigA := makeSig(8, 8)
+	sigB := makeSig(12, 12)
+
+	type guestState struct {
+		surname     string
+		firstName   string
+		nationality string
+		note        string
+		noticeLang  string
+		submitState string
+		attempts    int
+		lastErrors  sql.NullString
+		submittedAt sql.NullString
+		birthDate   string
+		docNumber   string
+		docEnc      string
+	}
+	readState := func(t *testing.T, getenv func(string) string, id int64) guestState {
+		t.Helper()
+		var st guestState
+		var birthPlain, birthEnc, docPlain string
+		if err := pool.QueryRow(ctx, `SELECT COALESCE(surname,''), COALESCE(first_name,''),
+			COALESCE(nationality,''), COALESCE(note,''), COALESCE(notice_lang,''),
+			submit_state, submit_attempts, last_errors, submitted_at,
+			COALESCE(birth_date,''), COALESCE(birth_date_enc,''),
+			COALESCE(doc_number,''), COALESCE(doc_number_enc,'')
+			FROM guest WHERE id = $1`, id).Scan(
+			&st.surname, &st.firstName, &st.nationality, &st.note, &st.noticeLang,
+			&st.submitState, &st.attempts, &st.lastErrors, &st.submittedAt,
+			&birthPlain, &birthEnc, &docPlain, &st.docEnc,
+		); err != nil {
+			t.Fatalf("readState(%d): %v", id, err)
+		}
+		bd, err := decryptGuestField(getenv, now, birthEnc, birthPlain)
+		if err != nil {
+			t.Fatalf("decrypt birth_date(%d): %v", id, err)
+		}
+		dn, err := decryptGuestField(getenv, now, st.docEnc, docPlain)
+		if err != nil {
+			t.Fatalf("decrypt doc_number(%d): %v", id, err)
+		}
+		st.birthDate = bd
+		st.docNumber = dn
+		return st
+	}
+
+	type stayEnv struct {
+		userID, aptID, resID int64
+		tok                  string
+		getenv               func(string) string
+		mux                  *http.ServeMux
+		csrf                 string
+		csrfCookie           string
+	}
+	newStay := func(t *testing.T, offset int64) stayEnv {
+		t.Helper()
+		base := time.Now().UnixNano()%1000000000 + 8200000 + offset*100
+		userID, aptID, resID := base, base+1, base+2
+		tok := fmt.Sprintf("fcorr%d", base)
+		mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+			VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("fc%d@example.test", base), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at, passport_photo_policy)
+			VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4, 'off')`, aptID, userID, tok, stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+			VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $4)`, resID, aptID, fmt.Sprintf("fc-%d", resID), stamp)
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
+			VALUES ($1, 'claimed', '', 1, $2, $2)`, resID, stamp)
+		t.Cleanup(func() {
+			bg := context.Background()
+			_, _ = pool.Exec(bg, `DELETE FROM submission_claim WHERE guest_id IN (SELECT id FROM guest WHERE reservation_id = $1)`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM guest WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation_claim WHERE reservation_id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM reservation WHERE id = $1`, resID)
+			_, _ = pool.Exec(bg, `DELETE FROM apartment WHERE id = $1`, aptID)
+			_, _ = pool.Exec(bg, `DELETE FROM user_account WHERE id = $1`, userID)
+		})
+		getenv := func(k string) string {
+			switch k {
+			case "UBYHOST_GUEST_PIN":
+				return "0"
+			case "UBYHOST_MAIL_BACKEND":
+				return "disabled"
+			}
+			return testDataEnv(k)
+		}
+		mux := http.NewServeMux()
+		RegisterStayClaim(mux, pool, getenv, now, wrap, nil)
+		RegisterFormPages(mux, pool, getenv, now, wrap)
+		RegisterFormSave(mux, pool, getenv, now, wrap, &passportHookCount{})
+		getRec := httptest.NewRecorder()
+		mux.ServeHTTP(getRec, httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d/claim?lang=en", tok, resID), nil))
+		csrf := extractPageCSRF(getRec.Body.String())
+		cookie := csrfCookie(getRec.Result().Cookies())
+		if csrf == "" || cookie == "" {
+			t.Fatalf("csrf %q cookie %q status %d", csrf, cookie, getRec.Code)
+		}
+		return stayEnv{userID, aptID, resID, tok, getenv, mux, csrf, cookie}
+	}
+
+	type seedOpt struct {
+		surname      string
+		firstName    string
+		birthDate    string
+		nationality  string
+		docNumber    string
+		note         string
+		stayFrom     string
+		stayTo       string
+		submitState  string
+		attempts     int
+		lastErrors   string
+		submittedAt  string
+		restrictedAt string
+	}
+	seedGuest := func(t *testing.T, resID int64, o seedOpt) int64 {
+		t.Helper()
+		if o.surname == "" {
+			o.surname = "SMITH"
+		}
+		if o.firstName == "" {
+			o.firstName = "JOHN"
+		}
+		if o.birthDate == "" {
+			o.birthDate = "10051990"
+		}
+		if o.nationality == "" {
+			o.nationality = "DEU"
+		}
+		if o.docNumber == "" {
+			o.docNumber = "DOC12345"
+		}
+		enc, err := secure.GuestWriteValues(keys, map[string]any{
+			"birth_date": o.birthDate, "doc_number": o.docNumber, "visa_number": "",
+			"res_street": "Main 1", "res_city": "Berlin", "signature_png": sigA,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var le, subAt, restAt any
+		if o.lastErrors != "" {
+			le = o.lastErrors
+		}
+		if o.submittedAt != "" {
+			subAt = o.submittedAt
+		}
+		if o.restrictedAt != "" {
+			restAt = o.restrictedAt
+		}
+		var id int64
+		if err := pool.QueryRow(ctx, `INSERT INTO guest (
+			reservation_id, is_lead, surname, first_name, nationality, res_country, purpose, note,
+			stay_from, stay_to, submit_state, submit_attempts, last_errors, submitted_at, restricted_at,
+			notice_lang, created_at, updated_at,
+			birth_date_enc, doc_number_enc, visa_number_enc, res_street_enc, res_city_enc, signature_png_enc
+		) VALUES ($1,0,$2,$3,$4,'DEU','99',$5,$6,$7,$8,$9,$10,$11,$12,'en',$13,$13,$14,$15,$16,$17,$18,$19)
+		RETURNING id`,
+			resID, o.surname, o.firstName, o.nationality, o.note,
+			o.stayFrom, o.stayTo, o.submitState, o.attempts, le, subAt, restAt,
+			stamp,
+			enc["birth_date_enc"], enc["doc_number_enc"], enc["visa_number_enc"],
+			enc["res_street_enc"], enc["res_city_enc"], enc["signature_png_enc"],
+		).Scan(&id); err != nil {
+			t.Fatalf("seedGuest: %v", err)
+		}
+		return id
+	}
+
+	postForm := func(t *testing.T, se stayEnv, lang string, owned []int64, vals url.Values) *httptest.ResponseRecorder {
+		t.Helper()
+		vals.Set("_csrf", se.csrf)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/l/%s/%d/save?lang=%s", se.tok, se.resID, lang), strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: se.csrfCookie})
+		if len(owned) > 0 {
+			ownRec := httptest.NewRecorder()
+			rememberOwnedGuestIDs(ownRec, se.getenv, owned)
+			for _, c := range ownRec.Result().Cookies() {
+				req.AddCookie(c)
+			}
+		}
+		rec := httptest.NewRecorder()
+		se.mux.ServeHTTP(rec, req)
+		return rec
+	}
+
+	baseEditForm := func(guestID int64) url.Values {
+		return url.Values{
+			"guest_id":    {fmt.Sprintf("%d", guestID)},
+			"surname":     {"SMITH"},
+			"first_name":  {"JOHN"},
+			"birth_date":  {"10.05.1990"},
+			"nationality": {"DEU"},
+			"doc_number":  {"DOC12345"},
+			"res_street":  {"Main 1"},
+			"res_city":    {"Berlin"},
+			"res_country": {"DEU"},
+			"purpose":     {"99"},
+			"note":        {""},
+			"signature":   {sigA},
+			"legal_ack":   {"1"},
+		}
+	}
+
+	t.Run("blocked_duplicate_unchanged_fields_stays_blocked", func(t *testing.T) {
+		SetGuestLanguages("en,cs,de")
+		t.Cleanup(func() { SetGuestLanguages("en,cs") })
+		se := newStay(t, 1)
+		gid := seedGuest(t, se.resID, seedOpt{
+			submitState: "blocked",
+			lastErrors:  "150: Duplicate record",
+			attempts:    3,
+			stayFrom:    "",
+			stayTo:      "",
+		})
+		f := baseEditForm(gid)
+		f.Set("surname", " smith ")
+		f.Set("first_name", " john ")
+		f.Set("birth_date", "10.05.1990")
+		f.Set("signature", sigB)
+		rec := postForm(t, se, "de", []int64{gid}, f)
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+		}
+		st := readState(t, se.getenv, gid)
+		if st.submitState != "blocked" || !st.lastErrors.Valid || st.lastErrors.String != "150: Duplicate record" || st.attempts != 3 || st.noticeLang != "de" {
+			t.Fatalf("duplicate block should be preserved while non-filing columns update: %+v", st)
+		}
+	})
+
+	t.Run("blocked_duplicate_czech_wording_stays_blocked", func(t *testing.T) {
+		se := newStay(t, 2)
+		gid := seedGuest(t, se.resID, seedOpt{
+			submitState: "blocked",
+			lastErrors:  "105: Jiná chyba | Duplicitní záznam",
+			attempts:    2,
+			stayFrom:    "2026-06-20",
+			stayTo:      "2026-06-22",
+		})
+		rec := postForm(t, se, "en", []int64{gid}, baseEditForm(gid))
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+		}
+		st := readState(t, se.getenv, gid)
+		if st.submitState != "blocked" || !st.lastErrors.Valid || st.lastErrors.String != "105: Jiná chyba | Duplicitní záznam" || st.attempts != 2 {
+			t.Fatalf("Czech duplicate wording should stay blocked: %+v", st)
+		}
+	})
+
+	t.Run("blocked_duplicate_changed_field_resets", func(t *testing.T) {
+		cases := []struct {
+			name   string
+			field  string
+			val    string
+			verify func(t *testing.T, st guestState)
+		}{
+			{"doc_number", "doc_number", "DOC99999", func(t *testing.T, st guestState) {
+				if st.docNumber != "DOC99999" {
+					t.Fatalf("want docNumber DOC99999, got %q", st.docNumber)
+				}
+			}},
+			{"birth_date", "birth_date", "11.05.1990", func(t *testing.T, st guestState) {
+				if st.birthDate != "11051990" {
+					t.Fatalf("want birthDate 11051990, got %q", st.birthDate)
+				}
+			}},
+			{"surname", "surname", "JONES", func(t *testing.T, st guestState) {
+				if st.surname != "JONES" {
+					t.Fatalf("want surname JONES, got %q", st.surname)
+				}
+			}},
+			{"note", "note", "Late arrival", func(t *testing.T, st guestState) {
+				if st.note != "Late arrival" {
+					t.Fatalf("want note Late arrival, got %q", st.note)
+				}
+			}},
+		}
+		for i, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				se := newStay(t, int64(10+i))
+				gid := seedGuest(t, se.resID, seedOpt{
+					submitState: "blocked",
+					lastErrors:  "150: Duplicate record",
+					attempts:    3,
+					stayFrom:    "2026-06-20",
+					stayTo:      "2026-06-22",
+				})
+				f := baseEditForm(gid)
+				f.Set(tc.field, tc.val)
+				rec := postForm(t, se, "en", []int64{gid}, f)
+				if rec.Code != http.StatusSeeOther {
+					t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+				}
+				st := readState(t, se.getenv, gid)
+				if st.submitState != "pending" || st.lastErrors.Valid || st.attempts != 0 {
+					t.Fatalf("changed %s should reset to pending/0/NULL: %+v", tc.name, st)
+				}
+				tc.verify(t, st)
+			})
+		}
+	})
+
+	t.Run("non_duplicate_error_and_blocked_at_attempt_cap_reset", func(t *testing.T) {
+		for i, state := range []string{"error", "blocked"} {
+			t.Run(state, func(t *testing.T) {
+				se := newStay(t, int64(20+i))
+				gid := seedGuest(t, se.resID, seedOpt{
+					submitState: state,
+					lastErrors:  "104: Invalid birth date",
+					attempts:    3,
+					stayFrom:    "2026-06-20",
+					stayTo:      "2026-06-22",
+				})
+				rec := postForm(t, se, "en", []int64{gid}, baseEditForm(gid))
+				if rec.Code != http.StatusSeeOther {
+					t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+				}
+				st := readState(t, se.getenv, gid)
+				if st.submitState != "pending" || st.lastErrors.Valid || st.attempts != 0 {
+					t.Fatalf("non-duplicate %s should reset to pending/0/NULL: %+v", state, st)
+				}
+			})
+		}
+	})
+
+	t.Run("pending_edit_preserves_submit_attempts", func(t *testing.T) {
+		se := newStay(t, 30)
+		gid := seedGuest(t, se.resID, seedOpt{
+			submitState: "pending",
+			lastErrors:  "transient",
+			attempts:    2,
+			stayFrom:    "2026-06-20",
+			stayTo:      "2026-06-22",
+		})
+		f := baseEditForm(gid)
+		f.Set("surname", "MILLER")
+		rec := postForm(t, se, "en", []int64{gid}, f)
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+		}
+		st := readState(t, se.getenv, gid)
+		if st.submitState != "pending" || st.lastErrors.Valid || st.attempts != 2 || st.surname != "MILLER" {
+			t.Fatalf("pending edit must preserve submit_attempts: %+v", st)
+		}
+	})
+
+	t.Run("nationality_transitions", func(t *testing.T) {
+		cases := []struct {
+			name        string
+			seedNat     string
+			seedState   string
+			seedErr     string
+			seedAttempt int
+			newNat      string
+			wantState   string
+		}{
+			{"blocked_dup_deu_to_cze", "DEU", "blocked", "150: Duplicate record", 3, "CZE", "not_required"},
+			{"error_deu_to_cze", "DEU", "error", "104: Invalid birth date", 3, "CZE", "not_required"},
+			{"not_required_cze_to_deu", "CZE", "not_required", "", 2, "DEU", "pending"},
+		}
+		for i, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				se := newStay(t, int64(40+i))
+				gid := seedGuest(t, se.resID, seedOpt{
+					nationality: tc.seedNat,
+					submitState: tc.seedState,
+					lastErrors:  tc.seedErr,
+					attempts:    tc.seedAttempt,
+					stayFrom:    "2026-06-20",
+					stayTo:      "2026-06-22",
+				})
+				f := baseEditForm(gid)
+				f.Set("nationality", tc.newNat)
+				rec := postForm(t, se, "en", []int64{gid}, f)
+				if rec.Code != http.StatusSeeOther {
+					t.Fatalf("want 303, got %d: %s", rec.Code, rec.Body.String())
+				}
+				st := readState(t, se.getenv, gid)
+				if st.submitState != tc.wantState || st.lastErrors.Valid || st.attempts != 0 || st.nationality != tc.newNat {
+					t.Fatalf("nationality transition %s failed: %+v", tc.name, st)
+				}
+			})
+		}
+	})
+
+	t.Run("sent_restricted_claimed_and_cas_protected", func(t *testing.T) {
+		t.Run("sent_refused_403", func(t *testing.T) {
+			se := newStay(t, 50)
+			gid := seedGuest(t, se.resID, seedOpt{
+				submitState: "sent",
+				submittedAt: stamp,
+				attempts:    1,
+				stayFrom:    "2026-06-20",
+				stayTo:      "2026-06-22",
+			})
+			before := readState(t, se.getenv, gid)
+			f := baseEditForm(gid)
+			f.Set("surname", "CHANGED")
+			f.Set("doc_number", "NEWDOC99")
+			rec := postForm(t, se, "en", []int64{gid}, f)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("want 403 for sent guest, got %d", rec.Code)
+			}
+			after := readState(t, se.getenv, gid)
+			if after.surname != "SMITH" || after.docEnc != before.docEnc || after.submitState != "sent" || after.attempts != 1 || !after.submittedAt.Valid || after.submittedAt.String != stamp {
+				t.Fatalf("sent guest was mutated: before=%+v after=%+v", before, after)
+			}
+		})
+
+		t.Run("restricted_redirects_without_update", func(t *testing.T) {
+			se := newStay(t, 51)
+			gid := seedGuest(t, se.resID, seedOpt{
+				submitState:  "error",
+				restrictedAt: stamp,
+				attempts:     2,
+				stayFrom:     "2026-06-20",
+				stayTo:       "2026-06-22",
+			})
+			f := baseEditForm(gid)
+			f.Set("surname", "CHANGED")
+			rec := postForm(t, se, "en", []int64{gid}, f)
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("want 303 for restricted guest, got %d", rec.Code)
+			}
+			after := readState(t, se.getenv, gid)
+			if after.surname != "SMITH" || after.submitState != "error" || after.attempts != 2 {
+				t.Fatalf("restricted guest was mutated: %+v", after)
+			}
+		})
+
+		t.Run("active_submission_claim_refused_403", func(t *testing.T) {
+			se := newStay(t, 52)
+			gid := seedGuest(t, se.resID, seedOpt{
+				submitState: "error",
+				attempts:    2,
+				stayFrom:    "2026-06-20",
+				stayTo:      "2026-06-22",
+			})
+			mustExecGuest(t, ctx, pool, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'tok-active', $2)`,
+				gid, float64(now().Unix())-60)
+			f := baseEditForm(gid)
+			f.Set("surname", "CHANGED")
+			rec := postForm(t, se, "en", []int64{gid}, f)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("want 403 for actively claimed guest, got %d", rec.Code)
+			}
+			after := readState(t, se.getenv, gid)
+			if after.surname != "SMITH" || after.submitState != "error" || after.attempts != 2 {
+				t.Fatalf("actively claimed guest was mutated: %+v", after)
+			}
+		})
+
+		t.Run("expired_submission_claim_allows_save", func(t *testing.T) {
+			se := newStay(t, 53)
+			gid := seedGuest(t, se.resID, seedOpt{
+				submitState: "error",
+				lastErrors:  "104: Invalid birth date",
+				attempts:    2,
+				stayFrom:    "2026-06-20",
+				stayTo:      "2026-06-22",
+			})
+			mustExecGuest(t, ctx, pool, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'tok-expired', $2)`,
+				gid, float64(now().Unix())-600)
+			f := baseEditForm(gid)
+			f.Set("surname", "UPDATED")
+			rec := postForm(t, se, "en", []int64{gid}, f)
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("want 303 for expired claim, got %d: %s", rec.Code, rec.Body.String())
+			}
+			after := readState(t, se.getenv, gid)
+			if after.surname != "UPDATED" || after.submitState != "pending" || after.lastErrors.Valid || after.attempts != 0 {
+				t.Fatalf("expired claim should allow save and reset attempts: %+v", after)
+			}
+		})
+
+		t.Run("concurrent_cas_state_flip", func(t *testing.T) {
+			se := newStay(t, 54)
+			gid := seedGuest(t, se.resID, seedOpt{
+				submitState: "sent",
+				submittedAt: stamp,
+				attempts:    1,
+				stayFrom:    "2026-06-20",
+				stayTo:      "2026-06-22",
+			})
+			stale := &guestSaveRow{id: gid, submitState: "error"}
+			updated, err := updateGuestSaveRow(ctx, saveDeps{pool: pool, getenv: se.getenv, now: now}, stale, map[string]any{
+				"surname":         "STALE",
+				"submit_state":    "pending",
+				"submit_attempts": 0,
+			})
+			if err != nil {
+				t.Fatalf("expected nil error on CAS miss, got %v", err)
+			}
+			if updated {
+				t.Fatalf("expected updated=false on CAS miss")
+			}
+			after := readState(t, se.getenv, gid)
+			if after.surname != "SMITH" || after.submitState != "sent" || after.attempts != 1 {
+				t.Fatalf("sent row mutated despite CAS miss: %+v", after)
+			}
+		})
+	})
+}
