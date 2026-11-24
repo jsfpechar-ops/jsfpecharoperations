@@ -326,7 +326,8 @@ def test_deploy_keeps_rollback_copies_after_unfinished_deploy():
     text = DEPLOY.read_text(encoding="utf-8")
     assert "previous deploy did not finish; keeping existing rollback copies" in text
     marker = text.index("git rev-parse HEAD > .deploy-in-progress")
-    assert marker < text.index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")
+    assert marker > text.index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")
+    assert marker > text.index("docker tag ubyhost-go:local ubyhost-go:previous")
     assert text.count('"${KEEP_ROLLBACK_COPIES}" != "1"') == 3
     assert text.index("git rev-parse HEAD > .deployed-sha\nrm -f .deploy-in-progress") > marker
     assert ".deploy-in-progress" in (ROOT / "deploy/lightsail/.gitignore").read_text(encoding="utf-8")

@@ -180,7 +180,6 @@ if [ -f .deploy-in-progress ]; then
   KEEP_ROLLBACK_COPIES=1
   echo "NOTE: previous deploy did not finish; keeping existing rollback copies" >&2
 fi
-git rev-parse HEAD > .deploy-in-progress
 
 # 0710: keep the running Caddyfile for rollback.
 if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && [ -f caddy/Caddyfile.active ]; then
@@ -323,6 +322,9 @@ if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost-go:local
   docker tag ubyhost-go:local ubyhost-go:previous
   echo "Kept the running Go image as ubyhost-go:previous for rollback."
 fi
+# 2044: the rollback copies now hold the running release; from here a failed run
+# must not overwrite them, so mark the deploy as in progress.
+git rev-parse HEAD > .deploy-in-progress
 
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
