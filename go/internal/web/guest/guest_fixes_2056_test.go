@@ -12,7 +12,7 @@ import (
 )
 
 // The 30 guest keys added to i18n.json by brief 2056 step a, in all six guest languages.
-var fixes2056Keys = strings.Fields(`leon_error leon_error_reload leon_host_answered leon_host_answered_plain leon_intro leon_label leon_name leon_needs_js leon_other_prompt leon_placeholder leon_queued leon_role leon_see_card leon_send leon_sending leon_sit_emergency_help leon_sit_other leon_tag leon_waiting leon_welcome leon_you passport_photo_bad_type passport_photo_selected passport_photo_too_large_image passport_photo_too_large_pdf remove_help remove_keep remove_title remove_yes sign_for_who`)
+var fixes2056Keys = strings.Fields(`leon_error leon_error_reload leon_host_answered leon_host_answered_plain leon_intro leon_label leon_name leon_needs_js leon_other_prompt leon_placeholder leon_queued leon_role leon_see_card leon_send leon_sending leon_sit_broken leon_sit_cant_get_in leon_sit_checkout leon_sit_cold leon_sit_emergency leon_sit_emergency_help leon_sit_other leon_sit_parking leon_sit_trash leon_tag leon_waiting leon_welcome leon_you passport_photo_bad_type passport_photo_selected passport_photo_too_large_image passport_photo_too_large_pdf remove_help remove_keep remove_title remove_yes sign_for_who`)
 
 func loadGuestCatalogue2056(t *testing.T) map[string]map[string]string {
 	t.Helper()
