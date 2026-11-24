@@ -167,7 +167,8 @@ func TestGuestWriteEncryption(t *testing.T) {
 		"signature_png": signature, "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 		"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 	}
-	guestID, err := insertGuestSaveRow(ctx, d, payload, resID, guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22", declaredGuests: &one})
+	ins, err := insertGuestSaveRow(ctx, d, payload, resID, guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22", declaredGuests: &one}, 0)
+	guestID := ins.id
 	if err != nil || guestID == 0 {
 		t.Fatalf("guest self-save insert failed: %v", err)
 	}

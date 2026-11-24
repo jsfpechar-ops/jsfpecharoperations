@@ -183,12 +183,21 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		savedID = existing.id
 	} else {
-		savedID, err = insertGuestSaveRow(ctx, d, payload, resID, res)
-		if err != nil {
-			return err
+		partySize, _ := strconv.Atoi(validation.Strip(form["party_size"]))
+		ins, insErr := insertGuestSaveRow(ctx, d, payload, resID, res, partySize)
+		if insErr != nil {
+			return insErr
 		}
+		if ins.countCode != "" {
+			if err := auditHeadcountCount(ctx, d.pool, d.now, resID, ins.countCode, ins.countOld, partySize, cfg.ownerUserID); err != nil {
+				return err
+			}
+		}
+		savedID = ins.id
 		if savedID == 0 {
-			_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+			if ins.countSaved {
+				_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+			}
 			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
@@ -401,26 +410,89 @@ func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow,
 	return id == existing.id, nil
 }
 
-func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta) (int64, error) {
+// guestInsert is what insertGuestSaveRow reports once its transaction has ended.
+type guestInsert struct {
+	id         int64  // the new guest, or 0 when none was written
+	countCode  string // the first form's count result, "" when no count was attempted
+	countOld   *int64 // the declared count before that attempt
+	countSaved bool   // the count was saved in the committed transaction
+}
+
+// auditHeadcountCount is headcount.record for a first-form count. Call after commit.
+func auditHeadcountCount(ctx context.Context, pool *pgxpool.Pool, now func() time.Time, resID int64, code string, old *int64, count int, owner int64) error {
+	var action string
+	switch code {
+	case codeSaved:
+		action = "reservation_declared_guests_set"
+	case codeBelowFloor:
+		action = "reservation_declared_guests_refused"
+	default:
+		return nil
+	}
+	from := "None"
+	if old != nil {
+		from = strconv.FormatInt(*old, 10)
+	}
+	_, err := pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1, $2, $3, $4, $5)`,
+		now().UTC(), "guest", action, fmt.Sprintf("id=%d from=%s to=%d source=first_form", resID, from, count), owner)
+	return err
+}
+
+// insertGuestSaveRow is guest.py's first-form block (brief 1092): the lock, the
+// fresh reservation, the first count and the guest INSERT share one transaction.
+func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta, partySize int) (guestInsert, error) {
+	var out guestInsert
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('reservation'), $1::int)`, resID); err != nil {
-		return 0, err
+		return out, err
 	}
-	exp := headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
-	var live int
-	if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, resID).Scan(&live); err != nil {
-		return 0, err
+	// Read the reservation fresh under the lock, as Python does.
+	var aptID int64
+	var status, archived string
+	var override, declared, reduced *int64
+	err = tx.QueryRow(ctx, `SELECT apartment_id, COALESCE(status,''), COALESCE(archived_at::text,''),
+		expected_guests_override, declared_guests, lead_reduced_guests
+		FROM reservation WHERE id = $1 FOR UPDATE`, resID).Scan(&aptID, &status, &archived, &override, &declared, &reduced)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return out, nil
+	}
+	if err != nil {
+		return out, err
+	}
+	if aptID != res.apartmentID || (partyStay{status: status, archivedAt: archived}).gone() {
+		return out, nil
+	}
+	if headcount.Expected(override, declared, reduced) == nil {
+		out.countOld = declared
+		out.countCode, err = partyDeps{pool: d.pool, getenv: d.getenv, now: d.now}.applyDeclaredTx(ctx, tx, resID, partySize)
+		if err != nil {
+			return out, err
+		}
+		out.countSaved = out.countCode == codeSaved
+		if !out.countSaved {
+			return out, tx.Commit(ctx)
+		}
+		if err = tx.QueryRow(ctx, `SELECT expected_guests_override, declared_guests, lead_reduced_guests
+			FROM reservation WHERE id = $1`, resID).Scan(&override, &declared, &reduced); err != nil {
+			return out, err
+		}
+	}
+	exp := headcount.Expected(override, declared, reduced)
+	live, err := liveGuestRows(ctx, tx, resID)
+	if err != nil {
+		return out, err
 	}
 	if exp != nil && live >= int(*exp) {
-		return 0, tx.Commit(ctx)
+		// The count, if saved, still commits; no guest is added to a full group.
+		return out, tx.Commit(ctx)
 	}
 	var isFirst bool
 	if err := tx.QueryRow(ctx, `SELECT NOT EXISTS (SELECT 1 FROM guest WHERE reservation_id = $1)`, resID).Scan(&isFirst); err != nil {
-		return 0, err
+		return out, err
 	}
 	lead := 0
 	if isFirst {
@@ -431,16 +503,17 @@ func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any,
 	payload["created_at"] = payload["filled_at"]
 	enc, err := encryptSaveFields(d.getenv, payload)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
 	var id int64
 	err = tx.QueryRow(ctx, `INSERT INTO guest (`+strings.Join(guestSaveInsertCols, ", ")+`)
 		VALUES (`+guestSaveInsertPlaceholders()+`) RETURNING id`,
 		guestSaveInsertArgs(enc)...).Scan(&id)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
-	return id, tx.Commit(ctx)
+	out.id = id
+	return out, tx.Commit(ctx)
 }
 
 func encryptSaveFields(getenv func(string) string, payload map[string]any) (map[string]any, error) {
