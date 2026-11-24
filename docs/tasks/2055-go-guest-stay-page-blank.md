@@ -77,3 +77,15 @@ An anchor not found; no Go fee partial; door code not callable; more than 25 too
 ## 10. Orchestrator decision (after the first run)
 
 Fee panel (`guest/_fee_pay.html`): Python shows it only when `apartment.stay_fee_collect` AND `config.STAY_FEE_GUEST_PAY` (App/app/routes/guest.py `_fee_pay_panel` ~2906-2911) and the stay has nobody left to register. Guest pay is an open owner decision (`UBYHOST_STAY_FEE_GUEST_PAY`), presumably off in production. So in this brief: port stay.html and assigned.html completely EXCEPT the fee panel; in Go render no fee box at all (a `{{if .FeePanel}}` block with FeePanel always nil, with a comment `// fee panel: follow-up brief, only when UBYHOST_STAY_FEE_GUEST_PAY is on`). Do not stop on the fee panel. Continue with steps 3-8. The parity harness command was denied for the executor: skip the harness (step 1 diagnosis is proven by grep; brief 2057 reruns parity); keep the Go DB test and the guest browser/geometry tests and the 390 px screenshots.
+
+## 11. Follow-up 2 (orchestrator review of run 2)
+
+Work on top of worktree commits ecca932, d2ee36f, e7ac21f. Port from Python exactly, with a test per item:
+1. Door-code card (Python stay.html block that uses `door_code` from `door_codes.view(reservation, apartment)`, App/app/routes/guest.py ~1576): find Go's equivalent view (grep go/internal/doorcodes and go/internal/web/guest for the door-code view/state) and render the same card with the same states (preparing, sent, failed, first use, times; keys door_code_* already in i18n.json).
+2. Turnstile widget on the assigned page's resend form (Python assigned.html; Go package go/internal/turnstile): same widget markup and the same server-side check on POST as Python. Rule: auth/guest forms work without JavaScript; check how Python degrades.
+3. Duplicate-warnings block (stay.html; keys dup_warning_*).
+4. Guide link (stay.html; `guide_live` from `_guide_is_live`, use ai.LeonProgressOf(...).Live as in brief 2056).
+5. Assigned page last-sent line (assigned_last_sent).
+6. Data parity: birth date formatted exactly as Python's filter for that row; residence formatted as Python does; guest completeness exactly as Python's `guest_is_complete` (compare the field list with Go validation.GuestIsComplete and fix the Go side if it differs — guest completeness drives police filing, so list both field sets in the report).
+7. Write the DB-backed stay_page_test.go the brief planned (claimed stay, 2 declared, 1 complete): asserts stepper, rows, door-code card state, guide link.
+8. `go test ./internal/web/guest/...` with the DB (0 new skips), layout lint browser test (0 skipped), 390 px screenshots of the stay page and the assigned page WITH the CSS loaded (use the Go server and its static files, not a bare template render), viewed and described.

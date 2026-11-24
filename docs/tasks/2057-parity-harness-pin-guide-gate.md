@@ -85,3 +85,10 @@ Precondition fails; anchor not found; `{gtok}` cannot be wired without editing `
 ## 9. Report
 
 `docs/tasks/2057-report.md`, 600 tokens at most.
+
+## Orchestrator additions (after 2055 and 2056)
+
+Preconditions: 2056 is merged (b6ab586); 2055 must be merged before you start (check `git log --oneline | grep -m1 'Merge 2055'`; if absent, stop).
+Also do, after the parity runs:
+1. Rule 7 for the changed guest pages (stay, assigned, remove, hub claimed, guest form new/edit): run the guest browser and geometry tests from docs/context/test-map.md (guest pages row) with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/layout_test`, 0 skipped. The parity side PNGs at 390 px count as the per-page screenshots; describe each.
+2. Two tests 2056 left open (go/internal/web/guest/guest_fixes_2056_test.go): the stay Leon history route answers 404 when the guide is not live and 200 when it is; the person-number chip renders on the new form and not on the edit form. `go test ./internal/web/guest/...` with the DB, 0 new skips.
