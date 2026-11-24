@@ -22,6 +22,7 @@ import (
 
 // completionAdapter implements guest.CompletionHooks. svc is nil when the door-code wiring is off
 // or could not be built; confirm is nil only when there is no pool.
+// When the build fails, the receipt is held for door-code apartments and sent without a code for the rest.
 type completionAdapter struct {
 	pool    *pgxpool.Pool
 	once    sync.Once
@@ -34,11 +35,16 @@ func completionHooks(pool *pgxpool.Pool) guest.CompletionHooks {
 	return &completionAdapter{pool: pool}
 }
 
-// noDoorCodes is the viewer used when the door-code service cannot be built: every apartment is
-// treated as one without door codes, so the receipt goes without a code.
+// noDoorCodes is the viewer used when the door-code service cannot be built. An apartment with
+// lock_provider 'ttlock' uses door codes, so its receipt is held (the same hold Python and Go use
+// while a code is prepared); ReleaseHeldConfirmations sends it later with the code. Only apartments
+// without door codes get the receipt "without" a code.
 type noDoorCodes struct{}
 
-func (noDoorCodes) CompletionDoorCode(context.Context, doorcodes.Reservation, doorcodes.Apartment) (doorcodes.CompletionResult, error) {
+func (noDoorCodes) CompletionDoorCode(_ context.Context, _ doorcodes.Reservation, apt doorcodes.Apartment) (doorcodes.CompletionResult, error) {
+	if apt.LockProvider == "ttlock" {
+		return doorcodes.CompletionResult{Action: doorcodes.CompletionHold}, nil
+	}
 	return doorcodes.CompletionResult{Action: doorcodes.CompletionWithout}, nil
 }
 

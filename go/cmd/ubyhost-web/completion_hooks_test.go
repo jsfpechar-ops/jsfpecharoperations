@@ -18,13 +18,29 @@ func TestCompletionHooksNilPoolNeverPanics(t *testing.T) {
 	}
 }
 
-// The door-code viewer used when the wiring cannot be built reports "no code".
-func TestNoDoorCodesViewerReportsWithout(t *testing.T) {
-	got, err := noDoorCodes{}.CompletionDoorCode(context.Background(), doorcodes.Reservation{}, doorcodes.Apartment{})
+// The fallback viewer holds the receipt for a ttlock apartment (door codes in use), so the
+// later release path sends it with the code instead of without one.
+func TestNoDoorCodesViewerHoldsTTLockApartment(t *testing.T) {
+	apt := doorcodes.Apartment{LockProvider: "ttlock"}
+	got, err := noDoorCodes{}.CompletionDoorCode(context.Background(), doorcodes.Reservation{}, apt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Action != doorcodes.CompletionWithout {
-		t.Fatalf("action %q, want %q", got.Action, doorcodes.CompletionWithout)
+	if got.Action != doorcodes.CompletionHold {
+		t.Fatalf("action %q, want %q", got.Action, doorcodes.CompletionHold)
+	}
+}
+
+// The fallback viewer sends "without" only for an apartment that does not use door codes.
+func TestNoDoorCodesViewerReportsWithoutForNonTTLock(t *testing.T) {
+	for _, provider := range []string{"", "none", "manual"} {
+		apt := doorcodes.Apartment{LockProvider: provider}
+		got, err := noDoorCodes{}.CompletionDoorCode(context.Background(), doorcodes.Reservation{}, apt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Action != doorcodes.CompletionWithout {
+			t.Fatalf("provider %q: action %q, want %q", provider, got.Action, doorcodes.CompletionWithout)
+		}
 	}
 }
