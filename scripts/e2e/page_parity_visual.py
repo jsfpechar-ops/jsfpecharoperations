@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -138,7 +139,7 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts):
                     if el:
                         value = (el.get_attribute(attr) if attr else el.inner_text()) or ""
                         break
-                out["texts"][spec] = value.replace(base, "<BASE>").strip()
+                out["texts"][spec] = re.sub(r"https?://127\.0\.0\.1:\d+", "<BASE>", value.replace(base, "<BASE>")).strip()
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(dest), full_page=True)
             out["shot"] = True
