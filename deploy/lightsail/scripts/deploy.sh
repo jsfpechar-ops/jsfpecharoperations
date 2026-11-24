@@ -612,6 +612,7 @@ fi
 
 # 0710: this commit is now the rollback target.
 git rev-parse HEAD > .deployed-sha
+rm -f .deploy-in-progress
 
 # 0962: success is final. Drop dangling images (the old ubyhost:local of each
 # deploy) and all build cache of this deploy. Never -a: it would delete
