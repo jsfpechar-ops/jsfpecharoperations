@@ -63,8 +63,10 @@ def questions(out, owner, apt):
     })
 
 
-def leon(out, owner, apt):
-    raise RuntimeError("no Leon settings table or insert helper in the baseline; not seeded")
+def leon_block(out, owner, apt):
+    db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = ? WHERE id = ?",
+               (leon.LEON_TERMS_VERSION, apt))
+    out["leon_enabled"] = 1
 
 
 def cleaning_block(out, owner, apt):
@@ -149,7 +151,7 @@ def main():
     owner, apt = int(sys.argv[1]), int(sys.argv[2])
     out = {}
     for name, fn in (
-        ("guide", guide), ("questions", questions), ("leon", leon), ("cleaning", cleaning_block),
+        ("guide", guide), ("questions", questions), ("leon", leon_block), ("cleaning", cleaning_block),
         ("havel", havel_block), ("privacy", privacy), ("submission", submission), ("invite", invite),
         ("property", property_block), ("unsub", unsub),
     ):
