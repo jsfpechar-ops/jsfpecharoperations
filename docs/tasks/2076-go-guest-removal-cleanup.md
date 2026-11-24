@@ -1,6 +1,6 @@
 # 2076: Clean up a removed guest and reassess filing
 
-Status: todo
+Status: review
 Depends on: 2075 | Base commit: 76af25f60a9e770c258668ff608b24ebb4aeb549 | Branch: task/2076-go-guest-removal-cleanup
 Executor: Gemini 4 Neon (medium) | Fits one session: 30 tool calls, 60k tokens
 
