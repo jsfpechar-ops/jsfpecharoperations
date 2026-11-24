@@ -1,6 +1,6 @@
 # 2042: V2 visual parity, part 3: guest and token-link pages, and the pre-deploy gate command
 
-Status: todo
+Status: replaced by 2042b and 2042c
 Depends on: 2040, 2041, 2045 (harness fixes: modal off, Leon env, error capture, QR masking, `ACCEPTED` list; use its `page_parity_visual.py`) | Base commit: HEAD | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 100k tokens (stop at 25 calls; see section 8)
 
