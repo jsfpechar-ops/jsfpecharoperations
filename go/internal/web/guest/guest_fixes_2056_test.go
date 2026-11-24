@@ -133,3 +133,40 @@ func TestPersonNumberFixes2056CountsCompleteGuestsOnly(t *testing.T) {
 		t.Fatalf("two partial guests: complete count %d want 0", n)
 	}
 }
+
+func TestGuideLiveFixes2056NeedsAllMustHaveKinds(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := int64(81000000 + time.Now().UnixNano()%1000000)
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, aptID, fmt.Sprintf("g%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, created_at)
+		VALUES ($1, $1, 'Guide Flat', 'Prague', 1, $2)`, aptID, stamp)
+	s := &lqServer{pool: pool, lookupEnv: func(string) (string, bool) { return "", false }}
+	add := func(id int64, kind, state string) {
+		mustExecGuest(t, ctx, pool, `INSERT INTO guide_item (id, apartment_id, topic, kind, title, steps, visibility, state, source, sort_order, created_at, updated_at)
+			VALUES ($1, $2, 'custom', $3, $3, '[]', 'everyone', $4, 'host', $1, $5, $5) ON CONFLICT DO NOTHING`, id, aptID, kind, state, stamp)
+	}
+	add(aptID*10+1, "checkin", "done")
+	add(aptID*10+2, "wifi", "done")
+	add(aptID*10+3, "house_rules", "done")
+	live, err := s.guideLive(ctx, aptID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if live {
+		t.Fatal("three cards done but heating, checkout and emergency missing: want not live")
+	}
+	add(aptID*10+4, "heating", "skipped")
+	add(aptID*10+5, "checkout", "done")
+	add(aptID*10+6, "emergency", "done")
+	if live, err = s.guideLive(ctx, aptID); err != nil {
+		t.Fatal(err)
+	} else if !live {
+		t.Fatal("all five must-have kinds done or skipped: want live")
+	}
+}
