@@ -18,6 +18,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mailjob"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mailnotify"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
@@ -169,7 +170,7 @@ func startClaimSeed(ctx context.Context, d ClaimSeedDeps, res SeedReservation, a
 	}
 	st := &claimStay{id: res.ID, apartmentID: res.ApartmentID, status: res.Status}
 	a := &claimApt{id: apt.ID, ownerID: apt.OwnerUserID, name: apt.Name, permalink: apt.PermalinkToken}
-	if err := enqueueClaimStart(ctx, d.ops(), st, a, addr, lang, secret, version, stamp); err != nil {
+	if err := enqueueClaimStart(ctx, d.ops(), st, a, addr, lang, secret, version, resend || row.State == claimStateClaimed, stamp); err != nil {
 		return false, "", "", err
 	}
 	recKey := "claim_to:" + fmt.Sprintf("%x", sha256Sum([]byte(addr)))
@@ -325,45 +326,55 @@ func parseClaimHoldDeadline(value string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unparseable provisional_until %q", value)
 }
 
-func enqueueClaimStart(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, stamp string) error {
+func enqueueClaimStart(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, resend bool, stamp string) error {
 	if !billingjob.MailEnabled() {
 		return nil
 	}
 	base := strings.TrimRight(hostweb.PublicBase(d.getenv), "/")
 	link := fmt.Sprintf("%s/l/%s/%d/claim#c=%s", base, apt.permalink, st.id, claimSecretMarker)
-	subject := hostweb.HostStrings.T(lang, "mail_claim_subject", map[string]any{"property": apt.name})
-	if subject == "mail_claim_subject" {
-		subject = "Confirm your stay"
-	}
-	return enqueueClaimMail(ctx, d, st, apt, addr, lang, secret, version, "claim", fmt.Sprintf("claim:%d:v%d", st.id, version), subject, link, stamp)
+	return enqueueClaimMail(ctx, d, st, apt, addr, lang, secret, version, resend, link, stamp)
 }
 
-func enqueueClaimMail(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, kind, key, subject, link, stamp string) error {
+func enqueueClaimMail(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, resend bool, link, stamp string) error {
 	keys, err := secure.LoadDataKeys(d.getenv)
 	if err != nil {
 		return err
 	}
+	base := strings.TrimRight(hostweb.PublicBase(d.getenv), "/")
 	enc, err := keys.EncryptString(secret)
 	if err != nil {
 		return err
 	}
-	payload, _ := jsonMarshalClaimPayload(link, lang, enc)
+	var from, to string
+	_ = d.pool.QueryRow(ctx, `SELECT COALESCE(date_from::text,''), COALESCE(date_to::text,'') FROM reservation WHERE id = $1`, st.id).Scan(&from, &to)
+	var host *mailnotify.Host
+	var contact string
+	if apt.legalEntityID != nil {
+		var h mailnotify.Host
+		if err := d.pool.QueryRow(ctx, `SELECT COALESCE(name,''), COALESCE(seat,''), COALESCE(contact_email,''), COALESCE(contact_phone,'') FROM legal_entity WHERE id = $1`, *apt.legalEntityID).Scan(&h.Name, &h.Seat, &h.Email, &h.Phone); err == nil {
+			host = &h
+			contact = ubyport.NormaliseEmail(h.Email)
+		}
+	}
+	content := mailnotify.BuildClaim(base, mailnotify.ClaimInput{Lang: lang, PropertyName: apt.name, Dates: mailnotify.CompletionDateRange(from, to), Link: link, Resend: resend, Host: host})
+	kind, key := "claim", fmt.Sprintf("claim:%d:v%d", st.id, version)
+	if resend {
+		kind, key = "claim_resend", fmt.Sprintf("claim_resend:%d:v%d", st.id, version)
+	}
+	parts := map[string]any{"text": content.Text, "html": content.HTML, "lang": mailnotify.GuestLanguage(lang), mail.ClaimSecretPayloadKey: enc}
+	if contact != "" {
+		parts["reply_to"] = contact
+	}
+	payload, _ := json.Marshal(parts)
 	owner := apt.ownerID
 	res := st.id
 	aptID := apt.id
 	_, err = ubyport.EnqueueMail(ctx, d.pool, ubyport.OutboxMail{
 		Kind: kind, Key: key,
 		ReservationID: &res, ApartmentID: &aptID, OwnerUserID: &owner,
-		To: addr, Subject: subject, Payload: payload,
+		To: addr, Subject: content.Subject, Payload: string(payload),
 	})
 	return err
-}
-
-func jsonMarshalClaimPayload(link, lang, enc string) (string, error) {
-	b, err := json.Marshal(map[string]string{
-		"text": link, "html": link, "lang": lang, "claim_secret_enc": enc,
-	})
-	return string(b), err
 }
 
 // applyDeclaredInTx is headcount.apply_declared_in on an open transaction (demo paths).
