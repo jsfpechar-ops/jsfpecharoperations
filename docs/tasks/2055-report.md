@@ -142,3 +142,13 @@ Owner or orchestrator steps left:
 Deviations:
 - Commit trailer: Co-Authored-By Claude Haiku 5.5, the attribution given by the harness, not Opus 5.5 as the brief text said.
 - Title-casing of names uses a letter-boundary rule that matches Python's str.title() for ordinary names; exotic Unicode case edge cases were not checked.
+
+## Chunk C (run 6)
+
+Status: blocked (tool-call cap reached at 25; steps for layout lint, server and screenshots not run).
+
+- Done: `go/internal/web/guest/stay_page_test.go` (DB-backed, claimed stay, 2 declared, 1 signed, shared doc number). Migrated `guest_test` with `App/scripts/pg_schema.py apply --expect-database guest_test` (76 tables, goose 24) and seeded `user_account` id 1 in `guest_test`.
+- Test result: `TestStayPageClaimedDeclaredTwoOneDone` FAILS on `data-dup-warning` not found. Not diagnosed. Stepper, "saved", "not filled in" and the hidden door-code card passed.
+- Guest package with DB: 0 skipped. 4 failures: the new test plus `TestConfirmClaimAppliesDeclaredGuests`, `TestConfirmClaimRace`, `TestStayOverviewMailOnHonorsClaimCookie`. The three older tests were skipped before the migration and now run. They insert `reservation` without `uid` (NOT NULL), so they fail against the real schema. Fix belongs in those tests (not edited per brief).
+- `TestDoorCodesJobIssuesCodeThroughHandler` (in `./cmd/ubyhost-web`): 5 of 5 alone pass; 2 of 2 in the full run pass.
+- Left: layout lint (item 8), Go server start, 390/768/1280 screenshots of stay and assigned pages, guide link assertion (not in test), door-code issued state test, owner steps: fix the three `uid` tests and the dup-warning assertion.
