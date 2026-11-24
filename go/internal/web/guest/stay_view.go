@@ -66,11 +66,7 @@ type stayPerson struct {
 // stayPeople is guest.py _person_row for each guest of the stay, plus the
 // count of people filled (complete or filed).
 func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *scStay, lang string) ([]stayPerson, int, error) {
-	rows, err := d.pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date::text,''),
-		COALESCE(nationality,''), COALESCE(doc_number,''), COALESCE(visa_number,''), COALESCE(res_street,''),
-		COALESCE(res_city,''), COALESCE(res_country,''), COALESCE(purpose,''), COALESCE(submit_state,''),
-		COALESCE(restricted_at::text,''), COALESCE(signature_png,'')
-		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY is_lead DESC, id`, stay.id)
+	rows, err := d.pool.Query(ctx, "SELECT "+stayGuestSelect+" FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY is_lead DESC, id", stay.id)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -80,35 +76,35 @@ func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *sc
 	var out []stayPerson
 	filled := 0
 	for rows.Next() {
-		var id int64
-		var first, surname, birth, nat, doc, visa, street, city, country, purpose, submit, restricted, sig string
-		if err := rows.Scan(&id, &first, &surname, &birth, &nat, &doc, &visa, &street, &city, &country, &purpose, &submit, &restricted, &sig); err != nil {
+		var c stayGuestCols
+		if err := rows.Scan(c.scanArgs()...); err != nil {
 			return nil, 0, err
 		}
-		complete := validation.GuestIsComplete(validation.GuestRow{
-			Surname: surname, FirstName: first, BirthDate: birth, Nationality: nat, DocNumber: doc,
-			VisaNumber: visa, ResStreet: street, ResCity: city, ResCountry: country, Purpose: purpose,
-			SignaturePNG: sig,
-		}, stay.dateFrom, stay.dateTo, today)
-		sent := submit == formSubmitSent
+		gr, err := c.validationRow(d.getenv, d.now)
+		if err != nil {
+			return nil, 0, err
+		}
+		complete := validation.GuestIsComplete(gr, stay.dateFrom, stay.dateTo, today)
+		id, first, surname, nat := c.ID, c.First, c.Surname, c.Nat
+		sent := c.Submit == formSubmitSent
 		mine := owned[id]
 		p := stayPerson{
 			Index: len(out) + 1, ID: id, Mine: mine, Complete: complete, Sent: sent,
-			Locked:    sent || restricted != "",
-			Removable: mine && !sent && restricted == "",
+			Locked:    sent || c.Restricted != "",
+			Removable: mine && !sent && c.Restricted == "",
 		}
 		if mine {
 			p.Name = strings.TrimSpace(first + " " + surname)
-			docOut := doc
+			docOut := gr.DocNumber
 			if docOut == "INPASS" {
 				docOut = ""
 			}
 			p.Summary = &stayPersonSummary{
 				Nationality: ubyport.CountryName(nat, lang),
-				BirthDate:   validation.DisplayBirthDate(birth, today),
+				BirthDate:   validation.DisplayBirthDate(gr.BirthDate, today),
 				DocNumber:   docOut,
-				Purpose:     validationi18n.PurposeLabel(purpose, lang),
-				Residence:   joinNonEmpty(", ", street, city, country),
+				Purpose:     validationi18n.PurposeLabel(c.Purpose, lang),
+				Residence:   joinNonEmpty(", ", gr.ResStreet, gr.ResCity, gr.ResCountry),
 			}
 		}
 		if complete || sent {
