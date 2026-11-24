@@ -80,6 +80,28 @@ def guests(out, owner, apt):
     })
 
 
+def sig_png():
+    """A small real PNG signature (synthetic stroke), so the stored record validates."""
+    import base64
+    import struct
+    import zlib
+    w, h = 240, 80
+    rows = []
+    for y in range(h):
+        line = bytearray(b"\x00")
+        for x in range(w):
+            on = 20 < x < w - 20 and abs(y - (h // 2 + (x - w // 2) // 6)) <= 1
+            line += b"\x00\x00\x00" if on else b"\xff\xff\xff"
+        rows.append(bytes(line))
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    png = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+           + chunk(b"IDAT", zlib.compress(b"".join(rows))) + chunk(b"IEND", b""))
+    return "data:image/png;base64," + base64.b64encode(png).decode()
+
+
 def issued(out, owner, apt):
     """Claimed stay, all declared guests complete, one ISSUED door code (brief 2057 priority 2)."""
     now = db.utcnow()
@@ -101,11 +123,13 @@ def issued(out, owner, apt):
     out["res_issued_done"] = stay(apt, "e2e-guest-issued-done")
     set_claim(out["res_issued_done"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
               token_hash=None, updated_at=now)
-    db.execute("UPDATE apartment SET lock_provider = 'ttlock' WHERE id = ?", (apt,))
+    db.execute("UPDATE apartment SET lock_provider = 'ttlock', checkin_hour = 14, checkout_hour = 11 WHERE id = ?", (apt,))
     db.execute("UPDATE reservation SET registration_completed_at = ? WHERE id = ?", (now, out["res_issued_done"]))
     gid = db.insert("guest", {
         "reservation_id": out["res_issued_done"], "first_name": "Parity", "surname": "Done",
-        "birth_date": "01011990", "nationality": "DEU", "signature_png": SIG,
+        "birth_date": "01011990", "nationality": "DEU", "signature_png": sig_png(),
+        "doc_number": "E2E000000", "res_street": "Parity Street 1", "res_city": "Prague",
+        "res_country": "CZE", "purpose": "99",
         "created_at": now, "updated_at": now,
     })
     today = datetime.date.today()
