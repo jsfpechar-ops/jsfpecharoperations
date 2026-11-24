@@ -1,30 +1,33 @@
-# 2067 report (partial)
+# 2067 report
 
-Status: blocked (steps 3-6 not done; executor tool-call budget reached)
+Status: blocked (step 5 has one failing test; tool-call budget reached)
 
 ## Done
 
-- Step 1 (commit "2067 step 1"): added `mail_completion_sent_title`, `mail_completion_sent_doc_label`, `mail_completion_sent_unnamed` to `App/scripts/go_mailnotify_completion_i18n.py`; regenerated `go/internal/mailnotify/completion_i18n_strings.json` (18 new lines, 3 keys x 6 languages; "guest keys missing per language: {}").
-- Step 2 (commit "2067 step 2"):
-  - `go/internal/maildetails/details.go` (new): `Renderer` implements `mail.DetailsRenderer`. `ReceiptDetails` ports `render_receipt_details` (claim row, guest query, decrypt-every-guest, mask only for typed-here guests, text and HTML output, empty string when no lines). `GuestDetails` returns `mail.ErrNoDetailsRenderer` (2068).
-  - `go/internal/mail/outbox_markers.go`: `SetDefaultDetails(d DetailsRenderer)`.
-  - `go/cmd/ubyhost-web/main.go`: imports `mail` and `maildetails`; `mail.SetDefaultDetails(maildetails.Renderer{})` is the first statement of `run()`.
-  - `go build ./...` clean; `gofmt -l` empty on the touched packages.
+- Step 1 (commit 91f01c4): three `mail_completion_sent_*` keys added to `App/scripts/go_mailnotify_completion_i18n.py`; `go/internal/mailnotify/completion_i18n_strings.json` regenerated.
+- Step 2 (commit aec3f75): `go/internal/maildetails/details.go` (`Renderer`, `ReceiptDetails`), `mail.SetDefaultDetails`, and one call in `run()` in `go/cmd/ubyhost-web/main.go`.
+- Step 3 (commit ebfb1a8): `App/scripts/mail_details_golden.py` and `go/internal/maildetails/testdata/receipt_golden.json` (11 cases, invented data). Two runs give the same sha256 prefix `6b62686ff2c4a571`.
+- Step 4 (committed with this report): `details_test.go` compares all 11 cases, text and HTML, against the golden file. Undecryptable token returns `mail.ErrDecryption`. Both pass against the test DB.
+- Step 5 (partial): `details_db_test.go` has 4 drain tests. Three pass: receipt block filled and row `sent`; deleted stay gives an empty block and row `sent`; `{{guest_details}}` still gives `ErrNoDetailsRenderer` (2068 replaces this). One fails (below).
 
-## Not done
+## Test results
 
-- Step 3: `App/scripts/mail_details_golden.py` and `go/internal/maildetails/testdata/receipt_golden.json` not written. No golden comparison against Python has been run.
-- Step 4: `details_test.go` not written; no unit test run.
-- Step 5: `details_db_test.go` not written; drain behaviour (sent with block filled, deleted stay, decryption failure, guest_details still ErrNoDetailsRenderer) not verified.
-- Step 6: context lint not run; `Status:` line in the brief not edited.
-- No `go test` run at all.
+- `go build ./...`: clean. `go vet` on maildetails and mail: clean. `gofmt -l`: empty.
+- `go test ./internal/maildetails/... ./internal/mail/... ./internal/mailnotify/... ./cmd/ubyhost-web/... -count=1 -v`: mail, mailnotify and ubyhost-web ok; maildetails FAIL on `TestDrainReceiptWithoutStayIDCountsDecryptionFailure`.
+- Failure: `drain: want one failed attempt, got {Sent:0 Failed:0 Skipped:1} <nil>`. The row with `{{receipt_details}}` and no `receipt_details_reservation_id` is counted as Skipped, not Failed. The drain's ErrDecryption path is not what I expected. Not diagnosed: I did not read the Skipped branch of `go/internal/mail/outbox_drain.go`.
+- Skips in ubyhost-web: `TestJobRunProbe`, `TestRouteProbe`, `TestJobProbe` (need `GO_JOBRUN_DB` or similar env). Not added by this brief; not checked whether they were skipping before.
 
 ## Deviations
 
-- Key source: `Renderer` has a `Getenv func(string) string` field (nil means `os.Getenv`) and calls `secure.LoadDataKeys` on first need, instead of receiving `Config.Keys`. `DetailsRenderer` has no config argument, so this matches the brief's fallback option.
-- `SetDefaultDetails` call is at the top of `run()`, not a separate line before routes. Nothing else in `run()` runs before it.
-- Trailers use Claude Opus 5.5 as instructed for this run. No PR opened, no push.
+- The brief said `mailnotify.GuestText` reads the three keys. It does not: the keys are in `completion_i18n_strings.json`, read only by the unexported `completionGuestText`. Added exported `mailnotify.CompletionGuestText` in `go/internal/mailnotify/completion_i18n.go`; `details.go` uses it.
+- Step 5 drain rows are inserted with SQL, not by the real 2065 completion hook. That hook lives in `package main` and cannot be reached from `maildetails_test`. The sent text and HTML are not read back; the test checks the block the renderer returned to the drain (recorder).
+- Golden oracle stubs `db.query` with decrypted rows; the Go test covers the decrypt path with the same Fernet tokens.
+- Tests seed with `created_at` and `claimed_at` as text (`::text` compare).
 
 ## Owner steps
 
 None.
+
+## Next step for a new session
+
+Read the Skipped branch in `go/internal/mail/outbox_drain.go`. Decide whether a row with a missing stay ID must be Failed (as the brief says) or whether Skipped is correct. Then fix the code or the test, rerun the command above, and finish steps 5 (rest) and 6.

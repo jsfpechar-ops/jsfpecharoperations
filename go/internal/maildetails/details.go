@@ -55,9 +55,9 @@ func (r Renderer) ReceiptDetails(ctx context.Context, pool *pgxpool.Pool, reserv
 	defer rows.Close()
 
 	var keys *secure.MultiFernet
-	title := mailnotify.GuestText(lang, "mail_completion_sent_title", nil)
-	docLabel := mailnotify.GuestText(lang, "mail_completion_sent_doc_label", nil)
-	unnamed := mailnotify.GuestText(lang, "mail_completion_sent_unnamed", nil)
+	title := mailnotify.CompletionGuestText(lang, "mail_completion_sent_title", nil)
+	docLabel := mailnotify.CompletionGuestText(lang, "mail_completion_sent_doc_label", nil)
+	unnamed := mailnotify.CompletionGuestText(lang, "mail_completion_sent_unnamed", nil)
 
 	var lines []string
 	for rows.Next() {

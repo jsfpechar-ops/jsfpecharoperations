@@ -33,3 +33,9 @@ func completionGuestText(lang, key string, args Args) string {
 	table := completionCatalogue.Guest[GuestLanguage(lang)]
 	return lookup(table, completionCatalogue.Guest[catalogue.GuestDefaultLanguage], key, args)
 }
+
+// CompletionGuestText is completionGuestText for other packages: the receipt
+// keys (mail_completion_sent_*) live in the completion catalogue, not GuestText's.
+func CompletionGuestText(lang, key string, args Args) string {
+	return completionGuestText(lang, key, args)
+}
