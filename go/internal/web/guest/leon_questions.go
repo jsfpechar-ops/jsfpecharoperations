@@ -681,12 +681,12 @@ type leonApt struct {
 }
 
 func (s *lqServer) guideLive(ctx context.Context, apt int64) (bool, error) {
-	var answered, total int64
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FILTER (WHERE state = 'done'), COUNT(*) FROM guide_item WHERE apartment_id = $1 AND kind != 'placeholder'`, apt).Scan(&answered, &total)
+	ls := ai.LeonStore{HavelStore: ai.HavelStore{Pool: s.pool, Env: s.lookupEnv}}
+	items, err := ls.Items(ctx, apt)
 	if err != nil {
 		return false, err
 	}
-	return answered >= 1 && total > 0, nil
+	return ai.LeonProgressOf(items).Live, nil
 }
 
 func (s *lqServer) leonOn(a leonApt) bool {
