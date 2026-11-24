@@ -141,12 +141,25 @@ func TestDrainReceiptWithoutStayIDCountsDecryptionFailure(t *testing.T) {
 	})
 	rec := &recorder{inner: maildetails.Renderer{Getenv: goldenEnv(g.FernetKey)}}
 	sum, err := mail.Drain(context.Background(), pool, drainConfig(t, g.FernetKey, rec), 8)
-	if err != nil || sum.Failed != 1 || sum.Sent != 0 {
-		t.Fatalf("drain: want one failed attempt (ErrDecryption path), got %+v %v", sum, err)
+	if err != nil || sum.Skipped != 1 || sum.Sent != 0 || sum.Failed != 0 {
+		t.Fatalf("drain: want one retry-scheduled attempt (ErrDecryption path), got %+v %v", sum, err)
 	}
 	state, attempts := outboxState(t, pool, id)
 	if state == "sent" || attempts != 1 {
 		t.Fatalf("row must not be sent and must count one attempt: %s %d", state, attempts)
+	}
+	// Go keeps the row queued for a backed-off retry (not terminal, so no
+	// mail_failed alert yet) and records the error.
+	if state != "queued" {
+		t.Fatalf("state %q, want queued for retry", state)
+	}
+	var lastError *string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT last_error FROM email_outbox WHERE id = $1`, id).Scan(&lastError); err != nil {
+		t.Fatal(err)
+	}
+	if lastError == nil || *lastError == "" {
+		t.Fatal("last_error must record the decryption failure")
 	}
 }
 
