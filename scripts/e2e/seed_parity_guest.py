@@ -190,7 +190,7 @@ def cookies(out, owner, apt):
     out["claim_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-claim").dumps(
         {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1, str(out["res_issued_done"]): 1, str(out["res_fee"]): 1})
     out["owned_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-owned").dumps(
-        [out["guest_complete"], out["guest_partial"]])
+        [out["guest_complete"], out["guest_partial"], out["guest_fee"]])
 
 
 def tokens(out, owner, apt):
