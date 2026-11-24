@@ -443,6 +443,9 @@ func (s *lqServer) handoffList(ctx context.Context, apt int64) ([]handoffRow, in
 	return out, open, rows.Err()
 }
 
+// Day is the date part of CreatedAt, as Python shows q.created_at[:10].
+func (r handoffRow) Day() string { return lqDay(r.CreatedAt) }
+
 func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow, error) {
 	const q = `SELECT q.id, q.chat_id, COALESCE(q.summary,''), q.status, COALESCE(c.door,''), COALESCE(m.text,''), COALESCE(q.urgent,0), COALESCE(q.triaged,0), COALESCE(q.answer,''), COALESCE(q.created_at,'')
 		FROM guest_question q JOIN guest_chat c ON c.id = q.chat_id JOIN guest_chat_message m ON m.id = q.message_id

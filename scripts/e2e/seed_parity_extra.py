@@ -61,6 +61,18 @@ def questions(out, owner, apt):
         "summary": "E2E question answered", "status": "answered", "answer": "E2E answer text",
         "urgent": 0, "triaged": 1, "created_at": now, "answered_at": now,
     })
+    m3 = leon._store(chat["id"], "guest", "question", "E2E: the hot water stopped, please help now")
+    m4 = leon._store(chat["id"], "guest", "question", "E2E: can we keep the bikes in the hall?")
+    out["question_urgent_unread"] = db.insert("guest_question", {
+        "chat_id": chat["id"], "message_id": m3, "apartment_id": apt,
+        "summary": "E2E urgent unread: no hot water", "status": "open", "answer": "",
+        "urgent": 1, "triaged": 0, "created_at": now,
+    })
+    out["question_dismissed"] = db.insert("guest_question", {
+        "chat_id": chat["id"], "message_id": m4, "apartment_id": apt,
+        "summary": "E2E question dismissed", "status": "dismissed", "answer": "",
+        "urgent": 0, "triaged": 1, "created_at": now, "answered_at": now,
+    })
 
 
 def leon_block(out, owner, apt):

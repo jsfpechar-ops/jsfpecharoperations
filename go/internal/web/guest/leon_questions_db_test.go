@@ -30,11 +30,13 @@ func seedHandoffQuestions(t *testing.T) (*lqServer, *lqHostReq) {
 	mustExecGuest(t, ctx, pool, `INSERT INTO guest_chat_message (id, chat_id, role, kind, text, sources, created_at) VALUES
 		(7801, 780, 'guest', 'question', 'Where is the key?', '', '2026-11-20'),
 		(7802, 780, 'guest', 'question', 'Kde je klíč od bytu? ' || repeat('Příliš žluťoučký kůň ', 8), '', '2026-11-20'),
-		(7803, 780, 'guest', 'question', 'Is the heater on?', '', '2026-11-20')`)
+		(7803, 780, 'guest', 'question', 'Is the heater on?', '', '2026-11-20'),
+		(7804, 780, 'guest', 'question', 'Heater is broken now', '', '2026-11-20')`)
 	mustExecGuest(t, ctx, pool, `INSERT INTO guest_question (id, chat_id, apartment_id, message_id, summary, status, answer, urgent, triaged, created_at) VALUES
 		(7901, 780, 78, 7801, 'Guest asks for the key', 'open', '', 1, 1, '2026-11-20'),
 		(7902, 780, 78, 7802, 'Kde je klíč od bytu? ' || repeat('Příliš žluťoučký kůň ', 8), 'answered', 'Klíč je v boxu u dveří.', 0, 1, '2026-11-20'),
-		(7903, 780, 78, 7803, 'Heater question', 'dismissed', '', 0, 1, '2026-11-20')`)
+		(7903, 780, 78, 7803, 'Heater question', 'dismissed', '', 0, 1, '2026-11-20'),
+		(7904, 780, 78, 7804, 'Heater summary differs', 'open', '', 1, 0, '2026-11-20')`)
 	now := func() time.Time { return time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC) }
 	s := &lqServer{pool: pool, getenv: func(k string) string {
 		if k == "UBYHOST_SECRET_KEY" {
@@ -118,5 +120,51 @@ func TestHandoffAddGuideThenCardLinkFindsSameCard(t *testing.T) {
 	want := fmt.Sprintf(`href="/apartments/78/guide/%d"`, itemID)
 	if !strings.Contains(body, want) {
 		t.Fatalf("open-card link %s missing", want)
+	}
+}
+
+func TestHandoffListMatchesPythonRows(t *testing.T) {
+	s, q := seedHandoffQuestions(t)
+	rows, open, err := s.handoffList(context.Background(), 78)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if open != 2 {
+		t.Fatalf("open %d, want 2", open)
+	}
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/apartments/78/guide/questions", nil)
+	q.r = r
+	data := map[string]any{"Lang": "en", "ApartmentID": int64(78), "ApartmentName": "Handoff Flat", "OpenCount": open,
+		"Questions": rows, "Base": "/apartments/78/guide/questions"}
+	s.renderHost(rec, r, q, "guest_questions.html", data)
+	body := rec.Body.String()
+	for _, want := range []string{
+		">Heater is broken now</a>", ">Where is the key?</a>", ">Is the heater on?</a>",
+		`<span class="ui-sub"> 2026-11-20 · QR page</span>`,
+		"Urgent", "Not read by Leon (AI)", "Waiting", "Answered", "Dismissed",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("list misses %q", want)
+		}
+	}
+	if strings.Contains(body, "Guest asks for the key") || strings.Contains(body, "Heater question") {
+		t.Error("list shows the summary; Python shows the message text")
+	}
+	// Row order (same ORDER BY as guest_handoff.py): open first, urgent first, open by id ASC (7901, 7904), then answered/dismissed by id DESC (7903, 7902).
+	i4 := strings.Index(body, "/questions/7904")
+	i1 := strings.Index(body, "/questions/7901")
+	i3 := strings.Index(body, "/questions/7903")
+	i2 := strings.Index(body, "/questions/7902")
+	if !(i1 >= 0 && i1 < i4 && i4 < i3 && i3 < i2) {
+		t.Errorf("row order wrong: %d %d %d %d", i4, i1, i3, i2)
+	}
+	// A dismissed row must not carry Urgent or Unread, even if the columns say so.
+	row3 := body[i3:]
+	if j := strings.Index(row3, "</tr>"); j > 0 {
+		row3 = row3[:j]
+	}
+	if strings.Contains(row3, "Urgent") || strings.Contains(row3, "Not read by Leon") {
+		t.Error("dismissed row shows an open-only badge")
 	}
 }
