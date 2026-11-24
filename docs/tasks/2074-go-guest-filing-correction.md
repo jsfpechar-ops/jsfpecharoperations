@@ -1,6 +1,6 @@
 # 2074: Restart filing attempts when a guest corrects a record
 
-Status: todo
+Status: review
 Depends on: 2073 | Base commit: 81c9fae7f27637649226f39ef9975328ed3cae45 | Branch: task/2074-go-guest-filing-correction
 Executor: Gemini 4 Neon (medium) | Fits one session: 30 tool calls, 60k tokens
 
