@@ -138,7 +138,7 @@ GUEST_CASES = [
     ("g-stay-provisional", "/l/{tok}/{res_provisional}", [], "H"),
     ("g-stay-claimed", "/l/{tok}/{res_claimed}", ["claim"], "H"),
     ("g-stay-claimed-nocookie", "/l/{tok}/{res_claimed}", [], "H"),
-    ("g-stay-fee", "/l/{tok}/{res_fee}", ["claim"], "H"),
+    ("g-stay-fee", "/l/{tok_fee}/{res_fee}", ["claim"], "H"),
     ("g-stay-issued", "/l/{tok}/{res_issued}", ["claim"], "H"),
     ("g-stay-issued-done", "/l/{tok}/{res_issued_done}", ["claim"], "H"),
     ("g-stay-locked", "/l/{tok}/{res_locked}", ["claim"], "H"),

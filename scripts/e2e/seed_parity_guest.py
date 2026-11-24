@@ -62,9 +62,10 @@ def states(out, owner, apt):
     # 2064: claimed stay in its own apartment with the stay-fee box (fee flags set only here).
     ent = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apt,))["legal_entity_id"]
     db.execute("UPDATE legal_entity SET iban = 'CZ6508000000192000145399' WHERE id = ? AND (iban IS NULL OR iban = '')", (ent,))
+    out["tok_fee"] = os.urandom(9).hex()
     fee_apt = db.insert("apartment", {
         "internal_name": "Parity Fee Flat", "owner_user_id": owner, "legal_entity_id": ent,
-        "permalink_token": os.urandom(9).hex(), "permalink_pin": auth.new_permalink_pin(),
+        "permalink_token": out["tok_fee"], "permalink_pin": auth.new_permalink_pin(),
         "automation_mode": "manual", "default_purpose": "10", "active": 1, "created_at": db.utcnow(),
         "stay_fee_collect": 1, "stay_fee_rate_czk": 50, "stay_fee_guest_rails": "qr,iban",
     })
