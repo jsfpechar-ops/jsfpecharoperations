@@ -53,7 +53,7 @@ func leadDeps(pool *pgxpool.Pool, live bool, hooks CompletionHooks) partyDeps {
 		liveVal = "1"
 	}
 	return partyDeps{
-		pool:   pool,
+		pool: pool,
 		getenv: func(k string) string {
 			if k == "UBYHOST_HEADCOUNT_LEAD_LIVE" {
 				return liveVal
