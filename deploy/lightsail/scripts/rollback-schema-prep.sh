@@ -23,7 +23,7 @@ rollback_drop_guide_import_00024() {
     return 0
   fi
   if [ "${dry}" = "1" ]; then
-    echo "Would run: ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out;"
+    echo "Would run: BEGIN; ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out; DELETE FROM goose_db_version WHERE version_id = 24; COMMIT;"
     return 0
   fi
   echo "==> Dropping guide_import.codes_left_out (migration 00024) so the previous release can start"
