@@ -102,3 +102,7 @@ Precondition not met; anchor not found; a block still skipped after one fix; `su
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ```
+
+## Note from the orchestrator (before the run)
+
+Do not edit the ACCEPTED dict. In the report, classify `guide-item` (cs and en) as ACCEPTED with the reason "Go keeps one Save per form (design-system rule 5); Python shows Save and next card plus Save; see brief 2051 section 11", and the `apt-guide-full` Leon help placement as ACCEPTED (brief 2051 section 10). Every other difference on those pages is still reported.
