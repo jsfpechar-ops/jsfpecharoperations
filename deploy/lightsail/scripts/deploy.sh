@@ -101,6 +101,14 @@ pg_count() {
 # before the first one, ORIG_HEAD is the commit the workflow reset away from.
 PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
 
+# 2044: after the Go slot switch the site runs the new release. No automatic
+# rollback (owner decision); tell the operator exactly what to do.
+fail_after_switch() {
+  echo "$1" >&2
+  echo "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow. To go back run: ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" >&2
+  exit 1
+}
+
 # 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
 public_ok() {
   for _ in $(seq 1 12); do
@@ -552,8 +560,7 @@ fi
 
 echo "==> Backfilling legal acceptance evidence"
 if ! go_exec ubyhost-web backfill-legal-acceptance; then
-  echo "Legal acceptance backfill failed." >&2
-  exit 1
+  fail_after_switch "Legal acceptance backfill failed."
 fi
 
 # BE-11: encrypt any travel-document numbers still sitting in the plaintext
@@ -562,12 +569,10 @@ fi
 echo "==> Document-number backfill (counts only)"
 go_exec ubyhost-web migrate-encrypt-doc-fields --check || true
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields; then
-  echo "Document-number backfill failed." >&2
-  exit 1
+  fail_after_switch "Document-number backfill failed."
 fi
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields --check; then
-  echo "Plaintext document numbers remain after the backfill." >&2
-  exit 1
+  fail_after_switch "Plaintext document numbers remain after the backfill."
 fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
@@ -575,8 +580,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
   if [ "${PG_MODE}" != "1" ]; then
     LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
     if [ "${LIVE_OK}" != "ok" ]; then
-      echo "Live database integrity check failed: ${LIVE_OK}" >&2
-      exit 1
+      fail_after_switch "Live database integrity check failed: ${LIVE_OK}"
     fi
   fi
   for table in "${TABLES[@]}"; do
@@ -587,8 +591,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
         "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     fi
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
-      echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
-      exit 1
+      fail_after_switch "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}."
     fi
     echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
   done
@@ -603,8 +606,7 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
   echo ""
   echo "==> Public smoke (set SKIP_PUBLIC_SMOKE=1 to skip)"
   if ! ./scripts/smoke-remote.sh; then
-    echo "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now." >&2
-    exit 1
+    fail_after_switch "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now."
   fi
 fi
 
