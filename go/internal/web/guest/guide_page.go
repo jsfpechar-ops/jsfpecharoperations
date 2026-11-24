@@ -14,7 +14,7 @@ import (
 func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, lang string, apt *GuideApartment, res *GuideReservation, level, door, qrToken, backURL, leonURL string) {
 	access := guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}
 	var aptRow *Apartment
-	if row, _, _, ok := ResolveKey(r.Context(), h.pool, displayLink(qrToken)); ok {
+	if row, ok := loadApartmentByID(r.Context(), h.pool, apt.ID); ok {
 		aptRow = row
 	}
 	token := qrToken
@@ -53,9 +53,6 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 	access.render(w, r, guideSet, view, http.StatusOK, hardenedHeaders, true)
 	_ = res
 }
-
-// displayLink is the link key a guide route puts back into its own links.
-func displayLink(token string) string { return token }
 
 // guidePageView is guest/guide.html.
 type guidePageView struct {
