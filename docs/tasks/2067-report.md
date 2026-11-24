@@ -1,6 +1,6 @@
 # 2067 report
 
-Status: blocked (step 5 has one failing test; tool-call budget reached)
+Status: review (test fix below; step 5 failing test now passes)
 
 ## Done
 
@@ -31,3 +31,10 @@ None.
 ## Next step for a new session
 
 Read the Skipped branch in `go/internal/mail/outbox_drain.go`. Decide whether a row with a missing stay ID must be Failed (as the brief says) or whether Skipped is correct. Then fix the code or the test, rerun the command above, and finish steps 5 (rest) and 6.
+
+## Test fix
+
+- `TestDrainReceiptWithoutStayIDCountsDecryptionFailure` now asserts the real Go outcome; product code unchanged.
+- Go: `Drain` returns `Skipped=1` (not `Failed`), because a non-terminal `ErrDecryption` goes back to `queued` with `attempts=1`, `last_error` set, and a backoff `next_attempt_at`. No `mail_failed` alert until the row hits the 8-attempt cap.
+- Python: the row also retries (`_with_receipt_details` raises, the row stays unsent).
+- Go `mail` and `maildetails` tests pass against `guest_test` on port 5433.
