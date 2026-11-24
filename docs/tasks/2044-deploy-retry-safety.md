@@ -150,3 +150,20 @@ Any anchor not found verbatim; a site in §2 cannot be found or there are not ex
 ## 9. Report
 
 Write `docs/tasks/2044-report.md` (600 tokens at most): files changed, each §6 command with its last 5 lines, §7 ticked, Deviations, Questions. Set `Status: review`, open one draft PR, do not merge. Owner steps: merge with `scripts/merge-pr-on-green.sh`. Note for the owner: the marker lives on the server; if a stuck marker should be cleared by hand, `rm deploy/lightsail/.deploy-in-progress`.
+
+## 10. Amendment (orchestrator review, after the first run)
+
+Bug found in review: `git rev-parse HEAD > .deploy-in-progress` is written before the rollback copies are made. A deploy that fails at an early pre-flight check (before `Caddyfile.previous` and the `:previous` tags are refreshed) leaves the marker, so the retry keeps the copies of the deploy before last and a rollback would restore an even older release.
+
+Step 8. In `deploy/lightsail/scripts/deploy.sh`:
+1. Delete the single line `git rev-parse HEAD > .deploy-in-progress` that follows the `KEEP_ROLLBACK_COPIES` block (keep the block that reads the marker).
+2. Find the end of the second image-tag block (the `if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost-go:local` block, its closing `fi`). Directly after that `fi`, insert:
+```
+# 2044: the rollback copies now hold the running release; from here a failed run
+# must not overwrite them, so mark the deploy as in progress.
+git rev-parse HEAD > .deploy-in-progress
+```
+3. Verify: `grep -n 'deploy-in-progress' deploy/lightsail/scripts/deploy.sh | tail -10` shows the read (`-f .deploy-in-progress`), the single write after the tag blocks, and the `rm -f .deploy-in-progress` after `.deployed-sha`. The write's line number must be greater than both tag blocks and the `Caddyfile.previous` copy.
+4. Extend the static test in `App/tests/test_pg_go_slot_script.py` added in this brief: assert the write's offset in the file text is after `ubyhost-go:previous` tagging and after the `Caddyfile.previous` copy.
+5. Run `bash -n deploy/lightsail/scripts/deploy.sh` and, from `App/`, pytest `tests/test_pg_go_slot_script.py tests/test_pg_backup_scripts.py` (no `-x`); if `test_backup_waits_for_a_transient_gap_then_succeeds` fails, rerun that one test alone twice and report all three results.
+Commit "2044 step 8". Update the report.
