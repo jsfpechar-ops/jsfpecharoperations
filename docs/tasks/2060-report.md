@@ -51,3 +51,46 @@ Branch: claude/nice-hawking-fw98ct (fast-forwarded to origin, no push)
 - Step 11: `context_lint.py` OK.
 - Tests: `go build ./...` OK. `go test ./internal/web/guest/... ./internal/validation/... ./internal/ubyport/... -count=1 -v` with `UBYHOST_TEST_DATABASE_URL` set: 512 PASS, 0 FAIL, 0 SKIP.
 - Tool-call cap: this run exceeded the 30-call limit in the brief; the orchestrator should review it.
+
+## Steps 8-10 (orchestrator run)
+
+Status: blocked (full gate FAIL, 38 visible rows; see below)
+
+### Step 8: targeted reruns
+- H pass, `PARITY_ONLY='g-stay-issued-done*,g-guide-apt*,g-guide-stay*'`, groups A-H: rc 1, 18 rows, 12 identical, 6 visible, 0 error.
+  - g-stay-issued-done cs and en: visible at 390, 768, 1280 (diff 74 px cs, 72 px en). Side PNG (`/var/tmp/parity-visual/g-stay-issued-done-cs/g-stay-issued-done-cs-390-side.png`): both sides read "Osoba 1 · uloženo", so the step 5 text bug is gone. The remaining diff PNG shows only the check-mark glyph (Python thin check, Go heavy check).
+  - g-guide-apt cs/en and g-guide-stay cs/en: identical at all widths (diff_px 0). The chips fix and the 400 ms blur wait resolved these.
+- P pass, `PARITY_PIN=1 PARITY_GROUP=P PARITY_ONLY='g-pin-hub*'`: rc 0. cs 390/768/1280 and en 390/768 identical; en 1280 invisible (within tolerance). g-pin-hub is no longer a visible row.
+
+### Step 9: door card
+- Seed stderr (g-stay-issued-done): `{"lock_provider": "ttlock", "checkin_hour": 14, "door_code_state": "issued", "view_state": "issued"}`; `{"issued_done_issues": []}`.
+- Python view state is "issued" and the seed fields look right.
+- Rendered page (cs 390 side PNG): no door card on either side. Both show the guest hub: "Kolik osob bude ubytováno?", "Osoba 1 · uloženo", guide link, host card.
+- Cause not determined in this run. The door card still does not render at this URL on either side. The seed is not the cause (fields are correct), so the next step is the rendering condition, not the seed.
+
+### Step 10: full gate (`scripts/e2e/parity_gate.sh`, log `/var/tmp/parity_gate.log`)
+- Final lines: `{"rows": 12, "verdicts": {"identical": 11, "invisible": 1, "visible": 0, "accepted": 0, "error": 0}}`, `GATE: FAIL`, `GATE_EXIT=1`.
+- Per group (rows: identical / invisible / visible / accepted / error):
+  - A 78: 68 / 0 / 6 / 4 / 0
+  - B 96: 93 / 1 / 2 / 0 / 0
+  - C 30: 30 / 0 / 0 / 0 / 0
+  - D 150: 136 / 2 / 6 / 6 / 0
+  - E 90: 90 / 0 / 0 / 0 / 0
+  - F 90: 78 / 0 / 12 / 0 / 0
+  - G 12: 12 / 0 / 0 / 0 / 0
+  - H 132: 120 / 0 / 12 / 0 / 0
+  - P 12: 11 / 1 / 0 / 0 / 0
+- Errors: 0. Visible total: 38. Leftover parity servers: 0.
+- Visible rows (all 3 widths unless stated):
+  - A: home-host-cs, home-host-en
+  - B: reservation-detail-cs and reservation-detail-en, 1280 only
+  - D: apt-guide-qr-cs, apt-guide-qr-en
+  - F: apt-guide-full-cs, apt-guide-full-en, guide-item-cs, guide-item-en
+  - H: g-hub-claimed-cs, g-hub-claimed-en, g-stay-issued-done-cs, g-stay-issued-done-en
+- Accepted rows (not visible): dev-ui-en (A, 3 widths), dev-ui-cs at 1280 (A), apt-guide-cs and apt-guide-en (D, 3 widths).
+
+### Remaining items for the owner or next brief
+- Visible rows above are not silenced; the gate is red. Each needs a per-page look (side PNGs under `/var/tmp/parity-visual/`) before a merge.
+- g-stay-issued-done: the check-mark glyph differs (Python thin, Go heavy). Small, but visible.
+- Door card: not rendered on either side at the stay URL; the seed diagnostics are correct, so the render condition needs a separate brief.
+- The brief's Python bug (section 10, `door_codes._stay_checkin_label`) is unchanged.
