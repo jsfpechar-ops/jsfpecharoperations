@@ -168,3 +168,22 @@ Results (`UBYHOST_TEST_DATABASE_URL` = guest_test, `-count=1`): 366 PASS, 1 FAIL
 Deviations:
 - Commit trailer used Claude Opus 5.5 as the brief text says.
 - The fixture fix needed `$1::bigint::text`, not `$1::text`, because `$1` is also the id column (Postgres type conflict). It needed `updated_at` too (NOT NULL).
+
+## Chunk C3 (run 8)
+
+Status: blocked (steps 1 and 2 green; step 3 screenshots do not show the target pages).
+
+- Step 1, commit `e7a1bf4`: `TestStayOverviewMailOnHonorsClaimCookie` now asserts `g-assigned-stay` (class in both `App/app/templates/guest/assigned.html` and `go/internal/web/guest/templates/assigned.tmpl`). Rest of the test unchanged.
+- Go tests (`UBYHOST_TEST_DATABASE_URL` = guest_test, `-count=1`): `internal/web/guest`, `internal/doorcodes`, `doorcodes/cleaning`, `doorcodes/wire`, `cmd/ubyhost-web`: all PASS. Skips: `TestJobRunProbe`, `TestRouteProbe`, `TestJobProbe` (env-gated probes).
+- Step 2: `test_go_pages_layout_lint_browser.py`: 6 passed, 0 skipped.
+- Step 3: server built and run on 127.0.0.1:18081 against guest_test. Seed and cookies came from a temporary test file (removed; not committed). Screenshots: `/tmp/claude-0/-home-user-jsfpecharoperations/fddd852d-eb27-56de-8c5b-4ff23a59b41e/scratchpad/2055-shots/final/` (claimed, done, assigned at 390/768/1280).
+  - claimed-390: stay page with CSS; stepper shows "Test Guest - saved" and "Second Guest - not filled in"; the declared-count control shows 1 although the claim says 2. Not diagnosed.
+  - done-390: stay page with the declared-count step still shown; no `#door-code` card rendered. Seed likely lacks whatever marks the count as confirmed; not diagnosed.
+  - assigned: the no-cookie request rendered the stay page (stepper), not the assigned page (`g-assigned-stay` absent in the served HTML), although the Go test passes. Unexplained difference between test fixture and live server.
+- Server stopped; `ps` count of `ubyhost-web` is 0.
+
+Deviations:
+- Commit trailer: Co-Authored-By Claude Opus 5.5 as the brief text says (harness attribution is Haiku 5.5).
+- Owner or orchestrator decision: fix the seed for done/door-code, and explain why no-cookie stay A renders the stay page.
+
+Left: re-take the three screenshots after the seed/assigned question is settled; 768 and 1280 saved but not viewed.
