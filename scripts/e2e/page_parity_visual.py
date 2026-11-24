@@ -161,6 +161,7 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts, extra_coo
                         break
                 out["texts"][spec] = re.sub(r"https?://127\.0\.0\.1:\d+", "<BASE>", value.replace(base, "<BASE>")).strip()
             page.evaluate("document.activeElement && document.activeElement.blur && document.activeElement.blur()")
+            page.wait_for_timeout(400)
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(dest), full_page=True)
             out["shot"] = True
