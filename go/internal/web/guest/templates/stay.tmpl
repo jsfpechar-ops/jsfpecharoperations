@@ -133,4 +133,7 @@
 {{range .Others}}
   <div class="g-card g-summary g-summary-row">{{$.T "person"}} {{.Index}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</div>
 {{end}}
+{{if .GuideLive}}
+  <a class="g-card g-guide-link" href="{{.Base}}/guide{{.LangQ}}" data-guide-link>{{.T "guide_title"}}</a>
+{{end}}
 {{end}}

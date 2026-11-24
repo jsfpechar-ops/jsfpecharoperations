@@ -11,12 +11,14 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 )
 
 // stayView is guest/stay.html (the claimed stay hub). The fee panel
 // (_fee_pay.html) is not ported: follow-up brief, only when UBYHOST_STAY_FEE_GUEST_PAY is on.
 type stayView struct {
 	Page
+	GuideLive        bool
 	StayFrom, StayTo string
 	CanPickOther     bool
 	BackURL          string
@@ -142,7 +144,9 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 	page.CSRFToken = csrf
 	base := guestPath(token, stay.id)
 	langQ := langQuery(lang)
+	guideLive := d.guideLive(ctx, apt)
 	view := stayView{
+		GuideLive:        guideLive,
 		Page:             page,
 		StayFrom:         stay.dateFrom,
 		StayTo:           stay.dateTo,
@@ -262,4 +266,18 @@ func doorCodeCardFrom(s *doorcodes.Shown) *doorCodeCard {
 		return &doorCodeCard{State: "failed"}
 	}
 	return &doorCodeCard{State: "preparing"}
+}
+
+// guideLive is guest.py _guide_is_live: the stay's guide link shows only once
+// the host's guide is live. A guide error hides the link, never the stay page.
+func (d stayClaimDeps) guideLive(ctx context.Context, apt *Apartment) bool {
+	if apt == nil {
+		return false
+	}
+	env := ai.HavelEnv(func(k string) (string, bool) { v := d.getenv(k); return v, v != "" })
+	items, err := ai.LeonStore{HavelStore: ai.HavelStore{Pool: d.pool, Env: env}}.Items(ctx, apt.ID)
+	if err != nil {
+		return false
+	}
+	return ai.LeonProgressOf(items).Live
 }
