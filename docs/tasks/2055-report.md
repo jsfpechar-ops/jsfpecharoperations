@@ -1,8 +1,8 @@
 # 2055 report
 
-Status: blocked
+Status: blocked (stay hub partly ported, see Deviations)
 Branch: claude/nice-hawking-fw98ct (worktree agent-a9b76ed763c737e2e)
-Commits: `9c5467e 2055 step 2` (i18n keys). No other code changed.
+Commits: `9c5467e 2055 step 2` (i18n keys), `ecca932 2055 step 3` (stay.tmpl, assigned.tmpl), `d2ee36f 2055 step 4 to 6` (stay_view.go, stay_claim.go wiring, pages.go sets, stay_view_test.go).
 
 ## Step 1: diagnosis (partial)
 
@@ -29,3 +29,34 @@ Commits: `9c5467e 2055 step 2` (i18n keys). No other code changed.
 
 - Decide the fee-panel port (see step 3).
 - Allow the parity harness command, or run step 1 and step 8 manually.
+
+## Steps 3 to 8 (run 2, per brief section 10)
+
+- Step 3 done: `templates/stay.tmpl` and `templates/assigned.tmpl`. Fee panel not ported (decision 10).
+- Step 4 done: `stay_view.go` (`renderStayPage`, `stayPeople`, `renderAssignedPage`). Keys checked: all 38 template keys present in all six languages (cs 318, de 316, en 318, es 316, fr 316, uk 316 after step 2 numbers as recorded; the 2 extra cs/en keys predate this brief).
+- Step 6 done: `stayOverview` calls the new renderers; `stay` and `assigned` stubs removed from `guestTemplates`. `go build ./...` clean.
+- Step 7: the DB test `stay_page_test.go` was not written. Replaced by `stay_view_test.go` `TestStayTemplatesRender` (no DB): renders stay (claimed, stepper, all done) and assigned, asserts stepper, progress bar, still-missing, person rows, edit link, resend form.
+- Step 8: parity harness not run (decision 10). Go guest package with DB: `ok`, but 3 tests SKIP (`TestStayOverviewMailOnHonorsClaimCookie`, `TestConfirmClaimRace`, `TestConfirmClaimAppliesDeclaredGuests`) because layout_test has no migrated `apartment` table. These skips are environmental, not from this change.
+- `test_go_pages_layout_lint_browser.py`: 6 passed, 0 skipped.
+- Screenshots (390 px, rendered by the test to HTML, opened as file://, so NO CSS): `/tmp/claude-0/-home-user-jsfpecharoperations/fddd852d-eb27-56de-8c5b-4ff23a59b41e/scratchpad/2055-shots/stay-claimed-390.png` (heading, "Registered: 1 of 2", "Still to register: 1", "Add a person", "Anna Test - saved", "Person 2 - not filled in"; text order matches Python) and `.../assigned-390.png` (kicker and property, dates, "This reservation is already assigned", masked e-mail, e-mail field, resend button, host footer). Layout geometry is not verified because of the missing CSS.
+
+## Not ported (stay.html / assigned.html)
+
+- Python `dup_warnings` block: not ported.
+- `door_code` card (`#door-code`): not ported; stayDoorCodes not called.
+- `guide_live` link: not ported.
+- Fee panel: not ported (decision 10).
+- assigned: `claim_last_sent_at` line, turnstile widget and script not rendered; property name uses Page.Facility; city from apartment.CityEn.
+- `icon('check')` replaced by `&#10003;` (approximation).
+
+## Deviations
+
+- Done: steps 1 to 6 and the browser test. Left: door-code card, duplicate warnings, guide link, DB-backed stay test (`stay_page_test.go`), 390 px screenshots with CSS, parity rerun.
+- birth date shown as stored (no display formatting); residence is a plain join; completeness uses validation.GuestIsComplete with the fields the query loads (signature not loaded), so `complete` may differ from Python's `guest_is_complete` for some guests. Needs a check before merge.
+- Filled count = complete or filed (Python `filled` also counts filed-by-hand; approximated by submit_state).
+- Stay status is not `Locked` from `guest_form_locked` beyond sent or restricted.
+
+## Owner or orchestrator steps left
+
+- Decide whether door-code, dup-warning and guide-link ports go to a follow-up brief.
+- Confirm the three skipped Go tests run on the migrated DB.
