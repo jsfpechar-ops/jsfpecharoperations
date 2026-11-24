@@ -139,11 +139,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if child {
 		sig = ""
 	}
-	from, to := parseDate(stayFrom), parseDate(stayTo)
-	issues := validation.ValidateGuestForm(values, &from, &to, legalToday(d.now), raw)
-	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
-		issues = append(issues, *si)
-	}
+	issues := guestSaveValidateIssues(form, cfg, res, values, raw, stayFrom, stayTo, sig, child, existing, legalToday(d.now))
 	// guest.py:2518 — name the field that holds another alphabet, then word every
 	// sentence for the guest. Both passes run before the refusal is tested, so a
 	// translated sentence is what the page shows and what the log counts.
@@ -166,7 +162,8 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		savedID = existing.id
 	} else {
-		savedID, err = insertGuestSaveRow(ctx, d, payload, resID, res)
+		partySize, _ := strconv.Atoi(strings.TrimSpace(form["party_size"]))
+		savedID, err = insertGuestSaveRow(ctx, d, payload, resID, res, partySize)
 		if err != nil {
 			return err
 		}
@@ -189,6 +186,42 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	WithLang(w, d.getenv, lang)
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
+}
+
+func guestSaveFormContract(form map[string]string) guestcontract.GuestForm {
+	return guestcontract.GuestForm{
+		Surname: form["surname"], FirstName: form["first_name"], BirthDate: form["birth_date"],
+		Nationality: form["nationality"], DocNumber: form["doc_number"], VisaNumber: form["visa_number"],
+		ResStreet: form["res_street"], ResCity: form["res_city"], ResCountry: form["res_country"],
+		Purpose: form["purpose"], Note: form["note"], ParentDocNumber: form["parent_doc_number"],
+		Signature: form["signature"], PartySize: form["party_size"], LegalAck: form["legal_ack"] != "",
+		ChildSignRole: form["child_sign_role"], SignedBy: form["signed_by"],
+	}
+}
+
+func guestSaveExpectedGuests(res guestResMeta) *int {
+	exp := headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
+	if exp == nil {
+		return nil
+	}
+	n := int(*exp)
+	return &n
+}
+
+func guestSaveValidateIssues(form map[string]string, cfg guestFormCfg, res guestResMeta, values validation.GuestRow, raw map[string]string, stayFrom, stayTo, sig string, child bool, existing *guestSaveRow, today time.Time) []validation.Issue {
+	if existing == nil {
+		return guestcontract.CheckNewGuest(guestSaveFormContract(form), guestcontract.FormConfig{DefaultPurpose: cfg.defaultPurpose},
+			guestcontract.Stay{DateFrom: res.dateFrom, DateTo: res.dateTo, ExpectedGuests: guestSaveExpectedGuests(res)}, today)
+	}
+	from, to := parseDate(stayFrom), parseDate(stayTo)
+	issues := validation.ValidateGuestForm(values, &from, &to, today, raw)
+	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
+		issues = append(issues, *si)
+	}
+	if form["legal_ack"] == "" {
+		issues = append(issues, validation.Issue{Field: "legal_ack", Message: "Please confirm that you have read the legal information.", Severity: "error"})
+	}
+	return issues
 }
 
 func postForm(r *http.Request) map[string]string {
@@ -295,7 +328,7 @@ func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow,
 	return id == existing.id, nil
 }
 
-func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta) (int64, error) {
+func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta, partySize int) (int64, error) {
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -304,7 +337,24 @@ func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any,
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('reservation'), $1::int)`, resID); err != nil {
 		return 0, err
 	}
+	var declared *int64
+	if err := tx.QueryRow(ctx, `SELECT declared_guests, expected_guests_override, lead_reduced_guests FROM reservation WHERE id = $1`,
+		resID).Scan(&declared, &res.overrideGuests, &res.reducedGuests); err != nil {
+		return 0, err
+	}
+	res.declaredGuests = declared
 	exp := headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
+	if exp == nil && partySize > 0 {
+		code, _, err := headcount.ApplyDeclaredInTx(ctx, tx, resID, partySize, d.now())
+		if err != nil {
+			return 0, err
+		}
+		if code != "saved" {
+			return 0, tx.Commit(ctx)
+		}
+		res.declaredGuests = ptrInt64(int64(partySize))
+		exp = headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
+	}
 	var live int
 	if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, resID).Scan(&live); err != nil {
 		return 0, err
@@ -589,4 +639,7 @@ func guestFormSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, gete
 	}
 	_, err = scheduler.Enqueue(ctx, pool, "submit")
 	return err
+}
+func ptrInt64(n int64) *int64 {
+	return &n
 }
