@@ -1,28 +1,30 @@
 # 2063 report
 
-Status: blocked (partial, tool-call cap reached)
-Done: steps 1 to 3
+Status: review
+Done: steps 1 to 5 (step 5 partly). Left: step 5 DB render test and key test, step 6 PR and screenshots.
 
 ## Commits
 
-- `57fdd05 2063 step 3`: `go/internal/web/guest/stay_fee_panel.go` (new). Types `feeRail`, `feePerson`, `feePanel`; pure `buildFeePanel(fee, qr, cashDefault)`; `loadFeePanel` on `stayClaimDeps` (guest-pay switch as Python; Prague today; `stayfee.LoadApartment` and `stayfee.LoadCompletionFee`; failures logged as `stay_fee_panel_failed` with no amounts or names, box dropped). `go build ./internal/web/guest/` passes.
+- 57fdd05 2063 step 3: stay_fee_panel.go (buildFeePanel, loadFeePanel).
+- 9305152 2063 step 4: stay_view.go (FeePanel field, loaded when Remaining <= 0, "not ported" comment removed), stay.tmpl (fee block after JustRemoved; all_done_body_fee), templates/_fee_pay.tmpl, pages.go.
+- 2063 step 5: stay_fee_panel_test.go (TestBuildFeePanel, 7 subtests, pass); partial renamed to templates/fee_pay.tmpl.
+
+## Commands (last lines)
+
+- go build ./internal/web/guest/ and go vet: clean.
+- go test -run TestBuildFeePanel: PASS, 7 subtests.
+- go build ./...: build=0. go test guest, stayfee, ubyhost-web: test=0, SKIP lines=3.
 
 ## Not done
 
-- Step 4 (view glue): `stay_view.go` (FeePanel field, call after the HasRemaining block, drop the "not ported" comment), `stay.tmpl` (fee block before the party stepper, `all_done_body_fee`), the `fee_pay` partial, `pages.go`.
-- Step 5 (tests): `stay_fee_panel_test.go` and the key test. `TestBuildFeePanel` is planned, not written.
-- Step 6: the PR is not opened.
-
-## Condition
-
-Python's: the box is built only when `remaining <= 0`, `UBYHOST_STAY_FEE_GUEST_PAY` lowercased and stripped equals `on`, and `stayfee` returns a fee (apartment collect flag, total > 0).
+- DB render test (TestStayPageFeeBox) and key test (TestFeeKeysAllLanguages): not written (tool cap).
+- Browser and geometry tests (section 6, line 67): not run. Screenshot: not taken. No PR opened.
 
 ## Deviations
 
-- Decrypter: `stayClaimDeps` has no decrypter field, but it has `getenv`. `loadFeePanel` uses `secure.LoadDataKeys(d.getenv)` as `guestSaveDecrypter` does. Nothing was wired from `cmd/ubyhost-web`.
-- Commits were made as `git add` and `git commit` in separate calls, one commit per step.
-- Build not run for `go test` (no test file yet).
+- Partial named fee_pay.tmpl, not _fee_pay.tmpl: go:embed skips underscore-prefixed files, so pageSet panicked at init.
+- Commit trailers: the brief asks for Claude Opus 5.5; the report's commit steps used the brief's trailers.
 
 ## Owner steps left
 
-None for the Go side yet. Brief 2063 must finish steps 4 to 6 before the guest deploy.
+None yet. Brief 2063 needs the DB render test, key test, browser tests and screenshot before merge.
