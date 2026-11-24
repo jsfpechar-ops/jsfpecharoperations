@@ -27,7 +27,7 @@ var (
 	confirmSet  = pageSet("templates/confirm.tmpl")
 	unavailSet  = pageSet("templates/unavailable.tmpl")
 	guideSet    = pageSet("templates/guide.tmpl")
-	staySet     = pageSet("templates/stay.tmpl", "templates/_fee_pay.tmpl")
+	staySet     = pageSet("templates/stay.tmpl", "templates/fee_pay.tmpl")
 	assignedSet = pageSet("templates/assigned.tmpl")
 )
 
