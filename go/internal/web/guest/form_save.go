@@ -169,6 +169,18 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		sig = ""
 	}
 	issues := guestSaveValidateIssues(form, res, values, raw, stayFrom, stayTo, sig, child, existing, legalToday(d.now), lang)
+	var existingID int64
+	if existing != nil {
+		existingID = existing.id
+	}
+	// guest.py:2473 — if a child ticked a role with multiple eligible adults and
+	// chose none, ask instead of silently dropping the link.
+	if child && isSignForRole(strings.TrimSpace(form["child_sign_role"])) && strings.TrimSpace(form["signed_by"]) == "" {
+		signers, _ := formU15Lists(ctx, d.pool, resID, existingID, formPagesOwnedIDs(r, d.getenv), d.getenv, d.now, res.dateFrom)
+		if len(signers) > 1 {
+			issues = append(issues, validation.Issue{Field: "signed_by", Message: signForWhoMissingText(lang), Severity: "error"})
+		}
+	}
 	// guest.py:2483 — a required-photo property needs a passport photo from a foreign guest.
 	// The file is read and validated before anything is written; a valid upload is stored after the row.
 	var photoBody []byte
@@ -202,11 +214,18 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	// translated sentence is what the page shows and what the log counts.
 	issues = localizeIssues(nameLatinIssues(issues, lang), lang)
 	if len(validation.ErrorsOnly(issues)) > 0 {
-		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, raw, values, stayFrom, stayTo, issues)
+		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, form, raw, values, stayFrom, stayTo, sig, issues)
 		return nil
 	}
 	nowS := utcStamp(d.now)
-	payload := buildSavePayload(values, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing)
+	var signFor map[string]any
+	if child {
+		signFor, err = resolveChildSignerFields(ctx, d, r, resID, res.dateFrom, existingID, form["signed_by"], form["child_sign_role"], nowS)
+		if err != nil {
+			return err
+		}
+	}
+	payload := buildSavePayload(values, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing, signFor)
 	var savedID int64
 	if existing != nil {
 		ok, err := updateGuestSaveRow(ctx, d, existing, payload)
@@ -249,6 +268,11 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 			return err
 		}
 		if _, err := d.pool.Exec(ctx, `UPDATE guest SET passport_photo_at = $1, updated_at = $1 WHERE id = $2 AND reservation_id = $3`, nowS, savedID, resID); err != nil {
+			return err
+		}
+	}
+	if !child && validation.CertainlyAtLeastAge(values.BirthDate, parseDatePtr(stayFrom), adultSignerAge) {
+		if err := linkSignedChildren(ctx, d, r, resID, res.dateFrom, savedID, r.PostForm["sign_for_ids"], form["sign_for_role"], nowS); err != nil {
 			return err
 		}
 	}
@@ -394,7 +418,7 @@ func existingSig(g *guestSaveRow) string {
 	return g.signaturePNG
 }
 
-func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow) map[string]any {
+func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow, signFor map[string]any) map[string]any {
 	p := map[string]any{
 		"surname": v.Surname, "first_name": v.FirstName, "birth_date": v.BirthDate,
 		"nationality": v.Nationality, "doc_number": v.DocNumber, "visa_number": v.VisaNumber,
@@ -418,6 +442,18 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 	if existing != nil && existing.submitState == "blocked" && strings.Contains(existing.lastErrors, "duplicate") {
 		delete(p, "submit_state")
 		delete(p, "last_errors")
+	}
+	if child {
+		// guest.py:2587 — empty signFor adds nothing, so edits keep an earlier link.
+		for k, val := range signFor {
+			p[k] = val
+		}
+	} else {
+		// guest.py:2596 — a guest 15+ (or corrected to 15+) loses any child signer link.
+		p["signed_for_guest_id"] = nil
+		p["signed_for_role"] = nil
+		p["signed_for_at"] = nil
+		p["signed_for_wording"] = nil
 	}
 	return p
 }
@@ -666,6 +702,7 @@ var guestSaveInsertCols = []string{
 	"birth_date_enc", "doc_number_enc", "visa_number_enc",
 	"res_street_enc", "res_city_enc", "signature_png_enc",
 	"signed_at", "last_errors",
+	"signed_for_guest_id", "signed_for_role", "signed_for_at", "signed_for_wording",
 }
 
 func guestSaveInsertPlaceholders() string {
@@ -703,7 +740,7 @@ func guestFormLocked(row *guestSaveRow) bool { return false }
 // renderGuestForm422 redraws the form the guest just submitted, with what they
 // typed and the sentences saying what to fix — Python's 422 (guest.py:2530
 // renders the form context again with values and issues), not a bare status.
-func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt *Apartment, token, lang string, resID int64, existing *guestSaveRow, raw map[string]string, values validation.GuestRow, stayFrom, stayTo string, issues []validation.Issue) {
+func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt *Apartment, token, lang string, resID int64, existing *guestSaveRow, form, raw map[string]string, values validation.GuestRow, stayFrom, stayTo, sig string, issues []validation.Issue) {
 	fd := formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}
 	ctx := r.Context()
 	res, ok := formPagesReservation(ctx, fd.pool, apt, resID, r)
@@ -727,6 +764,28 @@ func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt 
 		return
 	}
 	view.Values = guestTypedValues(values, raw, stayFrom, stayTo)
+	if form["legal_ack"] != "" {
+		view.Values["legal_ack"] = form["legal_ack"]
+	}
+	if values.BirthDate != "" {
+		arrival := parseDatePtr(stayFrom)
+		view.Under15 = validation.CertainlyUnderAge(values.BirthDate, arrival, guestcontract.UnderSignAge)
+		view.AdultSigner = validation.CertainlyAtLeastAge(values.BirthDate, arrival, adultSignerAge)
+	}
+	if validation.IsValidSignature(sig) {
+		view.SignatureValue = sig
+	} else {
+		view.SignatureValue = ""
+	}
+	if id, ok := parsePositiveASCIIDigits(form["signed_by"]); ok {
+		view.SelectedSigner = id
+	}
+	if isSignForRole(form["child_sign_role"]) {
+		view.SelectedChildRole = form["child_sign_role"]
+	}
+	if isSignForRole(form["sign_for_role"]) {
+		view.SelectedSignForRole = form["sign_for_role"]
+	}
 	view.Issues = issues
 	view.LoadSignatureJS = true
 	view.WrapClass = "g-checkin-page"
