@@ -92,3 +92,92 @@ Write `docs/tasks/2072-report.md` with the changed paths, command results, count
 
 1. Open after 2071.
 2. Review the missing-photo screenshot and encrypted-storage result.
+
+## Continuation (orchestrator)
+
+Step 1 is done (worktree commit 29791cf: `passportphotos.Prepare`, `SavePrepared`; `Save` unchanged in behaviour). The executor stopped at step 2 because it could not find the Python helpers in Go. Findings, then the replacement for steps 2-4. Anchors below are checked against the current tip; if one differs, stop.
+
+### A. Python helpers and their Go status
+
+Python rule (`App/app/reporting.py:409-427`, `guest_needs_passport_photo`): policy = `apartment.passport_photo_policy` trimmed, lowercased, empty = "off"; true only when policy == `required_foreign` AND `guest_is_reportable(nationality)` AND `_guest_entered_by(guest) != "host"` AND NOT `guest_identity_verified(guest)`.
+
+| Python | Go | Difference |
+|---|---|---|
+| `validation.guest_is_reportable` | `validation.GuestIsReportable` at `go/internal/validation/validation.go:510` | none (empty nationality = false, Czech = false) |
+| `reporting._guest_entered_by` (`reporting.py:387`) | none: port needed | trivial: `entered_by` empty means "guest" |
+| `reporting.guest_identity_verified` (`reporting.py:380`) | none: port needed | trivial |
+| `guest_needs_passport_photo` | none: port needed | `RequirePassport` at `go/internal/web/guest/form_pages.go:673` only does the policy half for page display |
+| `passport_photos.has_photo` (`passport_photos.py:68`) | none (`passportphotos.Read` at `save.go:99` decrypts, too heavy) | add `Has` |
+
+Port (new file `go/internal/web/guest/passport_required.go`, package `guest`; add it to the section 3 table):
+
+```go
+// passportRequired is reporting.guest_needs_passport_photo.
+// enteredBy and identityVerifiedAt come from the stored row, or "guest" and ""
+// for a new guest (guest.py:2486 passes exactly that stub).
+func passportRequired(policy, nationality, enteredBy, identityVerifiedAt string) bool {
+	if strings.ToLower(strings.TrimSpace(policy)) != "required_foreign" {
+		return false
+	}
+	if !validation.GuestIsReportable(nationality) {
+		return false
+	}
+	if enteredBy == "host" { // empty counts as "guest"
+		return false
+	}
+	// guest_identity_verified: non-reportable is always verified (excluded above);
+	// otherwise verified only when identity_verified_at is set.
+	return identityVerifiedAt == ""
+}
+```
+
+Python `bool(guest["identity_verified_at"])` is truthy for any non-empty string, so the exact test is `identityVerifiedAt == ""` (no trimming). The nationality is the NORMALISED `values.Nationality` for a new guest, as in Python (`values["nationality"]`); for an existing guest Python uses the STORED row's nationality (`existing`), not the posted one. Copy that.
+
+Also add `func Has(dataDir string, guestID int64) bool` to `go/internal/passportphotos/save.go`: true when any of `<id><ext>` or `<id><ext>.enc` for ext in `AllExtensions` is a regular file (Python `_paths_for`, `path.is_file()`).
+
+### B. Existing multipart bug to fix first (same file)
+
+The form posts `enctype="multipart/form-data"` (`go/internal/web/guest/templates/form_content.tmpl:46`, file input `name="passport_photo"` at :258). `handleGuestFormSave` (`go/internal/web/guest/form_save.go:87`) calls only `r.ParseForm()`, which does NOT read multipart bodies, so `postForm(r)` (:119, :309) would see no fields on a real browser post. Replace the `ParseForm` block at :87 with:
+
+```go
+if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+	if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
+		return err
+	}
+	defer r.MultipartForm.RemoveAll() //nolint:errcheck
+} else if err := r.ParseForm(); err != nil {
+	return err
+}
+```
+
+`ParseMultipartForm` also fills `r.PostForm`, so `postForm` keeps working unchanged. Confirm `WithPOSTCSRF` (`form_save.go:35`) does not already consume the body; if it calls ParseForm first, that is fine for multipart (a no-op for the body). If the csrf token only exists in the multipart body, stop and report. `maxPDFBytes` is in `go/internal/passportphotos` (unexported) and `draft_scan.go` uses a package-level `maxPDFBytes`; reuse the guest package one.
+
+### C. Replacement steps 2-4
+
+2. Extend `guestSaveRow` (`form_save.go:49`) and the SELECT in `loadGuestSaveRow` (:354) with `nationality`, `entered_by`, `identity_verified_at`, `passport_photo_at` (all `COALESCE(...,'')`). Nationality is stored plain (check `insertGuestSaveRow` payload at :329; if it is only stored encrypted, stop). After the `guestcontract`/`legal_ack` issue (right after the `legal_ack_missing` block, before `issues = localizeIssues(...)` at ~:157) add:
+   - `apt` is the `*Apartment` from `OpenLink`; policy is `apt.PassportPhotoPolicy`.
+   - Build the inputs: existing != nil: `existing.nationality, existing.enteredBy, existing.identityVerifiedAt`; else `values.Nationality, "guest", ""`.
+   - If `passportRequired(...)`: `file, hdr, ferr := r.FormFile("passport_photo")`. Treat `http.ErrMissingFile` or `hdr == nil` or `hdr.Size == 0 && hdr.Filename == ""` as absent (Python: an empty file part is falsy-ish; browsers send an empty part with empty filename when nothing is chosen). If present: `raw, err := readUploadLimited(file)` (`draft_scan.go:379`; close the file), then `body, ext, err := passportphotos.Prepare(raw, hdr.Header.Get("Content-Type"))`. On error append `validation.Issue{Field: "passport_photo", Message: msg, Severity: "error"}` where `msg` is the localized text (section D). If absent and not `hasExisting` append the `passport_photo_missing` issue. `hasExisting` = `existing != nil && existing.passportPhotoAt != "" && passportphotos.Has(dataDir, existing.id)`. Keep `body`, `ext` in locals.
+   - When not required: do not read the file at all (Python ignores it). Do not store it.
+   - `dataDir` comes from `getenv("UBYHOST_DATA_DIR")` exactly as `go/internal/web/stays/guest_privacy.go:37` (`privacyDataDir`), so the host read path agrees; copy that helper into the guest package rather than importing `stays`. Keys: `secure.LoadDataKeys(d.getenv)` as in `guestSaveDecrypter` (`go/internal/web/guest/stay_claim.go:654`).
+3. Order after the row is written (Python `guest.py:2709`): put the block after `savedID` is known and the `savedID == 0` redirect, BEFORE `auditGuestFormSaved` (:210), `guestFormSubmitStayIfComplete` (:209 region) and `runCompletion`. If `body != nil`: `passportphotos.SavePrepared(dataDir, keys, savedID, body, ext)`; on success `UPDATE guest SET passport_photo_at=$1, updated_at=$1 WHERE id=$2 AND reservation_id=$3` with `utcStamp`. On either error return it (existing 500 path) so no hook, submit-if-complete or redirect runs; the guest row stays saved, as in Python (Python has no transaction; do not add one). Change `SavePrepared` so a failed replacement keeps the old file: write `<id><ext>.enc.tmp` (0600) in the same dir, `os.Rename` onto the final name, then delete the OTHER extensions' files for this id (not the one just written); on a write error remove the tmp file and leave the prior files. Keep the existing `Save` tests green.
+4. Tests in `go/internal/web/guest/form_save_test.go`, `TestGuestSavePassportPhoto`, same fixtures as `TestGuestSaveNoticeAndHeadcount` (:231; isolated rows, `UBYHOST_DATA_DIR` = `t.TempDir()`, `UBYHOST_DATA_KEYS` from `testDataEnv`). Set the apartment `passport_photo_policy` to `required_foreign`, post `multipart/form-data` built with `mime/multipart` (all normal required fields plus `legal_ack`, `party_size`, nationality `DEU`), file part `passport_photo`. Synthetic JPEG: `image/jpeg` encoded from a 64x64 `image.NewRGBA` (well over 64 bytes). Cases:
+   - required + no file: 422, body contains the `passport_photo_missing` text, zero guest rows for the reservation, no file in the photos dir, hook counter 0.
+   - required + bad content (`text/plain` and an over-5 MB JPEG): 422, translated message, nothing written, hook 0.
+   - required + valid JPEG: 303, one guest row with `passport_photo_at` set, `<id>.jpg.enc` exists, mode 0600, content is not plaintext JPEG (`!bytes.HasPrefix(raw, {0xFF,0xD8,0xFF})`) and decrypts via `passportphotos.Read` to a JPEG, hook 1.
+   - not required (policy `off`, or nationality `CZE`): file ignored, 303, no file, `passport_photo_at` empty.
+   - existing guest with stamp and a real file, no new upload: 303, file untouched. Existing guest with stamp but file removed: 422 missing.
+   - I/O failure: make the photos dir unwritable (parent dir read-only; skip when running as root) and assert error status, hook 0, row present, no stamp, prior file intact on replacement.
+   - Unit tests for `passportRequired` over: policy off / `Required_Foreign ` (case/space) / Czech / empty nationality / host-entered / identity verified / new guest.
+   Capture the 390 px missing-photo 422 screenshot as the brief says.
+
+### D. Error message keys
+
+Go `go/internal/web/guest/i18n.json` already has `passport_photo_missing` (cs line 218, de 577, en ~934, es ~1293) and `passport_photo_bad_type`, `passport_photo_too_large_image`, `passport_photo_too_large_pdf`. It has NO keys for the other `Prepare` errors (empty file, invalid PDF, invalid image, too many pixels) that Python maps in `PASSPORT_UPLOAD_MESSAGES` (`guest.py:57-105`, incl. uk via `guest_uk_i18n.PASSPORT_UPLOAD`). Add a small Go map in `passport_required.go` keyed by the English `Prepare` message, per language, copied verbatim from `PASSPORT_UPLOAD_MESSAGES` for `cs`, `de`, `es`, `uk`; English and unknown languages fall back to the English text, as Python (`PASSPORT_UPLOAD_MESSAGES.get(lang, {}).get(msg, msg)`). Do not add keys to `i18n.json` (translation file parity lint). Missing-photo uses `stringsCatalog.T(lang, "passport_photo_missing", nil)` like `legal_ack_missing` at `form_save.go:152`.
+
+### E. Risks
+
+- Multipart parsing (section B) is the highest risk: before this fix the real browser post carries no fields.
+- Existing-row nationality and verification must come from the stored row, not the form.
+- Photo file write is outside any DB transaction by design (Python parity); a crash between row insert and file write leaves a saved guest without a photo, and the guest is asked again on the next save because `passport_photo_at` is unset.
+- Do not log file names or bytes.
