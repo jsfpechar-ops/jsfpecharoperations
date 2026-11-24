@@ -133,6 +133,7 @@ GUEST_CASES = [
     ("g-stay-provisional", "/l/{tok}/{res_provisional}", [], "H"),
     ("g-stay-claimed", "/l/{tok}/{res_claimed}", ["claim"], "H"),
     ("g-stay-claimed-nocookie", "/l/{tok}/{res_claimed}", [], "H"),
+    ("g-stay-issued", "/l/{tok}/{res_issued}", ["claim"], "H"),
     ("g-stay-locked", "/l/{tok}/{res_locked}", ["claim"], "H"),
     ("g-stay-gone", "/l/{tok}/{res_gone}", [], "H"),
     ("g-claim-landing", "/l/{tok}/{res_provisional}/claim", [], "H"),
@@ -142,9 +143,9 @@ GUEST_CASES = [
     ("g-form-edit-partial", "/l/{tok}/{res_claimed}/edit/{guest_partial}", ["claim", "owned"], "H"),
     ("g-remove", "/l/{tok}/{res_claimed}/remove/{guest_complete}", ["claim", "owned"], "H"),
     # H3: guide and Leon
-    ("g-guide-apt", "/g/{tok}", [], "H"),
+    ("g-guide-apt", "/g/{gtok}", [], "H"),
     ("g-guide-stay", "/l/{tok}/{res_claimed}/guide", ["claim"], "H"),
-    ("g-leon-apt", "/g/{tok}/leon", [], "H"),
+    ("g-leon-apt", "/g/{gtok}/leon", [], "H"),
     ("g-leon-stay", "/l/{tok}/{res_claimed}/guide/leon", ["claim"], "H"),
     # H4: other token links (no login)
     ("t-cleaner-share", "/cleaning/shared/{share_token}", [], "H"),

@@ -63,6 +63,7 @@ def states(out, owner, apt):
     set_claim(out["res_locked"], state="claimed", claimed_at=now, token_version=1, declared_guests=2,
               token_hash=None, guest_access_locked_at=now, updated_at=now)
     out["res_gone"] = stay(apt, "e2e-guest-gone", status="cancelled")
+    issued(out, owner, apt)
 
 
 def guests(out, owner, apt):
@@ -79,10 +80,28 @@ def guests(out, owner, apt):
     })
 
 
+def issued(out, owner, apt):
+    """Claimed stay, all declared guests complete, one ISSUED door code (brief 2057 priority 2)."""
+    now = db.utcnow()
+    out["res_issued"] = stay(apt, "e2e-guest-issued")
+    set_claim(out["res_issued"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
+              token_hash=None, updated_at=now)
+    db.insert("guest", {
+        "reservation_id": out["res_issued"], "first_name": "Parity", "surname": "Issued",
+        "birth_date": "01011990", "nationality": "DEU", "signature_png": SIG,
+        "created_at": now, "updated_at": now,
+    })
+    out["door_code_issued"] = db.insert("door_code", {
+        "reservation_id": out["res_issued"], "apartment_id": apt, "lock_id": "e2e-lock-parity",
+        "code_kind": "random", "state": "issued", "attempts": 0, "issued_at": now,
+        "valid_from": now, "valid_to": now, "next_attempt_at": now, "created_at": now, "updated_at": now,
+    })
+
+
 def cookies(out, owner, apt):
     secret = config.secret_key()
     out["claim_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-claim").dumps(
-        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1})
+        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1})
     out["owned_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-owned").dumps(
         [out["guest_complete"], out["guest_partial"]])
 

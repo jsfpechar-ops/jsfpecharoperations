@@ -13,7 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, os.getcwd())
-from app import cleaning, db, dsr, guest_guide, havel, leon, lifecycle_mail, auth, login_link  # noqa: E402
+from app import cleaning, db, dsr, guest_guide, havel, leon, lifecycle_mail, auth, login_link, guide_token  # noqa: E402
 
 
 def block(name, fn, out):
@@ -24,19 +24,25 @@ def block(name, fn, out):
 
 
 def guide(out, owner, apt):
-    # Four cards: two with steps or a location (done), two left missing.
-    kinds = list(guest_guide.KINDS)[:4]
+    # Live guide: every MUST_HAVE card done (steps), one card with only a location, the rest missing.
+    must = list(guest_guide.MUST_HAVE)
+    kinds = list(dict.fromkeys(must + list(guest_guide.KINDS)))[:6]
     for kind in kinds:
         guest_guide.add_kind(apt, kind)
     ids = []
     for kind in kinds:
         row = db.query_one("SELECT id FROM guide_item WHERE apartment_id = ? AND kind = ?", (apt, kind))
         ids.append(row["id"])
-    guest_guide.save(apt, ids[0], {"steps": "E2E steps text", "location": ""})
-    guest_guide.save(apt, ids[1], {"steps": "", "location": "E2E location text"})
+    for kind, iid in zip(kinds, ids):
+        if kind in must:
+            guest_guide.save(apt, iid, {"steps": "E2E steps text", "location": ""})
+        elif kind == kinds[-1]:
+            guest_guide.save(apt, iid, {"steps": "", "location": "E2E location text"})
     out["guide_item"] = ids[0]
     out["guide_items"] = ids
     out["custom_item"] = guest_guide.add_custom(apt, "wifi", "E2E custom card")
+    out["gtok"] = guide_token.ensure(apt)
+    print("guide live:", guest_guide.progress(apt)["live"], file=sys.stderr)
 
 
 def questions(out, owner, apt):

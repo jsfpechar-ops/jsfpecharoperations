@@ -234,6 +234,9 @@ def main() -> int:
     pin = os.environ.get("PARITY_PIN") == "1"
     if pin:
         groups = {"P"}
+        os.chdir(audit.APP)
+        sys.path.insert(0, str(audit.APP))
+        os.environ.update({**audit.PIN_ENV, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public})
         py_proc, py_base = audit.start_py_process(py_port, db_url, public, audit.PIN_ENV)
         go_proc, go_base = audit.start_go(go_port, db_url, public, audit.PIN_ENV)
     else:
