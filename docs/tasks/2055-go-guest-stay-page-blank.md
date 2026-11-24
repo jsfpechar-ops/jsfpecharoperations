@@ -73,3 +73,7 @@ An anchor not found; no Go fee partial; door code not callable; more than 25 too
 ## 9. Report
 
 `docs/tasks/2055-report.md`, 600 tokens at most.
+
+## 10. Orchestrator decision (after the first run)
+
+Fee panel (`guest/_fee_pay.html`): Python shows it only when `apartment.stay_fee_collect` AND `config.STAY_FEE_GUEST_PAY` (App/app/routes/guest.py `_fee_pay_panel` ~2906-2911) and the stay has nobody left to register. Guest pay is an open owner decision (`UBYHOST_STAY_FEE_GUEST_PAY`), presumably off in production. So in this brief: port stay.html and assigned.html completely EXCEPT the fee panel; in Go render no fee box at all (a `{{if .FeePanel}}` block with FeePanel always nil, with a comment `// fee panel: follow-up brief, only when UBYHOST_STAY_FEE_GUEST_PAY is on`). Do not stop on the fee panel. Continue with steps 3-8. The parity harness command was denied for the executor: skip the harness (step 1 diagnosis is proven by grep; brief 2057 reruns parity); keep the Go DB test and the guest browser/geometry tests and the 390 px screenshots.
