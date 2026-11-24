@@ -135,7 +135,9 @@ def submission(out, owner, apt):
 
 
 def invite(out, owner, apt):
-    raise RuntimeError("no account invite table or insert helper in the baseline; not seeded")
+    acct_id = auth.create_account("invitee@e2e.test", "E2E Invitee", role="host")
+    row = db.query_one("SELECT * FROM user_account WHERE id = ?", (acct_id,))
+    out["invite_token"] = login_link.issue(row, purpose=login_link.INVITE, remember=True)
 
 
 def property_block(out, owner, apt):
