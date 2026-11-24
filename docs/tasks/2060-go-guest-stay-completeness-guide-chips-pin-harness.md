@@ -5,7 +5,10 @@ Executor: Haiku 5.5. One PR, draft. Commit trailers:
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 
-## 1. Why (diagnosis, file:line)
+## 1. Objective
+Fix the real Go differences found after 2059 (stay completeness, guide chips), make the PIN parity row stable, find why the door card is missing, rerun the affected cases and the gate once.
+
+## 2. Context (diagnosis, file:line)
 
 1. **CRITICAL, g-stay-issued-done: Python "uloženo", Go "nevyplněno".** `go/internal/web/guest/stay_view.go:68-72` (`stayPeople`) selects only the PLAIN columns `birth_date, doc_number, visa_number, res_street, res_city, signature_png`. Production and the seed write these through `db.insert`, which redirects them to `*_enc` and blanks the plain column (`App/app/db.py` ENCRYPTED_GUEST_COLUMNS: doc_number, visa_number, signature_png, birth_date, res_street, res_city). Python reads them decrypted (`reporting.guest_issues`). So Go sees an empty birth date, document, residence and signature, and `GuestIsComplete` is false. Go also never loads `note`, `stay_from`, `stay_to`, which `reporting.guest_dict/_stay_dates` use (guest's own stay dates win over the reservation's; note is needed for INPASS). The filing path `ubyport.LoadGuests` (`go/internal/ubyport/collect.go:419`, `decryptOrPlain`) and the guest form (`form_pages.go:746 loadFormGuest`) already decrypt, so today the stay page can say "not filled in" for a person the filing would send. The same plain-only SELECT exists in `go/internal/web/guest/pick_data.go:~160` and `go/internal/web/guest/form_pages.go:~575` (progress counts). Fix all three with the decrypt helper `decryptGuestField(getenv, now, token, plain)` in `form_save.go:260`.
 2. **Door-code card absent on both sides.** Python `door_codes.view` (`App/app/door_codes.py:216-262`) returns None unless apartment.lock_provider == "ttlock", source != "demo", and (DOOR_CODES_LIVE or source == "manual"); then a row state "issued" with a decryptable pin_enc gives the card (`stay.html:66`, `{% if door_code %}`). Go `doorcodes/view.go:115-119` is the same condition; Go also needs `d.doorCodes != nil` (`stay_claim.go:216`). The seed stay is `source="manual"` and sets ttlock and hours (`seed_parity_guest.py:126`), so on paper both conditions hold, yet neither side shows it. Cause not provable by reading (static); step 2 adds stderr diagnostics, step 9 reads them. Suspects: the `issued()` block raising after the guest insert (block() only prints a "skipped" line to stderr, `seed_parity_guest.py:24-28`), or the apartment UPDATE not landing on the apartment behind the token link.
@@ -13,7 +16,7 @@ Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 4. **g-guide-apt / g-guide-stay:** the only content difference seen (cs 390, en 1280) is the Leon quick-reply chips: Go shows raw keys `leon_sit_cant_get_in, leon_sit_cold, leon_sit_checkout, leon_sit_emergency` (also broken, parking, trash) because `go/internal/web/guest/i18n.json` lacks those 7 keys (it has only `leon_sit_other`, `leon_sit_emergency_help`); `guide.tmpl:79-85` calls `.T`. Values exist in `go/internal/web/ai/leon_guest_i18n.json`. Chips wrap differently, so the cards differ in height and everything below shifts (the 6k-58k px diff). Layout, text and host card are otherwise identical.
 5. **g-pin-hub:** same HTML (`pin.html:13-14` vs `pin.tmpl:11-12`, identical attributes), same JS (`guest-enhancements.js:44-75`). The difference is only the first cell: `.g-pin-cell.is-caret` (border + 4px ring) is removed by `paint()` on blur, but the cell has `transition: border-color/box-shadow 0.14s` (`guest.css:756-767`) and the screenshot is taken right after `blur()` (`page_parity_visual.py:163`), so each side is caught at a different point of the fade (Python pinkish border, Go dark border + ring). Harness timing issue, not a Go bug. Fix: wait after blur.
 
-## 2. Files (section 3)
+## 3. Files
 
 - `go/internal/web/guest/stay_view.go`, `pick_data.go`, `form_pages.go`
 - `go/internal/web/guest/i18n.json`, `go/internal/web/guest/i18n_keys.txt`
@@ -21,7 +24,7 @@ Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 - `scripts/e2e/seed_parity_guest.py`, `scripts/e2e/page_parity_visual.py`
 - Not touched: anything under `App/app`.
 
-## 3. Steps (one commit each, message `2060 step k`; every command ends `2>&1 | tail -30`)
+## 4. Steps (one commit each, message `2060 step k`; every command ends `2>&1 | tail -30`)
 
 1. **Shared helper.** In `stay_view.go` add (anchor: `func joinNonEmpty`, insert before it):
 ```go
@@ -94,10 +97,13 @@ Then `git diff --stat go/internal/web/guest/i18n.json | tail -5`: only added lin
 10. **Full gate once.** After steps 8-9 are clean: `scripts/e2e/parity_gate.sh 2>&1 | tail -30`. Expected: guest pages 0 visible differences (or list each remaining row in the report; do not silence).
 11. `python3 scripts/context_lint.py 2>&1 | tail -3`: OK. Write `docs/tasks/2060-report.md` per executor.md. Open a draft PR.
 
-## 4. Tests (section 6)
+## 5. Do not touch
+Anything under `App/app`; other Go packages; the Python door-code bug (section 10).
+
+## 6. Commands
 `cd go && go test ./internal/web/guest/ 2>&1 | tail -30`. Guest page screenshots at 390 px for g-stay-issued-done and g-guide-apt (cs), from the harness PNGs.
 
-## 5. Acceptance (section 7)
+## 7. Acceptance
 - [ ] g-stay-issued-done: both sides "Osoba 1 · uloženo".
 - [ ] Guide chips show translated text in Go (cs, en).
 - [ ] g-pin-hub identical in all rows.
@@ -105,8 +111,11 @@ Then `git diff --stat go/internal/web/guest/i18n.json | tail -5`: only added lin
 - [ ] parity_gate.sh output pasted (last 5 lines).
 - [ ] No change under `App/app`.
 
-## 6. Stop rules (section 8)
+## 8. Stop and ask
 Any anchor missing, step 3 not feasible without a signature change, or a Go test failing twice: STOP, report `blocked`.
 
-## 7. For the owner (report only, no code here)
+## 9. Report
+`docs/tasks/2060-report.md` per executor.md.
+
+## 10. For the owner (report only, no code here)
 Python bug: `App/app/door_codes.py:210-213` `_stay_checkin_label` crashes (TypeError, HTTP 500 on the guest stay page and the host stay page) when an apartment with an issued door code has NULL `checkin_hour` or `checkout_hour`. Production runs door codes, and hours are nullable; new codes require both hours (`door_codes.py:193`), so exposure is limited to a host who clears the hours after a code was issued. Ask for a separate Python brief: fall back to the code's `valid_from/valid_to` or hide the times when an hour is NULL.
