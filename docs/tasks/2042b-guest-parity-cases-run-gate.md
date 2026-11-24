@@ -112,3 +112,7 @@ cd App && PARITY_PIN=1 PARITY_GROUP=P .venv/bin/python ../scripts/e2e/page_parit
 ## 9. Report
 
 `docs/tasks/2042b-report.md`.
+
+## Step 0 (orchestrator, do first): stop the leaked Go server
+
+`scripts/e2e/page_parity_visual.py` ~line 220 does `_, go_base = audit.start_go(go_port, db_url, public)`: the Go process handle is thrown away, so every run leaves a `/var/tmp/ubyhost-web-parity` process running its scheduler against `parity_run` (the orchestrator found 10+ of them, up to an hour old). Fix: keep the handle (`go_proc, go_base = audit.start_go(...)`) and stop it in a `try/finally` around the code that uses it (`go_proc.terminate()`, then `go_proc.wait(timeout=10)`, and `go_proc.kill()` if it is still alive), the same way `page_parity_audit.py` stops its own servers (~lines 253, 279, 451-452). Do the same for any other process this file starts (grep `start_py`, `Popen`). Verify: after one short run (`PARITY_ONLY=<one host case> PARITY_WIDTHS=390`), `ps -eo pid,cmd | grep -c '[u]byhost-web-parity'` prints 0. Commit "2042b step 0".
