@@ -179,6 +179,20 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 		return "", err
 	}
 	defer tx.Rollback(ctx)
+	code, err := d.applyDeclaredTx(ctx, tx, resID, count)
+	if err != nil || code != codeSaved {
+		return code, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return "", err
+	}
+	return codeSaved, nil
+}
+
+// applyDeclaredTx is applyDeclared's locked read, rules and declared-count write
+// run inside the caller's transaction. It commits nothing.
+func (d partyDeps) applyDeclaredTx(ctx context.Context, tx pgx.Tx, resID int64, count int) (string, error) {
+	var err error
 	var s partyStay
 	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
@@ -240,9 +254,6 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 			count, stamp, resID)
 	}
 	if err != nil {
-		return "", err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return "", err
 	}
 	return codeSaved, nil

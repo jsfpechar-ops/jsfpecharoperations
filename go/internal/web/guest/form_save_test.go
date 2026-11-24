@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -167,7 +168,8 @@ func TestGuestWriteEncryption(t *testing.T) {
 		"signature_png": signature, "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 		"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 	}
-	guestID, err := insertGuestSaveRow(ctx, d, payload, resID, guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22", declaredGuests: &one})
+	ins, err := insertGuestSaveRow(ctx, d, payload, resID, guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22", declaredGuests: &one}, 0)
+	guestID := ins.id
 	if err != nil || guestID == 0 {
 		t.Fatalf("guest self-save insert failed: %v", err)
 	}
@@ -222,6 +224,171 @@ func TestGuestWriteEncryption(t *testing.T) {
 	if _, err := updateGuestSaveRow(ctx, d, existing, map[string]any{"doc_number": 123}); err == nil {
 		t.Fatal("wrong protected field type must fail before writing")
 	}
+}
+
+// TestGuestSaveNoticeAndHeadcount covers the first-form count and guest insert
+// as one transaction (brief 2071), on synthetic rows.
+func TestGuestSaveNoticeAndHeadcount(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	baseID := time.Now().UnixNano()%1000000000 + 7500000
+	userID, aptID := baseID, baseID+1
+	stamp := "2026-01-01T00:00:00Z"
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("hc%d@example.test", userID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at)
+		VALUES ($1, $2, 'Synthetic', 'Prague', 1, $3, $4)`, aptID, userID, fmt.Sprintf("guestheads%d", aptID), stamp)
+	var resIDs []int64
+	newRes := func(id int64, declared, override *int64) int64 {
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, declared_guests, expected_guests_override, created_at, updated_at)
+			VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', $4, $5, $6, $6)`,
+			id, aptID, fmt.Sprintf("hc-%d", id), declared, override, stamp)
+		resIDs = append(resIDs, id)
+		return id
+	}
+	t.Cleanup(func() {
+		bg := context.Background()
+		for _, id := range resIDs {
+			_, _ = pool.Exec(bg, `DELETE FROM guest WHERE reservation_id = $1`, id)
+			_, _ = pool.Exec(bg, `DELETE FROM audit WHERE detail LIKE $1`, fmt.Sprintf("id=%d %%", id))
+			_, _ = pool.Exec(bg, `DELETE FROM reservation WHERE id = $1`, id)
+		}
+		_, _ = pool.Exec(bg, `DELETE FROM apartment WHERE id = $1`, aptID)
+		_, _ = pool.Exec(bg, `DELETE FROM user_account WHERE id = $1`, userID)
+	})
+	d := saveDeps{pool: pool, getenv: testDataEnv, now: func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }}
+	meta := guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22"}
+	payloadFor := func() map[string]any {
+		return map[string]any{
+			"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
+			"doc_number": "SYNTHETIC-DOC", "visa_number": "", "res_street": "Test Street", "res_city": "Test City",
+			"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+			"signature_png": "data:image/png;base64,AAAA", "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
+			"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
+		}
+	}
+	countGuests := func(resID int64) int {
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM guest WHERE reservation_id = $1`, resID).Scan(&n); err != nil {
+			t.Fatalf("guest count: %v", err)
+		}
+		return n
+	}
+	declaredOf := func(resID int64) *int64 {
+		var v *int64
+		if err := pool.QueryRow(ctx, `SELECT declared_guests FROM reservation WHERE id = $1`, resID).Scan(&v); err != nil {
+			t.Fatalf("declared read: %v", err)
+		}
+		return v
+	}
+
+	t.Run("first guest with party size 3 saves count and guest", func(t *testing.T) {
+		id := newRes(baseID+10, nil, nil)
+		ins, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 3)
+		if err != nil || ins.id == 0 || !ins.countSaved || ins.countCode != codeSaved {
+			t.Fatalf("insert: id=%d code=%q saved=%v err=%v", ins.id, ins.countCode, ins.countSaved, err)
+		}
+		if v := declaredOf(id); v == nil || *v != 3 {
+			t.Fatalf("declared_guests = %v, want 3", v)
+		}
+		if n := countGuests(id); n != 1 {
+			t.Fatalf("guests = %d, want 1", n)
+		}
+		if err := auditHeadcountCount(ctx, pool, d.now, id, ins.countCode, ins.countOld, 3, userID); err != nil {
+			t.Fatalf("audit: %v", err)
+		}
+		var rows int
+		if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM audit WHERE action = 'reservation_declared_guests_set' AND detail = $1`,
+			fmt.Sprintf("id=%d from=None to=3 source=first_form", id)).Scan(&rows); err != nil || rows != 1 {
+			t.Fatalf("audit rows = %d, err = %v", rows, err)
+		}
+	})
+
+	t.Run("out-of-range party size writes nothing", func(t *testing.T) {
+		for _, size := range []int{0, 61} {
+			id := newRes(baseID+20+int64(size), nil, nil)
+			ins, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, size)
+			if err != nil || ins.id != 0 || ins.countSaved {
+				t.Fatalf("size %d: id=%d saved=%v err=%v", size, ins.id, ins.countSaved, err)
+			}
+			if v := declaredOf(id); v != nil {
+				t.Fatalf("size %d: declared_guests = %d, want NULL", size, *v)
+			}
+			if n := countGuests(id); n != 0 {
+				t.Fatalf("size %d: guests = %d, want 0", size, n)
+			}
+		}
+	})
+
+	t.Run("valid count in an already full group commits count only", func(t *testing.T) {
+		id := newRes(baseID+40, nil, nil)
+		first, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 1)
+		if err != nil || first.id == 0 {
+			t.Fatalf("first insert: id=%d err=%v", first.id, err)
+		}
+		if _, err := pool.Exec(ctx, `UPDATE reservation SET declared_guests = NULL WHERE id = $1`, id); err != nil {
+			t.Fatal(err)
+		}
+		ins, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 1)
+		if err != nil || ins.id != 0 || !ins.countSaved {
+			t.Fatalf("full group: id=%d saved=%v err=%v", ins.id, ins.countSaved, err)
+		}
+		if v := declaredOf(id); v == nil || *v != 1 {
+			t.Fatalf("declared_guests = %v, want 1", v)
+		}
+		if n := countGuests(id); n != 1 {
+			t.Fatalf("guests = %d, want 1", n)
+		}
+	})
+
+	t.Run("host override is kept and no count is written", func(t *testing.T) {
+		two := int64(2)
+		id := newRes(baseID+50, nil, &two)
+		ins, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 5)
+		if err != nil || ins.id == 0 || ins.countCode != "" {
+			t.Fatalf("override: id=%d code=%q err=%v", ins.id, ins.countCode, err)
+		}
+		if v := declaredOf(id); v != nil {
+			t.Fatalf("declared_guests = %d, want NULL", *v)
+		}
+	})
+
+	t.Run("two concurrent final-slot saves insert one guest", func(t *testing.T) {
+		id := newRes(baseID+60, nil, nil)
+		first, err := insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 2)
+		if err != nil || first.id == 0 {
+			t.Fatalf("first insert: id=%d err=%v", first.id, err)
+		}
+		var wg sync.WaitGroup
+		results := make([]guestInsert, 2)
+		errs := make([]error, 2)
+		for i := range results {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				results[i], errs[i] = insertGuestSaveRow(ctx, d, payloadFor(), id, meta, 0)
+			}(i)
+		}
+		wg.Wait()
+		inserted := 0
+		for i := range results {
+			if errs[i] != nil {
+				t.Fatalf("concurrent save %d: %v", i, errs[i])
+			}
+			if results[i].id != 0 {
+				inserted++
+			}
+		}
+		if inserted != 1 {
+			t.Fatalf("concurrent saves inserted %d guests, want exactly 1", inserted)
+		}
+		if n := countGuests(id); n != 2 {
+			t.Fatalf("guests = %d, want 2 (first guest plus one final slot)", n)
+		}
+		if v := declaredOf(id); v == nil || *v != 2 {
+			t.Fatalf("declared_guests = %v, want 2", v)
+		}
+	})
 }
 
 func mustRequest(method, target string) *http.Request {
