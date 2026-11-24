@@ -30,8 +30,8 @@ const (
 )
 
 // RegisterFormSave wires POST /l/{token}/{reservation_id}/save (dormant until UBYHOST_GO_PATHS).
-func RegisterFormSave(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := saveDeps{pool: pool, getenv: getenv, now: now}
+func RegisterFormSave(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, hooks CompletionHooks) {
+	d := saveDeps{pool: pool, getenv: getenv, now: now, hooks: hooks}
 	mux.Handle("POST /l/{token}/{reservation_id}/save", wrap("POST /l/{token}/{reservation_id}/save", WithPOSTCSRF(getenv, now, guestFormSaveHandler(d))))
 }
 
@@ -39,6 +39,7 @@ type saveDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	hooks  CompletionHooks
 }
 
 func (d saveDeps) shell() shellDeps {
@@ -181,6 +182,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		return err
 	}
 	_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+	runCompletion(ctx, d.hooks, res.apartmentID, resID)
 	rememberOwnedGuestIDs(w, d.getenv, append(ownedGuestIDs(r, d.getenv), savedID))
 	loc := GuestLink(token, resID, LangQuery(lang, ""))
 	if existing == nil {
