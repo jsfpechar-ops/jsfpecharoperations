@@ -91,3 +91,15 @@ Status: partial. Item (2) done; item (1) not started (executor tool cap reached)
   - Item (1) not done (see above).
   - `layout_test` is partly migrated from my attempt to call `migrateGuestPool` in the new test. That helper is not idempotent (baseline re-run failed on `ubyhost_invoice_delete_guard`). I removed the call. The owner or Chunk C must reset or finish that DB.
   - Test fixtures follow the stored formats: `birth_date` is `DDMMYYYY` text, purpose code `03`.
+
+## Chunk A2 (run 4, item 1: door-code card)
+
+Status: done. Item (1) only; item (2) was already in commit `6399f9f`.
+
+- Commit `1ca03e3` (step 1, wiring): `stayClaimDeps` gets `doorCodes DoorCodeViewer` (exported interface, `ViewForStay`); `RegisterStayClaim` takes it as a last argument; `go/cmd/ubyhost-web/register_web_guest_stay_claim.go` passes `stayDoorCodes(pool)` (the same service staydetail uses). `party.go` unchanged: its gate literal only calls `pinRedirect`.
+- Commit `cf34b53` (step 2, render): `stayOverview` calls `ViewForStay` and passes `*doorcodes.Shown` to `renderStayPage` into `stayView.DoorCode` (`stay_view.go`, `doorCodeCardFrom`). `stay.tmpl` renders `#door-code` in the all-registered branch (remaining <= 0), after the big-ok card, as Python does (`stay.html:66-80`).
+- States and Python conditions: `issued` shows PIN (`g-door-code`), times (`door_code_times`), first-use line only when `FirstUseBy` is set (not for custom codes), sent line only when `ClaimEmailMasked` is set. `failed` shows `door_code_failed`. Anything else (`preparing`, `waiting`, `delayed`) shows `door_code_preparing`. `nil` (Python `None`) hides the card.
+- Tests: `go/internal/web/guest/stay_door_code_test.go` (`TestDoorCodeCardStates`, `TestDoorCodeCardRender` with 8 subtests, one per state plus hidden cases). These are unit tests that render `staySet`, with no DB.
+- Test callers: `csrf_forms_test.go`, `party_claim_start_test.go`, `pick_http_test.go` pass `nil` for the new argument.
+- Verification (fresh DB `guest_test`): `go build ./...` passes in `go/`. `go test ./internal/web/guest/... ./internal/doorcodes/... ./cmd/ubyhost-web/...` passes, including `TestConfirmClaimAppliesDeclaredGuests`, `TestStayOverviewMailOnHonorsClaimCookie` and `TestConfirmClaimRace`.
+- Deviations: a `ViewForStay` error is logged and the card is hidden, so the page still renders (Python would return 500). The door-code CSS (`.g-door-code`) and the 390 px screenshot were not checked; they belong to Chunk C item 8.
