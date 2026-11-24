@@ -92,6 +92,30 @@ var lqI18n = []byte(`{
     "guest_question.your_answer": "Your answer",
     "guest_question.answer_placeholder": "Write your answer for the guest",
     "guest_question.dismiss": "Dismiss without answering",
+    "guest_question.urgent_banner": "Leon (AI) read this as an emergency and showed the guest the emergency number and your emergency card. Call or write to the guest now if you can.",
+    "guest_question.shown_to_guest": "The guest sees this on the guide page, word for word.",
+    "guest_question.field.answer": "Answer",
+    "guest_question.field.answer_help": "Plain text, up to %(max)s characters. Write it the way you would say it; no need to sign.",
+    "guest_question.dismiss_help": "For a question that needs no answer. The guest is not told.",
+    "guest_question.dismissed_banner": "You dismissed this question. You can still answer it.",
+    "guest_question.card.title": "Add to guide",
+    "guest_question.card.help": "Save this answer as a guide card, so Leon (AI) answers the next guest himself. You can edit the card afterwards.",
+    "guest_question.card.button": "Add to guide",
+    "guest_question.card.done": "This answer is in your guide.",
+    "guest_question.card.open": "Open the card",
+    "guest_guide.add.topic": "Topic",
+    "guest_guide.more.title": "More",
+    "guest_guide.topic.arrival": "Arrival and getting here",
+    "guest_guide.topic.wifi": "Wi-Fi and TV",
+    "guest_guide.topic.heating": "Heating and hot water",
+    "guest_guide.topic.kitchen": "Kitchen",
+    "guest_guide.topic.rooms": "Bedrooms",
+    "guest_guide.topic.bathroom": "Bathroom and laundry",
+    "guest_guide.topic.rules": "House rules",
+    "guest_guide.topic.trash": "Trash",
+    "guest_guide.topic.checkout": "Checkout",
+    "guest_guide.topic.area": "Nearby",
+    "guest_guide.topic.emergency": "Emergencies",
     "guest_question.send": "Send to guest",
     "guest_question.add_to_guide": "Add answer to guide",
     "guest_question.topic": "Topic",
@@ -125,6 +149,30 @@ var lqI18n = []byte(`{
     "guest_question.your_answer": "Vaše odpověď",
     "guest_question.answer_placeholder": "Napište odpověď pro hosta",
     "guest_question.dismiss": "Odložit bez odpovědi",
+    "guest_question.urgent_banner": "Leon (AI) to vyhodnotil jako nouzi a ukázal hostovi tísňové číslo a vaši kartu Nouze. Pokud můžete, hostovi hned zavolejte nebo napište.",
+    "guest_question.shown_to_guest": "Host ji uvidí na stránce průvodce slovo od slova.",
+    "guest_question.field.answer": "Odpověď",
+    "guest_question.field.answer_help": "Prostý text, nejvýše %(max)s znaků. Napište ji tak, jak byste ji řekli; podpis není třeba.",
+    "guest_question.dismiss_help": "Pro dotaz, který odpověď nepotřebuje. Host se nic nedozví.",
+    "guest_question.dismissed_banner": "Tento dotaz jste odložili. Pořád na něj můžete odpovědět.",
+    "guest_question.card.title": "Přidat do průvodce",
+    "guest_question.card.help": "Uložte odpověď jako kartu průvodce, aby příštímu hostovi odpověděl Leon (AI) sám. Kartu pak můžete upravit.",
+    "guest_question.card.button": "Přidat do průvodce",
+    "guest_question.card.done": "Tato odpověď je ve vašem průvodci.",
+    "guest_question.card.open": "Otevřít kartu",
+    "guest_guide.add.topic": "Téma",
+    "guest_guide.more.title": "Další možnosti",
+    "guest_guide.topic.arrival": "Příjezd a cesta",
+    "guest_guide.topic.wifi": "Wi-Fi a televize",
+    "guest_guide.topic.heating": "Topení a teplá voda",
+    "guest_guide.topic.kitchen": "Kuchyně",
+    "guest_guide.topic.rooms": "Ložnice",
+    "guest_guide.topic.bathroom": "Koupelna a praní",
+    "guest_guide.topic.rules": "Domácí pravidla",
+    "guest_guide.topic.trash": "Odpad",
+    "guest_guide.topic.checkout": "Odjezd",
+    "guest_guide.topic.area": "V okolí",
+    "guest_guide.topic.emergency": "Nouzové situace",
     "guest_question.send": "Odeslat hostovi",
     "guest_question.add_to_guide": "Přidat odpověď do průvodce",
     "guest_question.topic": "Téma",
@@ -365,10 +413,11 @@ type handoffRow struct {
 	Summary, Status, Door, Question string
 	Urgent, Triaged                 int
 	Answer                          string
+	CreatedAt                       string
 }
 
 func (s *lqServer) handoffList(ctx context.Context, apt int64) ([]handoffRow, int, error) {
-	const q = `SELECT q.id, q.chat_id, COALESCE(q.summary,''), q.status, COALESCE(c.door,''), COALESCE(m.text,''), COALESCE(q.urgent,0), COALESCE(q.triaged,0), COALESCE(q.answer,'')
+	const q = `SELECT q.id, q.chat_id, COALESCE(q.summary,''), q.status, COALESCE(c.door,''), COALESCE(m.text,''), COALESCE(q.urgent,0), COALESCE(q.triaged,0), COALESCE(q.answer,''), COALESCE(q.created_at,'')
 		FROM guest_question q JOIN guest_chat c ON c.id = q.chat_id JOIN guest_chat_message m ON m.id = q.message_id
 		WHERE q.apartment_id = $1 ORDER BY CASE q.status WHEN 'open' THEN 0 ELSE 1 END,
 		CASE q.status WHEN 'open' THEN -q.urgent ELSE 0 END,
@@ -382,7 +431,7 @@ func (s *lqServer) handoffList(ctx context.Context, apt int64) ([]handoffRow, in
 	open := 0
 	for rows.Next() {
 		var row handoffRow
-		if err := rows.Scan(&row.ID, &row.ChatID, &row.Summary, &row.Status, &row.Door, &row.Question, &row.Urgent, &row.Triaged, &row.Answer); err != nil {
+		if err := rows.Scan(&row.ID, &row.ChatID, &row.Summary, &row.Status, &row.Door, &row.Question, &row.Urgent, &row.Triaged, &row.Answer, &row.CreatedAt); err != nil {
 			return nil, 0, err
 		}
 		if row.Status == "open" {
@@ -394,11 +443,11 @@ func (s *lqServer) handoffList(ctx context.Context, apt int64) ([]handoffRow, in
 }
 
 func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow, error) {
-	const q = `SELECT q.id, q.chat_id, COALESCE(q.summary,''), q.status, COALESCE(c.door,''), COALESCE(m.text,''), COALESCE(q.urgent,0), COALESCE(q.triaged,0), COALESCE(q.answer,'')
+	const q = `SELECT q.id, q.chat_id, COALESCE(q.summary,''), q.status, COALESCE(c.door,''), COALESCE(m.text,''), COALESCE(q.urgent,0), COALESCE(q.triaged,0), COALESCE(q.answer,''), COALESCE(q.created_at,'')
 		FROM guest_question q JOIN guest_chat c ON c.id = q.chat_id JOIN guest_chat_message m ON m.id = q.message_id
 		WHERE q.id = $1 AND q.apartment_id = $2`
 	var row handoffRow
-	err := s.pool.QueryRow(ctx, q, qid, apt).Scan(&row.ID, &row.ChatID, &row.Summary, &row.Status, &row.Door, &row.Question, &row.Urgent, &row.Triaged, &row.Answer)
+	err := s.pool.QueryRow(ctx, q, qid, apt).Scan(&row.ID, &row.ChatID, &row.Summary, &row.Status, &row.Door, &row.Question, &row.Urgent, &row.Triaged, &row.Answer, &row.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, errHandoffGone
 	}
@@ -406,6 +455,55 @@ func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow,
 		return nil, err
 	}
 	return &row, nil
+}
+
+func (s *lqServer) handoffCardID(ctx context.Context, apt int64, row *handoffRow) (int64, error) {
+	title := ""
+	for _, text := range []string{row.Summary, row.Question} {
+		if f := strings.Fields(text); len(f) > 0 {
+			title = strings.Join(f, " ")
+			break
+		}
+	}
+	if title == "" {
+		title = "Guest question"
+	}
+	if r := []rune(title); len(r) > 120 {
+		title = strings.TrimSpace(string(r[:120]))
+	}
+	var id int64
+	err := s.pool.QueryRow(ctx, `SELECT id FROM guide_item WHERE apartment_id = $1 AND kind = 'custom' AND title = $2 ORDER BY id DESC LIMIT 1`, apt, title).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}
+
+var lqTopics = []string{"arrival", "wifi", "heating", "kitchen", "rooms", "bathroom", "rules", "trash", "checkout", "area", "emergency"}
+
+func lqTopicOptions(lang string) [][]any {
+	var out [][]any
+	for _, t := range lqTopics {
+		out = append(out, []any{t, hostCatalog.T(lang, "guest_guide.topic."+t, nil)})
+	}
+	return out
+}
+
+func lqDay(ts string) string {
+	if len(ts) > 10 {
+		return ts[:10]
+	}
+	return ts
+}
+
+func lqLines(text string) []string {
+	var out []string
+	for _, line := range strings.Split(text, "\n") {
+		if strings.TrimSpace(line) != "" {
+			out = append(out, line)
+		}
+	}
+	return out
 }
 
 func (s *lqServer) handoffRefreshAlert(ctx context.Context, apt int64) error {
@@ -528,13 +626,25 @@ func (s *lqServer) renderQuestion(w http.ResponseWriter, r *http.Request, q *lqH
 		lqFail(w, err)
 		return
 	}
+	var cardID int64
+	if row.Status == "answered" {
+		cardID, err = s.handoffCardID(ctx, q.apt, row)
+		if err != nil {
+			lqFail(w, err)
+			return
+		}
+	}
 	data := map[string]any{
 		"Lang": q.lang, "QuestionID": q.qid, "ApartmentName": aptName,
 		"Base":         fmt.Sprintf("/apartments/%d/guide/questions", q.apt),
 		"QuestionText": row.Question, "Summary": row.Summary, "AnswerDraft": r.FormValue("answer"),
 		"Error": errKey, "MaxChars": handoffAnswerMax,
 		"Answered": row.Status == "answered" && row.Answer != "",
-		"Topics":   []string{"arrival", "keys", "rules", "amenities", "checkout", "emergency", "other"},
+		"Status":   row.Status, "Urgent": row.Urgent == 1 && row.Status == "open", "Triaged": row.Triaged != 0,
+		"Door": row.Door, "CreatedDay": lqDay(row.CreatedAt), "AnswerText": row.Answer, "CardID": cardID,
+		"QuestionLines": lqLines(row.Question), "SummaryLines": lqLines(row.Summary), "AnswerLines": lqLines(row.Answer),
+		"SummaryDiffers": row.Summary != "" && row.Summary != row.Question,
+		"TopicOptions":   lqTopicOptions(q.lang), "ApartmentID": q.apt,
 	}
 	p := layout.Page{
 		Title: s.lqPageTitle(q.lang, "guest_question.html", aptName), Nav: "apartments",
