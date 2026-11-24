@@ -48,9 +48,24 @@ func Save(dataDir string, keys *secure.MultiFernet, guestID int64, content []byt
 	if keys == nil {
 		return errors.New("passportphotos: data encryption keys are not configured")
 	}
-	body, storeExt, err := prepareUpload(content, contentType)
+	body, storeExt, err := Prepare(content, contentType)
 	if err != nil {
 		return err
+	}
+	return SavePrepared(dataDir, keys, guestID, body, storeExt)
+}
+
+// Prepare validates an upload and returns the bytes to store with their
+// extension, so a caller can refuse a bad file before it writes anything.
+func Prepare(content []byte, contentType string) ([]byte, string, error) {
+	return prepareUpload(content, contentType)
+}
+
+// SavePrepared stores bytes returned by Prepare: encrypt, write
+// <guest_id><ext>.enc, chmod 600. It replaces any prior photo for the guest.
+func SavePrepared(dataDir string, keys *secure.MultiFernet, guestID int64, body []byte, storeExt string) error {
+	if keys == nil {
+		return errors.New("passportphotos: data encryption keys are not configured")
 	}
 	dir := PhotosDir(dataDir)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
