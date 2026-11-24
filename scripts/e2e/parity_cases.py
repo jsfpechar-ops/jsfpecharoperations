@@ -4,7 +4,10 @@ One row = (name, path template, persona, group). Persona is "host" (user h1) or 
 Anonymous pages are out of scope. Placeholders are filled by page_parity_visual.fill():
 {apt} {res} {guest} {inv} {hinv} {fee_a} {alfa} {tok}
 Groups: A account+admin, B host core, C money, D setup+cleaning+guide (empty states).
+Brief 2041 adds EXTRA_CASES (groups E, F, G, populated pages from seed_parity_extra.py).
 """
+
+GUIDE_QUICK_STEPS = ("times", "rules", "access", "kitchen", "comfort")  # from guide_facts.STEPS
 
 CASES = [
     # A: account and admin
@@ -79,3 +82,36 @@ QR_PAYLOAD_CASES = {
     "2fa-setup-moved": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
     "apt-guide-qr": {"mask": ["img.guide-qr"], "texts": [".ui-mono"]},
 }
+
+# Brief 2041. Placeholders not produced by seed_parity_extra.py skip their row as SKIPPED.
+# Persona "anon_invite": no cookie on either stack (the invite link works signed out).
+EXTRA_CASES = [
+    # E: populated versions of pages that were empty in 2040
+    ("cleaning-full", "/cleaning", "host", "E"),
+    ("cleaning-edit", "/cleaning/events/{cleaning_event}/edit", "host", "E"),
+    ("cleaning-shares-full", "/cleaning/shares", "host", "E"),
+    ("havel-full", "/havel", "host", "E"),
+    ("privacy-requests-full", "/privacy-requests", "admin", "E"),
+    ("submissions-full", "/submissions", "host", "E"),
+    ("submission-draft", "/submissions/{submission_id}", "host", "E"),
+    ("submission-sent", "/submissions/{submission_sent}", "host", "E"),
+    ("apartments-full", "/apartments", "host", "E"),
+    ("property-detail", "/apartments/{property_id}", "host", "E"),
+    ("account-accept", "/account/accept?token={invite_token}", "anon_invite", "E"),
+    # F: guide, questions, Leon (populated)
+    ("apt-guide-full", "/apartments/{apt}/guide", "host", "F"),
+    ("guide-item", "/apartments/{apt}/guide/{guide_item}", "host", "F"),
+    ("guide-questions-full", "/apartments/{apt}/guide/questions", "host", "F"),
+    ("guide-question", "/apartments/{apt}/guide/questions/{question_id}", "host", "F"),
+    ("guide-quick-done", "/apartments/{apt}/guide/quick/done", "host", "F"),
+    ("leon-settings-full", "/apartments/{apt}/leon", "host", "F"),
+    ("leon-setup-cards-full", "/apartments/{apt}/leon/setup/cards", "host", "F"),
+] + [
+    (f"guide-quick-{s}", f"/apartments/{{apt}}/guide/quick/{s}", "host", "F")
+    for s in GUIDE_QUICK_STEPS
+] + [
+    # G: variants of existing pages (query parameters checked in the routes)
+    # "invoices-new-picker" (/invoices/new?step=) and "settings-tab-account" (/settings?tab=) removed: no such variant.
+    ("reservations-past", "/reservations?range=past", "host", "G"),
+    ("stay-fees-oct", "/stay-fees?month=2026-10", "host", "G"),
+]

@@ -1,6 +1,6 @@
 # 2049: host parity fixes (Go copy, admin-customer back icon, harness)
 
-Status: ready
+Status: todo
 Executor: Haiku 5.5, alone. Limits: 100k tokens, 30 tool calls. Read only AGENTS.md, docs/context/executor.md, this brief and the files named below.
 Follows: 2045 (harness), 2046 (reservation-detail, merged). Branch: the branch you are on; do not push or merge.
 

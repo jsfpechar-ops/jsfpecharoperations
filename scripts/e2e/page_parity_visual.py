@@ -25,6 +25,7 @@ import json
 import os
 import shutil
 import socket
+import subprocess
 import sys
 from pathlib import Path
 
@@ -71,19 +72,38 @@ def legacy_cases(refs: dict, py: dict, go: dict) -> list[tuple[str, str, str | N
     ]
 
 
-def fill(path: str, refs: dict, seed: dict) -> str:
+def fill(path: str, refs: dict, seed: dict, extra: dict | None = None) -> str:
     return path.format(
         apt=refs["apartment_id"], res=refs["reservation_id"], guest=refs["guest_id"],
         inv=refs["invoice_id"], hinv=seed["host_invoices"][-1], fee_a=seed["fee"]["a"],
-        alfa=seed["alfa"]["id"], tok=refs["token"],
+        alfa=seed["alfa"]["id"], tok=refs["token"], **(extra or {}),
     )
 
 
-def table_cases(refs: dict, seed: dict, py: dict, go: dict):
-    for name, path, persona, group in parity_cases.CASES:
-        filled = fill(path, refs, seed)
+def run_extra_seed(seed: dict, refs: dict) -> dict:
+    """Brief 2041: synthetic populated data on parity_run. Skipped blocks are echoed from stderr."""
+    env = {**os.environ, **audit.ENV, "UBYHOST_DATABASE_URL": f"{audit.PG}/parity_run"}
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/e2e/seed_parity_extra.py"), str(seed["h1"]["id"]),
+         str(refs["apartment_id"]), str(refs["reservation_id"])],
+        cwd=APP, env=env, capture_output=True, text=True, check=True,
+    )
+    for line in r.stderr.splitlines():
+        print(line)
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+def table_cases(refs: dict, seed: dict, py: dict, go: dict, extra: dict | None = None):
+    for name, path, persona, group in parity_cases.CASES + parity_cases.EXTRA_CASES:
+        try:
+            filled = fill(path, refs, seed, extra)
+        except KeyError as exc:
+            print(f"SKIPPED (seed block missing): {name} needs {exc}")
+            continue
         if persona == "host":
             py_cookie, go_cookie = py["host"], go["h1"]
+        elif persona == "anon_invite":
+            py_cookie, go_cookie = None, None
         else:
             py_cookie, go_cookie = py["admin"], go["admin"]
         for lang in ("cs", "en"):
@@ -191,6 +211,7 @@ def main() -> int:
     audit.ENV.update(AI_ENV)
     audit.PIN_ENV.update(AI_ENV)
     seed, refs = audit.seed_db()
+    extra = run_extra_seed(seed, refs)
     py_port, go_port = free_port(), free_port()
     db_url = f"{audit.PG}/parity_run"
     public = f"http://127.0.0.1:{py_port}"
@@ -199,7 +220,7 @@ def main() -> int:
     py, go = audit.py_persona_sessions(seed), audit.go_persona_sessions(seed)
 
     jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
-    jobs += list(table_cases(refs, seed, py, go))
+    jobs += list(table_cases(refs, seed, py, go, extra))
     for name, path, persona, group in parity_cases.MODAL_CASES:
         for lang in ("cs", "en"):
             filled = fill(path, refs, seed)
