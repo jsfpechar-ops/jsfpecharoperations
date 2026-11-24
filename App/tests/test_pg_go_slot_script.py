@@ -320,3 +320,21 @@ def test_rollback_slots_recreates_live_when_image_moved(tmp_path):
     assert "force-recreate ubyhost-go-b" in log
     assert "stop ubyhost-go" in log
     assert "stop ubyhost-go-b" not in log.replace("force-recreate ubyhost-go-b", "")
+
+
+def test_deploy_keeps_rollback_copies_after_unfinished_deploy():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "previous deploy did not finish; keeping existing rollback copies" in text
+    marker = text.index("git rev-parse HEAD > .deploy-in-progress")
+    assert marker < text.index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")
+    assert text.count('"${KEEP_ROLLBACK_COPIES}" != "1"') == 3
+    assert text.index("git rev-parse HEAD > .deployed-sha\nrm -f .deploy-in-progress") > marker
+    assert ".deploy-in-progress" in (ROOT / "deploy/lightsail/.gitignore").read_text(encoding="utf-8")
+
+
+def test_deploy_failures_after_switch_print_the_rollback_command():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" in text
+    assert "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow." in text
+    tail = text.split('echo "==> Removing retired compose services"', 1)[1]
+    assert tail.count("fail_after_switch ") == 6
