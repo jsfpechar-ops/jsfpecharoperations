@@ -38,7 +38,7 @@ pages that need new seed data are brief 2041.
 
 | Path | Action | What |
 |---|---|---|
-| `scripts/e2e/parity_env.sh` | new | one `source`-able script: starts Postgres, builds the venv, exports the env |
+| `scripts/e2e/parity_env.sh` | new, then modified in step 0 | one `source`-able script: starts Postgres, builds the venv, exports the env |
 | `scripts/e2e/parity_cases.py` | new | the page table (data only) |
 | `scripts/e2e/page_parity_visual.py` | edit | read the table, add `lang`, `PARITY_GROUP`, error rows, `--report` markdown |
 | `docs/tasks/2040-report.md` | write | the verdict table and the visible-row descriptions |
@@ -46,6 +46,16 @@ pages that need new seed data are brief 2041.
 No other file may change. Never touch `App/app/**`, `go/**`, `scripts/e2e/seed.py`.
 
 ## 4. Steps
+
+0. **Step 0 (re-run after the first attempt).** The first attempt stopped at step 1 (commit cd75988 already has `scripts/e2e/parity_env.sh`, with a broken install block). Run `rm -rf App/.venv`. In `scripts/e2e/parity_env.sh`, find the anchor line `if [ ! -x App/.venv/bin/python ]; then` and replace that whole block (through its closing `fi`, 4 lines) with exactly:
+```
+[ -x App/.venv/bin/python ] || python3 -m venv App/.venv
+if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
+  App/.venv/bin/pip install -q -r App/requirements.lock -r App/requirements-dev.txt
+  App/.venv/bin/pip install -q playwright==1.63.0
+fi
+```
+   Why: the hashed lock file turns on `--require-hashes`, which refuses the unhashed `playwright==1.63.0` in the same call (CI installs it separately), and the old guard skipped the install after a half-failed one. Then skip the file creation in step 1 (the file already exists; its text below is the corrected version) and run only step 1's Run command. Never pipe a `source` into `tail`: a pipe runs it in a subshell and the exports are lost.
 
 1. Create `scripts/e2e/parity_env.sh` with exactly this content, then `chmod +x` it:
 ```
@@ -68,12 +78,13 @@ if ! $PGBIN/pg_isready -q -h 127.0.0.1 -p 5433; then
   runuser -u postgres -- $PGBIN/pg_ctl -D "$PARITY_PG_DIR/data" -w -l "$PARITY_PG_DIR/pg.log" \
     -o "-p 5433 -c listen_addresses=127.0.0.1 -c fsync=off -c unix_socket_directories=$PARITY_PG_DIR" start >/dev/null
 fi
-if [ ! -x App/.venv/bin/python ]; then
-  python3 -m venv App/.venv && App/.venv/bin/pip install -q \
-    -r App/requirements.lock -r App/requirements-dev.txt playwright==1.63.0
+[ -x App/.venv/bin/python ] || python3 -m venv App/.venv
+if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
+  App/.venv/bin/pip install -q -r App/requirements.lock -r App/requirements-dev.txt
+  App/.venv/bin/pip install -q playwright==1.63.0
 fi
 ```
-   Run (timeout 600000): `cd /home/user/jsfpecharoperations && source scripts/e2e/parity_env.sh 2>&1 | tail -5; $PGBIN/pg_isready -h 127.0.0.1 -p 5433; ls App/.venv/bin/python; App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx; print('ok')" 2>&1 | tail -3`
+   Run (timeout 600000): `cd /home/user/jsfpecharoperations && source scripts/e2e/parity_env.sh > /var/tmp/parity_env.log 2>&1; tail -5 /var/tmp/parity_env.log; $PGBIN/pg_isready -h 127.0.0.1 -p 5433; ls App/.venv/bin/python; App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx; print('ok')" 2>&1 | tail -3`
    Expected: `accepting connections`, the python path, `ok`. If `requirements.lock` fails to install,
    stop (section 8). Do NOT run `playwright install`. `git status --short | tail -5` must not list `App/.venv`.
 
