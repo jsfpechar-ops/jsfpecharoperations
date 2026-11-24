@@ -102,7 +102,7 @@
 
 {{range .Mine}}
   <details class="g-card g-summary">
-    <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</summary>
+    <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true"><svg class="ui-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="check"><path d="M20 6 9 17l-5-5"/></svg></span>{{else}}{{$.T "not_filled"}}{{end}}</summary>
     <div class="g-summary-body">
       <h2>{{$.T "summary_title"}}</h2>
       {{if .Summary}}
@@ -140,7 +140,7 @@
 {{end}}
 
 {{range .Others}}
-  <div class="g-card g-summary g-summary-row">{{$.T "person"}} {{.Index}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true">&#10003;</span>{{else}}{{$.T "not_filled"}}{{end}}</div>
+  <div class="g-card g-summary g-summary-row">{{$.T "person"}} {{.Index}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true"><svg class="ui-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="check"><path d="M20 6 9 17l-5-5"/></svg></span>{{else}}{{$.T "not_filled"}}{{end}}</div>
 {{end}}
 {{if .GuideLive}}
   <a class="g-card g-guide-link" href="{{.Base}}/guide{{.LangQ}}" data-guide-link>{{.T "guide_title"}}</a>
