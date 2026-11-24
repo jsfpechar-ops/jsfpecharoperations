@@ -13,7 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, os.getcwd())
-from app import cleaning, db, guest_guide, havel, lifecycle_mail  # noqa: E402
+from app import cleaning, db, dsr, guest_guide, havel, leon, lifecycle_mail, auth, login_link  # noqa: E402
 
 
 def block(name, fn, out):
@@ -40,20 +40,27 @@ def guide(out, owner, apt):
 
 
 def questions(out, owner, apt):
-    chat = db.query_one("SELECT id FROM guest_chat WHERE apartment_id = ? ORDER BY id LIMIT 1", (apt,))
-    msg = db.query_one("SELECT id FROM guest_chat_message WHERE chat_id = ? ORDER BY id LIMIT 1", (chat["id"],))
+    res = db.query_one("SELECT id FROM reservation WHERE apartment_id = ? ORDER BY id LIMIT 1", (apt,))
+    chat = leon.stay_chat(apt, res["id"], "en")
     now = db.utcnow()
-    open_id = db.insert("guest_question", {
-        "chat_id": chat["id"], "message_id": msg["id"], "apartment_id": apt,
+    m1 = leon._store(chat["id"], "guest", "question", "E2E: is there a late check-in option?")
+    m2 = leon._store(chat["id"], "guest", "question", "E2E: the heating is not working and it is freezing")
+    leon._store(chat["id"], "leon", "answer", "E2E: I passed this to your host.")
+    out["question_open"] = db.insert("guest_question", {
+        "chat_id": chat["id"], "message_id": m1, "apartment_id": apt,
         "summary": "E2E question still open", "status": "open", "answer": "",
         "urgent": 0, "triaged": 1, "created_at": now,
     })
-    db.insert("guest_question", {
-        "chat_id": chat["id"], "message_id": msg["id"], "apartment_id": apt,
+    out["question_id"] = db.insert("guest_question", {
+        "chat_id": chat["id"], "message_id": m2, "apartment_id": apt,
+        "summary": "E2E urgent: no heating", "status": "open", "answer": "",
+        "urgent": 1, "triaged": 1, "created_at": now,
+    })
+    out["question_answered"] = db.insert("guest_question", {
+        "chat_id": chat["id"], "message_id": m1, "apartment_id": apt,
         "summary": "E2E question answered", "status": "answered", "answer": "E2E answer text",
         "urgent": 0, "triaged": 1, "created_at": now, "answered_at": now,
     })
-    out["question_id"] = open_id
 
 
 def leon(out, owner, apt):
