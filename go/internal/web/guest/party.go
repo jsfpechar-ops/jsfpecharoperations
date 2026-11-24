@@ -47,11 +47,21 @@ type partyDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	hooks  CompletionHooks
+}
+
+// afterLeadChange mirrors headcount.change_by_lead_in after a real lowered or restored change:
+// submit the stay if complete, then the completion pair. It never fails the request.
+func (d partyDeps) afterLeadChange(ctx context.Context, apartmentID, resID int64) {
+	if err := guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, apartmentID, resID); err != nil {
+		log.Printf("party submit stay %d: %v", resID, err)
+	}
+	runCompletion(ctx, d.hooks, apartmentID, resID)
 }
 
 // RegisterParty wires the three guest POST routes (dormant until UBYHOST_GO_PATHS).
-func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := partyDeps{pool: pool, getenv: getenv, now: now}
+func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, hooks CompletionHooks) {
+	d := partyDeps{pool: pool, getenv: getenv, now: now, hooks: hooks}
 	mux.Handle("POST /l/{token}/{reservation_id}/party", wrap("POST /l/{token}/{reservation_id}/party", WithPOSTCSRF(getenv, now, partySizeHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/count", wrap("POST /l/{token}/{reservation_id}/count", WithPOSTCSRF(getenv, now, leadCountHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/another", wrap("POST /l/{token}/{reservation_id}/another", WithPOSTCSRF(getenv, now, addAnotherHandler(d))))
@@ -556,6 +566,9 @@ func leadCountHandler(d partyDeps) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
+		}
+		if code == codeLowered || code == codeRestored {
+			d.afterLeadChange(r.Context(), stay.apartmentID, resID)
 		}
 		redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "count="+url.QueryEscape(code)), lang)
 	}

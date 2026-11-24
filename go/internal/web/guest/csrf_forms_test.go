@@ -61,7 +61,7 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 
 	mux := http.NewServeMux()
 	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
-	RegisterParty(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	RegisterParty(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 
 	type claimState string
 	states := []struct {
