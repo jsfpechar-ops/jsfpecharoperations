@@ -2,10 +2,13 @@ package guest
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The 30 guest keys added to i18n.json by brief 2056 step a, in all six guest languages.
@@ -64,6 +67,43 @@ func TestRemovePageFixes2056ShowsFooterAndNoRawKeys(t *testing.T) {
 		}
 		if !strings.Contains(body, `href="/l/tok2056/privacy?lang=`+lang+`"`) {
 			t.Errorf("%s: privacy href missing", lang)
+		}
+	}
+}
+
+func TestHubPageFixes2056ShowsHostCard(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	t.Setenv("UBYHOST_SECRET_KEY", strings.Repeat("z", 32))
+	t.Setenv("UBYHOST_GUEST_PIN", "0")
+	t.Setenv("UBYHOST_MAIL_BACKEND", "disabled")
+	getenv := func(k string) string { return os.Getenv(k) }
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := int64(79000000 + time.Now().UnixNano()%1000000)
+	tok := fmt.Sprintf("hubhost2056%d", aptID)
+	resID := aptID + 1
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, aptID, fmt.Sprintf("h%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO legal_entity (id, owner_user_id, name, contact_email, created_at)
+		VALUES ($1, $1, 'Hub Host Co 2056', 'hub2056@example.test', $2)`, aptID, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, legal_entity_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES ($1, $1, $1, 'Flat', 'Prague', 1, $2, '123456', $3)`, aptID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("hub-%d", resID), "2026-06-10", "2026-06-12", stamp)
+
+	d := shellDeps{pool: pool, getenv: getenv, now: now}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /l/{token}", d.pickStay)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/l/"+tok+"?lang=en", nil))
+	body := rec.Body.String()
+	for _, want := range []string{"Hub Host Co 2056", "hub2056@example.test"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("hub page missing host %q (status %d)", want, rec.Code)
 		}
 	}
 }
