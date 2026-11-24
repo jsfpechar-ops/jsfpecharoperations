@@ -112,7 +112,7 @@ def table_cases(refs: dict, seed: dict, py: dict, go: dict, extra: dict | None =
             yield (f"{name}-{lang}", f"{filled}{sep}lang={lang}", py_cookie, go_cookie, group)
 
 
-def _capture(playwright, base, path, width, dest, cookie, mask, texts):
+def _capture(playwright, base, path, width, dest, cookie, mask, texts, extra_cookies=None):
     """One screenshot. Returns dict(status, error, texts). Never raises on HTTP >= 400; masks QR images."""
     from tests.browser_support import chromium_launch_kwargs, settle_motion
 
@@ -122,6 +122,8 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts):
         context = browser.new_context(viewport={"width": width, "height": 900})
         if cookie:
             context.add_cookies([{"name": "ubyhost_session", "value": cookie, "url": base + "/"}])
+        if extra_cookies:
+            context.add_cookies([{"name": n, "value": v, "url": base + "/"} for n, v in extra_cookies])
         page = context.new_page()
         try:
             response = page.goto(base.rstrip("/") + path, wait_until="networkidle")
@@ -158,7 +160,7 @@ def _shape(text: str) -> str:
     return re.sub(r"[A-Z2-7]", "X", text)
 
 
-def run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre_sql):
+def run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre_sql, extra_cookies=None):
     import playwright.sync_api as sync_api
 
     cfg = parity_cases.QR_PAYLOAD_CASES.get(base_name, {"mask": [], "texts": []})
@@ -169,9 +171,9 @@ def run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cooki
         for width in widths:
             f = {k: out_dir / f"{slug}-{width}-{k}.png" for k in ("py", "go", "side", "diff")}
             shots._run_pre_sql(pre_sql)
-            a = _capture(pw, py_base, path, width, f["py"], py_cookie, cfg["mask"], cfg["texts"])
+            a = _capture(pw, py_base, path, width, f["py"], py_cookie, cfg["mask"], cfg["texts"], extra_cookies=extra_cookies)
             shots._run_pre_sql(pre_sql)
-            b = _capture(pw, go_base, path, width, f["go"], go_cookie, cfg["mask"], cfg["texts"])
+            b = _capture(pw, go_base, path, width, f["go"], go_cookie, cfg["mask"], cfg["texts"], extra_cookies=extra_cookies)
             sa, sb = a["status"], b["status"]
             msg = f"py={sa} go={sb}" + (f" py_err={a['error']}" if a["error"] else "") + (f" go_err={b['error']}" if b["error"] else "")
             if a["shot"] and b["shot"]:

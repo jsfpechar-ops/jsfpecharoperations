@@ -123,3 +123,34 @@ EXTRA_CASES = [
     ("reservations-past", "/reservations?range=past", "host", "G"),
     ("stay-fees-oct", "/stay-fees?month=2026-10", "host", "G"),
 ]
+
+GUEST_CASES = [
+    # H1: hub and stay states (no cookie = a stranger with the link)
+    ("g-hub", "/l/{tok}", [], "H"),
+    ("g-hub-claimed", "/l/{tok}", ["claim"], "H"),
+    ("g-privacy", "/l/{tok}/privacy", [], "H"),
+    ("g-stay-unclaimed", "/l/{tok}/{res_unclaimed}", [], "H"),
+    ("g-stay-provisional", "/l/{tok}/{res_provisional}", [], "H"),
+    ("g-stay-claimed", "/l/{tok}/{res_claimed}", ["claim"], "H"),
+    ("g-stay-claimed-nocookie", "/l/{tok}/{res_claimed}", [], "H"),
+    ("g-stay-locked", "/l/{tok}/{res_locked}", ["claim"], "H"),
+    ("g-stay-gone", "/l/{tok}/{res_gone}", [], "H"),
+    ("g-claim-landing", "/l/{tok}/{res_provisional}/claim", [], "H"),
+    # H2: the guest form
+    ("g-form-new", "/l/{tok}/{res_claimed}/new", ["claim"], "H"),
+    ("g-form-edit-complete", "/l/{tok}/{res_claimed}/edit/{guest_complete}", ["claim", "owned"], "H"),
+    ("g-form-edit-partial", "/l/{tok}/{res_claimed}/edit/{guest_partial}", ["claim", "owned"], "H"),
+    ("g-remove", "/l/{tok}/{res_claimed}/remove/{guest_complete}", ["claim", "owned"], "H"),
+    # H3: guide and Leon
+    ("g-guide-apt", "/g/{tok}", [], "H"),
+    ("g-guide-stay", "/l/{tok}/{res_claimed}/guide", ["claim"], "H"),
+    ("g-leon-apt", "/g/{tok}/leon", [], "H"),
+    ("g-leon-stay", "/l/{tok}/{res_claimed}/guide/leon", ["claim"], "H"),
+    # H4: other token links (no login)
+    ("t-cleaner-share", "/cleaning/shared/{share_token}", [], "H"),
+    ("t-unsubscribe", "/mail/unsubscribe/{unsub_token}", [], "H"),
+]
+PIN_CASES = [
+    ("g-pin-hub", "/l/{tok}", [], "P"),
+    ("g-pin-demo", "/l/{tok}/demo/{res_claimed}", [], "P"),
+]
