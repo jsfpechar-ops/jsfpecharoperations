@@ -320,3 +320,13 @@ def test_rollback_slots_recreates_live_when_image_moved(tmp_path):
     assert "force-recreate ubyhost-go-b" in log
     assert "stop ubyhost-go" in log
     assert "stop ubyhost-go-b" not in log.replace("force-recreate ubyhost-go-b", "")
+
+
+def test_rollback_prep_deletes_goose_row_in_one_transaction():
+    prep = (SCRIPTS / "rollback-schema-prep.sh").read_text(encoding="utf-8")
+    assert "BEGIN; ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out; DELETE FROM goose_db_version WHERE version_id = 24; COMMIT;" in prep
+    assert "ON_ERROR_STOP=1" in prep
+    deploy = DEPLOY.read_text(encoding="utf-8")
+    rollback = deploy.split("rollback() {", 1)[1].split("\n}\n", 1)[0]
+    assert "ERROR: schema rollback prep failed; old release may not start" in rollback
+    assert "rollback_drop_guide_import_00024 || true" not in rollback
