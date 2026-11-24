@@ -1,43 +1,38 @@
 # 2071 report
 
-Status: blocked
+Status: review
 
-Branch: claude/nice-hawking-fw98ct (fast-forwarded to origin, HEAD f1f0c10 before this work). Not pushed.
+Branch: claude/nice-hawking-fw98ct (worktree agent-acb44b3ebb01287d6). Not pushed.
 
-## Files changed
+## Commits
 
-- `go/internal/web/guest/form_save.go`: new-guest save now refuses an empty `legal_ack` (`legal_ack` issue) and, when no expected total exists, a `party_size` outside 1–60 (`party_size` issue). Both are added before the existing localization and 422 branch. Two English message constants were added above `handleGuestFormSave`. The 2065 completion hooks, 2069 save gates and 2070 encryption are unchanged.
+- `99911e1` step 1: notice and party-size checks on new guest save.
+- `b583e18` step 1 fix: notice and party-size text now from the guest i18n catalogue (`error_party_size`, `legal_ack_missing`, all six languages), not English copies.
+- `c3b6798` step 2: `applyDeclared` body moved into `applyDeclaredTx(ctx, tx, resID, count)`; the wrapper keeps the same return codes and commits only on `codeSaved`.
+- `3df784c` step 3: `insertGuestSaveRow` takes the party size, reads the reservation FOR UPDATE under the advisory lock, applies the count only when the fresh expected count is nil, then inserts the guest in the same transaction. Returns `guestInsert` (id, count code, old count, saved flag). The first-form audit (`reservation_declared_guests_set` or `_refused`) runs after commit in the caller.
+- `0ecad6c` step 4: `TestGuestSaveNoticeAndHeadcount` (DB-backed, five subtests).
 
 ## Commands
 
-- `gofmt -l internal/web/guest/form_save.go`: no output.
-- `go vet ./internal/web/guest/`: no output.
-- `go build ./...` (in `go/`): no output, clean.
-- `go test ./internal/web/guest/ -run 'FormSave|Party' -count=1 -v` with `UBYHOST_TEST_DATABASE_URL` set: `ok ... 0.595s`. PASS: TestFormSaveGoldenShape, TestFormSaveRoutePattern, TestFormSaveAccess, TestPartyStartClaimMailOn, TestPartyMailEnabledConsoleBackend, TestPartyGoldenHTTP. Skips: 0.
-
-## Steps
-
-- Step 1 (notice and party size): done, commit `99911e1`. The new 422 checks have no test yet (step 4 not done).
-- Step 2 (extract the `applyDeclared` transaction helper in `party.go`): not done.
-- Step 3 (count and guest in one transaction in `insertGuestSaveRow`): not done.
-- Step 4 (`TestGuestSaveNoticeAndHeadcount`): not done.
+- `go build ./...` (in `go/`): clean.
+- `go vet ./internal/web/guest/`: clean.
+- `go test ./internal/web/guest/ -run 'GuestSaveNoticeAndHeadcount|FormSave|Party' -count=1 -v`: all PASS, 0 skips.
+- `go test ./internal/web/guest/... ./internal/web/stays/... -count=1`: `ok` for both packages.
+- `go test -v` on the same packages: 3 SKIPs (`TestClaimOpsSignedOutRedirects`, `TestGuestEditSignedOutRedirects`, `TestGuestLifecycleSignedOutRedirects`). They skip because no pool is passed to hostweb.Login. These files were not touched in 2071.
 
 ## Section 7 acceptance
 
-- Missing notice returns the 422: implemented, untested.
-- Count and guest share one transaction: not done.
-- Two concurrent final-slot saves: not done.
+- Missing notice returns the translated 422: implemented (step 1). Not covered by a DB-backed HTTP test. The step 4 test calls `insertGuestSaveRow` directly.
+- Count and guest share one transaction: done. Already-full group commits the count with no new guest, and the completion check runs (caller, when `countSaved`). Overrides are kept.
+- Two concurrent final-slot saves: covered by the test. One guest is inserted and the count stays at 2.
 
 ## Deviations
 
-- The brief's anchors were re-anchored on the current file. `legal_ack` and `party_size` checks are now in `handleGuestFormSave`, not `guest.py`-style lines.
-- The English messages are duplicated from `go/internal/guestcontract/check.go`, because its constants are unexported. Exporting them would be a change outside brief section 3.
-- The executor tool budget was reached after step 1. Done: steps 1 to 1. Left: steps 2 to 4.
-
-## Questions
-
-- Should the guestcontract messages be exported so `form_save.go` does not repeat them?
+- Full-group check uses the live guest count (`liveGuestRows`), not the Python `reservation_progress` filled count. The Go completeness predicate lives in unexported `calendar` code that takes a pool, not a transaction. Python filters by completeness. Worth a follow-up.
+- No Go headcount audit helper existed. `auditHeadcountCount` writes the same audit action and detail as Python's `headcount.record`.
+- Step 4 cases not covered: stale-count refusal, below-floor refusal, and the HTTP-level 422 for a missing notice.
 
 ## Owner steps left
 
-- None yet. A fresh session should continue from step 2.
+- Review the 390 px form error in the browser (the translated notice and party-size text now come from the catalogue).
+- Decide whether the full-group check should use the completeness predicate (see Deviations).
