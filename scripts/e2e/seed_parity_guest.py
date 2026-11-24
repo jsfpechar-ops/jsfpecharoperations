@@ -95,11 +95,20 @@ def guests(out, owner, apt):
     })
 
 
+    # 2064: same record shape as res_issued_done's guest (valid PNG signature, full address and document),
+    # so guest_issues() counts it complete. CZE nationality: the QR is offered; adult, so fee-liable.
+    db.execute("UPDATE reservation SET registration_completed_at = ? WHERE id = ?", (now, out["res_fee"]))
     out["guest_fee"] = db.insert("guest", {
         "reservation_id": out["res_fee"], "first_name": "Parity", "surname": "Fee",
-        "birth_date": "01011990", "nationality": "CZE", "signature_png": SIG,
+        "birth_date": "01011990", "nationality": "CZE", "signature_png": sig_png(),
+        "doc_number": "E2E000000", "res_street": "Parity Street 1", "res_city": "Prague",
+        "res_country": "CZE", "purpose": "99",
         "created_at": now, "updated_at": now,
     })
+    from app import reporting  # 2064: diagnostics only (issue codes, no guest data)
+    fee_row = db.query_one("SELECT * FROM guest WHERE id = ?", (out["guest_fee"],))
+    fee_res = db.query_one("SELECT * FROM reservation WHERE id = ?", (out["res_fee"],))
+    print(json.dumps({"fee_guest_issues": [str(i)[:80] for i in reporting.guest_issues(fee_row, fee_res)]}), file=sys.stderr)
 
 
 def sig_png():
