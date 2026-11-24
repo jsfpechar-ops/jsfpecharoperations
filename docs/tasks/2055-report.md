@@ -123,3 +123,22 @@ Verification (`UBYHOST_TEST_DATABASE_URL` = guest_test):
 Deviations:
 - Commit trailers use Co-Authored-By Claude Haiku 5.5, the attribution given by the harness, not Opus 5.5 as the brief text said.
 - `gofmt` realigned struct and literal fields in `stay_view.go`.
+
+## Chunk B2 (duplicate warnings)
+
+Status: review. Item (b) done in Go; browser and geometry checks for the stay page not run (see below).
+
+- `35302fe` detection: `go/internal/web/guest/dup_warnings.go` ports `guest.py _duplicate_warnings`. A guest is flagged when it is owned by this device and another live guest in the stay has the same document number (`_doc_key`: upper case, A-Z and 0-9 only, INPASS and empty never match) or the same first name, surname and birth date (`_person_key`). Output is `Name: what`, with `what` = "document number" and/or "name and date of birth", joined by ", " in that order. `formPagesDupWarnings` (was a nil stub) now loads the stay's guests. Test: `dup_warnings_test.go` (TestDupWarningsFor: doc-only, person-only, both, other person's duplicate not shown, non-duplicate, INPASS).
+- `8c9798f` stay page: `stayView.DupWarnings` is set in `renderStayPage`; `templates/stay.tmpl` draws the `data-dup-warning` block before the person summaries, as stay.html. Form page (`form_content.tmpl`) already drew the block for mode "new", as form.html. Test: TestStayDupWarningRender.
+- `(step 3)` i18n: added `dup_what_doc` and `dup_what_person` to cs, de, en, es, fr, uk with Python's strings. `dup_warning_title` and `dup_warning_body` were already present and identical to Python in all six.
+
+Pages that show the block: stay.html (new in Go), form.html new-guest form (existing Go call, now real detection).
+
+Verification (`UBYHOST_TEST_DATABASE_URL` = guest_test): `go build ./...` passes. `go test ./internal/web/guest/... -v` passes. Skips: 4, the same as before (TestConfirmClaimRace, TestConfirmClaimAppliesDeclaredGuests, TestStayOverviewMailOnHonorsClaimCookie, TestStayPeopleSignatureCompleteness). No new skips.
+
+Owner or orchestrator steps left:
+- Rule 7/10 for the stay.tmpl change: run `test_layout_lint_browser.py` for the stay page, take a 390 px screenshot, and write what was seen in the PR. Not done in this chunk.
+
+Deviations:
+- Commit trailer: Co-Authored-By Claude Haiku 5.5, the attribution given by the harness, not Opus 5.5 as the brief text said.
+- Title-casing of names uses a letter-boundary rule that matches Python's str.title() for ordinary names; exotic Unicode case edge cases were not checked.
