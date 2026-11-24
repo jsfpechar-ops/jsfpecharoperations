@@ -1,6 +1,6 @@
 # 2050 report: guest-question page elements in Go
 
-Status: blocked (partial). Executor stopped at the 30-call cap before the browser lint run, screenshots and parity seed step.
+Status: blocked (partial, follow-up steps 1-3 done; step 4 not run). Executor stopped at the 30-call cap before the browser lint run, screenshots and parity seed step.
 
 ## Files changed
 - go/internal/web/guest/leon_questions.go: 24 strings (en and cs) added to lqI18n; handoffRow.CreatedAt; handoffCardID; lqTopics (11); lqTopicOptions; lqDay; lqLines; renderQuestion data (Status, Urgent, Triaged, Door, CreatedDay, AnswerText, CardID, QuestionLines, SummaryLines, AnswerLines, SummaryDiffers, TopicOptions, ApartmentID).
@@ -40,3 +40,12 @@ Status: blocked (partial). Executor stopped at the 30-call cap before the browse
 
 ## Owner steps left
 - Run the layout lint browser test and the 390/768/1280 screenshots for guest-question detail (not done).
+
+## Follow-up (brief section 10)
+
+- Step 1 (5bafc80): `handoffCardTitle` in leon_questions.go mirrors Python `card_title` (summary else question, whitespace collapsed, 120 runes, strip, "Guest question" fallback). Used by both `handoffCardID` and `handoffAddGuide`. Unit test with a 130-character Czech title.
+- Step 2: no diff. Python `base_url` is `/apartments/<id>/guide`, so the card link is `/apartments/<id>/guide/<card_id>`. The Go href was already this string; nothing changed.
+- Step 3 (6db38f7): `leon_questions_db_test.go` with 4 DB-backed tests (open urgent banner; answered answer and shown_to_guest; dismissed banner; add-to-guide then card lookup and open-card href). Add-to-guide wrote to a non-existent `guide_card` table; it now writes `guide_item.steps`.
+- Guest package with DB: ok, 3 SKIP (TestConfirmClaimAppliesDeclaredGuests, TestStayOverviewMailOnHonorsClaimCookie, TestConfirmClaimRace; none from the files touched).
+- Step 4 not run: layout lint browser test and 390/768/1280 screenshots were not run (executor call cap).
+- Owner: step 4 still open. Run `test_layout_lint_browser.py` and screenshot the question detail page (open urgent, answered, dismissed).
