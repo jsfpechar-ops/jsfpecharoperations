@@ -103,3 +103,8 @@ Run in the same worktree, on top of commit af55109.
 2. Card link. Python's "open card" button is `base_url ~ '/' ~ card_id` (App/app/templates/guest_question.html ~34); find `base_url` for that page in Python (grep `base_url` in App/app/routes/guest_guide.py or the question route) and make Go's href identical.
 3. DB-backed tests: rerun `go test ./internal/web/guest/...` with `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/layout_test`; 0 skipped for the files you touched. Write the DB-backed tests the brief's step 4 asked for (answered question shows answer + shown_to_guest; open urgent shows the banner and badge; dismissed shows the dismissed banner; card done shows the open-card link).
 4. Layout lint browser test green, 0 skipped; screenshots of the Go question detail page (open urgent, answered, dismissed) at 390/768/1280, viewed and described per width.
+
+## 11. Follow-up 2 (orchestrator review)
+
+1. Sort order parity. Python `guest_guide.add_custom` (App/app/guest_guide.py ~253-265) inserts `sort_order = len(KINDS) + 1` for every custom card. Go `handoffAddGuide` (go/internal/web/guest/leon_questions.go, the `INSERT INTO guide_item` from follow-up step 3) omits `sort_order`. Find how Go's own add-custom-card path sets it (grep `sort_order` in go/internal/web/ai/) and use the same value/constant in `handoffAddGuide`; extend the DB test from follow-up step 3 to assert the new card's sort_order equals the one Go's add-custom path writes. Commit "2050 follow-up 2 step 1".
+2. Section 10 step 4 (still open): layout lint browser test green with 0 skipped; screenshots of the Go question detail page (open urgent, answered, dismissed) at 390/768/1280, viewed and described per width. Commit the report update.
