@@ -62,6 +62,7 @@ func renderFeeBox(t *testing.T, declared int, guestPay string) string {
 	mustExec(t, pool, `INSERT INTO reservation_claim (reservation_id, state, token_version, declared_guests, created_at, updated_at)
 		VALUES ($1, $2, 1, $3, $4, $4) ON CONFLICT (reservation_id) DO UPDATE SET state = EXCLUDED.state, token_version = 1, declared_guests = EXCLUDED.declared_guests`,
 		resID, claimStateClaimed, declared, stamp)
+	mustExec(t, pool, `UPDATE reservation SET declared_guests = $1 WHERE id = $2`, declared, resID)
 	mustExec(t, pool, `DELETE FROM guest WHERE reservation_id = $1`, resID)
 	mustExec(t, pool, `INSERT INTO guest (id, reservation_id, created_at, updated_at, first_name, surname, birth_date, nationality,
 		doc_number, res_street, res_city, res_country, purpose, is_lead, signature_png)
