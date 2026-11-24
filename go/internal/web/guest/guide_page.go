@@ -49,7 +49,7 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 		LeonHost: ai.LeonHostFirstName(page.Host.Name),
 	}
 	if live {
-		cards, err := h.store.GuestCards(r.Context(), apt.ID, level)
+		cards, err := h.store.GuestGuideCards(r.Context(), apt.ID, level)
 		if err != nil {
 			access.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 			return
@@ -115,19 +115,20 @@ type guideCardView struct {
 
 // groupCards builds one group per topic in guest_guide.TOPICS order, only for
 // topics that have cards (guest_guide_view._groups). Titles follow the page language.
-func groupCards(cards []ai.LeonCard, lang string) []guideGroup {
+func groupCards(cards []ai.GuideCard, lang string) []guideGroup {
 	if len(cards) == 0 {
 		return nil
 	}
 	byTopic := map[string][]guideCardView{}
-	for _, c := range cards {
+	for _, g := range cards {
+		c := g.Card
 		var steps []string
 		for _, line := range strings.Split(c.Steps, "\n") {
 			if trimmed := strings.TrimSpace(line); trimmed != "" {
 				steps = append(steps, trimmed)
 			}
 		}
-		byTopic[c.Topic] = append(byTopic[c.Topic], guideCardView{
+		byTopic[g.Topic] = append(byTopic[g.Topic], guideCardView{
 			ID:       c.ID,
 			Kind:     c.Kind,
 			Title:    ai.LeonCardTitleIn(c, lang),
