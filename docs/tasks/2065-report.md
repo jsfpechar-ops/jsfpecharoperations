@@ -1,6 +1,6 @@
 # 2065 report
 
-Status: blocked. Steps 1-5 done; step 6 partial (adapter unit tests only, no DB handler tests).
+Status: blocked. Steps 1-5 done; step 6 partial (adapter unit tests only, no DB handler tests). Fallback fixed (7f57955): a ttlock apartment is now HELD when the door-code wiring fails, so the receipt is never sent without its code.
 
 ## Files
 - go/internal/web/guest/completion.go (new): CompletionHooks interface, runCompletion helper.
@@ -24,7 +24,9 @@ Status: blocked. Steps 1-5 done; step 6 partial (adapter unit tests only, no DB 
 
 ## Deviations
 - Step 6 DB handler tests not written. A complete guest row needs the full validation.GuestIsComplete field set plus expected_guests fixtures; the executor ran out of budget before mapping them. Existing wire tests (`TestMaybeNotifyCompletionSendsOnce`, `TestMaybeNotifyCompletionGuards`) already cover LiveConfirmations with a no-code viewer at the DB level.
-- Owner decision needed: if the door-code wiring fails to build while UBYHOST_DOOR_CODES is on, the fallback sends the receipt WITHOUT a code even for apartments that do have door codes. The brief asked for the no-code viewer; a safer alternative is to hold receipts for apartments with door codes in that case.
+- Orchestrator safety decision applied: `noDoorCodes` returns `CompletionHold` for `apt.LockProvider == "ttlock"` and `CompletionWithout` otherwise. Unit tests `TestNoDoorCodesViewerHoldsTTLockApartment` and `TestNoDoorCodesViewerReportsWithoutForNonTTLock` pass. Caveat: if the wiring never builds, a ttlock receipt stays held until a code path releases it.
+- Step 6 DB handler tests (last guest -> one outbox row, non-last -> none, re-save -> still one) still NOT written in this run. The real form-save POST needs a valid CSRF token (minted with `secure.NewTimedSerializer(secret, "ubyhost-csrf")`, cookie sha256 nonce), a PIN-off env, owned-guest cookies for re-saves, and a validated guest form. The golden save bodies in `go/internal/web/guest/testdata/form_save_golden.json` are stripped to `_csrf` only, so the form values must be built and checked against validation before the test can be trusted. The test must live in `go/cmd/ubyhost-web` (completionHooks is unexported there).
+- 3 SKIPs in the final run are the `TestJobRunProbe`, `TestRouteProbe`, `TestJobProbe` probes (env-gated), not added by this change.
 - Postgres was down; sourcing parity_env.sh was refused by the sandbox, so I ran its pg_ctl start line directly.
 - Fee panel cash default passed as "" (only affects a note, not rail presence).
 
