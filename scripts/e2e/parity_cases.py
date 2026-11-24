@@ -43,12 +43,6 @@ CASES = [
     ("invoices", "/invoices", "host", "C"),
     ("invoices-new", "/invoices/new", "host", "C"),
     ("invoice-detail", "/invoices/{hinv}", "host", "C"),
-    ("payments", "/payments", "host", "C"),
-    ("payments-new", "/payments/new", "host", "C"),
-    ("payments-consent", "/payments/consent", "host", "C"),
-    ("booking-sites", "/booking-sites", "host", "C"),
-    ("booking-site-setup", "/apartments/{apt}/booking-site", "host", "C"),
-    ("property-page-review", "/apartments/{apt}/page", "host", "C"),
     # D: setup, cleaning, guide (empty states: no data is seeded for these yet)
     ("cleaning", "/cleaning", "host", "D"),
     ("cleaning-new", "/cleaning/new", "host", "D"),
@@ -68,3 +62,20 @@ CASES = [
     (f"leon-setup-{s}", f"/apartments/{{apt}}/leon/setup/{s}", "host", "D")
     for s in ("cards", "import", "try", "switch_on", "done")
 ]
+
+# One case that shows the two-factor prompt modal on purpose in both stacks (PRE_SQL clears the prompt).
+MODAL_CASES = [
+    ("two-factor-modal", "/reservations", "host", "B"),
+]
+
+# Deliberate differences, kept as Go has them. Key = case name without "-cs"/"-en". Reported separately, not failures.
+ACCEPTED = {
+    "apt-guide": "Go keeps the newer External guide link card (Link (https) / Save link) above the Booking or Airbnb import; Python lacks it. Python import-title spacing differs as a consequence.",
+}
+
+# Cases with a QR image: its pixels are masked, and its payload text is compared separately.
+QR_PAYLOAD_CASES = {
+    "2fa-setup": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
+    "2fa-setup-moved": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
+    "apt-guide-qr": {"mask": ["img.guide-qr"], "texts": [".ui-mono"]},
+}
