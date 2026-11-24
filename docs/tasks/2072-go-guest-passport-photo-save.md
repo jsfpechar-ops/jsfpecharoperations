@@ -1,6 +1,6 @@
 # 2072: Validate and store required guest passport photos
 
-Status: todo
+Status: review
 Depends on: 2071 | Base commit: f6be14e46b68677884e26533eef674b15cb89f6a | Branch: task/2072-go-guest-passport-photo-save
 Executor: Luna | Fits one session: 30 tool calls, 60k tokens
 
