@@ -28,6 +28,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
@@ -43,10 +44,16 @@ const (
 	claimTokenBytes     = 24
 )
 
+// DoorCodeViewer is door_codes.view for one stay (*doorcodes.Service).
+type DoorCodeViewer interface {
+	ViewForStay(ctx context.Context, reservationID, apartmentID int64) (*doorcodes.Shown, error)
+}
+
 type stayClaimDeps struct {
-	pool   *pgxpool.Pool
-	getenv func(string) string
-	now    func() time.Time
+	pool      *pgxpool.Pool
+	getenv    func(string) string
+	now       func() time.Time
+	doorCodes DoorCodeViewer
 }
 
 type scApt struct {
@@ -77,8 +84,8 @@ type scClaim struct {
 }
 
 // RegisterStayClaim wires brief 1721 routes (dormant until UBYHOST_GO_PATHS).
-func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
+func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodes DoorCodeViewer) {
+	d := stayClaimDeps{pool: pool, getenv: getenv, now: now, doorCodes: doorCodes}
 	mux.Handle("POST /l/{token}/{reservation_id}/claim/confirm", wrap("POST /l/{token}/{reservation_id}/claim/confirm", WithPOSTCSRF(getenv, now, d.claimConfirm)))
 	mux.Handle("GET /l/{token}/{rest...}", wrap("GET /l/{token}/{rest...}", d.dispatchGET))
 }
