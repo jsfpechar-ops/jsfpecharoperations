@@ -929,6 +929,46 @@ func fmtDateRange(dateFrom, dateTo string) string {
 	return end
 }
 
+// stayRange is the Python templating.stay_range filter: short weekday format
+// per language ("pá 4. – po 7. 12.", "Fri 4 – Mon 7 Dec", "T6 4/12 – T2 7/12").
+// Unparseable dates return "". Unknown languages use en.
+func stayRange(lang, dateFrom, dateTo string) string {
+	start, ok1 := pyDay(dateFrom)
+	end, ok2 := pyDay(dateTo)
+	if !ok1 || !ok2 {
+		return ""
+	}
+	wd := func(t time.Time) int { return (int(t.Weekday()) + 6) % 7 }
+	sameMonth := start.Year() == end.Year() && start.Month() == end.Month()
+	switch lang {
+	case "cs":
+		days := []string{"po", "út", "st", "čt", "pá", "so", "ne"}
+		a := days[wd(start)] + " " + itoa(start.Day()) + "."
+		b := days[wd(end)] + " " + itoa(end.Day()) + "."
+		if sameMonth {
+			return a + " – " + b + " " + itoa(int(end.Month())) + "."
+		}
+		a += " " + itoa(int(start.Month())) + "."
+		b += " " + itoa(int(end.Month())) + "."
+		return a + " – " + b
+	case "vi":
+		days := []string{"T2", "T3", "T4", "T5", "T6", "T7", "CN"}
+		a := days[wd(start)] + " " + itoa(start.Day()) + "/" + itoa(int(start.Month()))
+		b := days[wd(end)] + " " + itoa(end.Day()) + "/" + itoa(int(end.Month()))
+		return a + " – " + b
+	default:
+		days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+		a := days[wd(start)] + " " + itoa(start.Day())
+		b := days[wd(end)] + " " + itoa(end.Day())
+		if sameMonth {
+			return a + " – " + b + " " + end.Month().String()[:3]
+		}
+		a += " " + start.Month().String()[:3]
+		b += " " + end.Month().String()[:3]
+		return a + " – " + b
+	}
+}
+
 // fmtDateCZ is validation.fmt_date: DD.MM.YYYY, unparseable input unchanged.
 func fmtDateCZ(value string) string {
 	if d, ok := pyDay(value); ok {
