@@ -96,3 +96,7 @@ Anchor not found; `LeonItem.Topic` empty for built-in kinds (then bucket by `gui
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ```
+
+## 10. Orchestrator decision (after run 2)
+
+`go/internal/web/ai/leon_try_test.go:274` compares Leon cards with Python fixtures and now fails because step 1 added `LeonCard.Topic`. Do NOT edit that test or its fixtures. The card output Leon and its parity fixtures see must stay identical to Python: keep `Topic` out of every serialized or compared form of `LeonCard` (e.g. `json:"-"` if the comparison or the AI payload goes through JSON; otherwise carry the topic in a separate grouping structure used only by the guest guide page). Verify: `go test ./internal/web/ai/... -count=1` passes with the test unchanged. Then continue with steps 4-7.
