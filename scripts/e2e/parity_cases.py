@@ -86,6 +86,7 @@ QR_PAYLOAD_CASES = {
     "2fa-setup": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
     "2fa-setup-moved": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
     "apt-guide-qr": {"mask": ["img.guide-qr"], "texts": [".ui-mono"]},
+    "g-stay-fee": {"mask": ["img.g-fee-qr-img"], "texts": [".g-fee-amt", ".g-fee-calc", ".g-fee-iban", ".g-fee-rail .g-summary-list"]},
 }
 
 # Brief 2041. Placeholders not produced by seed_parity_extra.py skip their row as SKIPPED.
@@ -137,6 +138,7 @@ GUEST_CASES = [
     ("g-stay-provisional", "/l/{tok}/{res_provisional}", [], "H"),
     ("g-stay-claimed", "/l/{tok}/{res_claimed}", ["claim"], "H"),
     ("g-stay-claimed-nocookie", "/l/{tok}/{res_claimed}", [], "H"),
+    ("g-stay-fee", "/l/{tok}/{res_fee}", ["claim"], "H"),
     ("g-stay-issued", "/l/{tok}/{res_issued}", ["claim"], "H"),
     ("g-stay-issued-done", "/l/{tok}/{res_issued_done}", ["claim"], "H"),
     ("g-stay-locked", "/l/{tok}/{res_locked}", ["claim"], "H"),

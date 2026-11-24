@@ -15,7 +15,7 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 from itsdangerous import URLSafeSerializer  # noqa: E402
-from app import claim, cleaning, config, db, lifecycle_mail  # noqa: E402
+from app import auth, claim, cleaning, config, db, lifecycle_mail  # noqa: E402
 
 SECRET = "e2e-claim-secret"
 SIG = "data:image/png;base64,iVBORw0KGgo="
@@ -59,6 +59,20 @@ def states(out, owner, apt):
     now = db.utcnow()
     set_claim(out["res_claimed"], state="claimed", claimed_at=now, token_version=1, declared_guests=2,
               token_hash=None, updated_at=now)
+    # 2064: claimed stay in its own apartment with the stay-fee box (fee flags set only here).
+    ent = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apt,))["legal_entity_id"]
+    db.execute("UPDATE legal_entity SET iban = 'CZ6508000000192000145399' WHERE id = ? AND (iban IS NULL OR iban = '')", (ent,))
+    fee_apt = db.insert("apartment", {
+        "internal_name": "Parity Fee Flat", "owner_user_id": owner, "legal_entity_id": ent,
+        "permalink_token": os.urandom(9).hex(), "permalink_pin": auth.new_permalink_pin(),
+        "automation_mode": "manual", "default_purpose": "10", "active": 1, "created_at": db.utcnow(),
+        "stay_fee_collect": 1, "stay_fee_rate_czk": 50, "stay_fee_guest_rails": "qr,iban",
+    })
+    out["res_fee"] = stay(fee_apt, "e2e-guest-fee")
+    now = db.utcnow()
+    set_claim(out["res_fee"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
+              token_hash=None, updated_at=now)
+    db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (out["res_fee"],))
     out["res_locked"] = stay(apt, "e2e-guest-locked")
     set_claim(out["res_locked"], state="claimed", claimed_at=now, token_version=1, declared_guests=2,
               token_hash=None, guest_access_locked_at=now, updated_at=now)
@@ -76,6 +90,13 @@ def guests(out, owner, apt):
     out["guest_partial"] = db.insert("guest", {
         "reservation_id": out["res_claimed"], "first_name": "Parity", "surname": None,
         "birth_date": None, "nationality": None, "signature_png": None,
+        "created_at": now, "updated_at": now,
+    })
+
+
+    out["guest_fee"] = db.insert("guest", {
+        "reservation_id": out["res_fee"], "first_name": "Parity", "surname": "Fee",
+        "birth_date": "01011990", "nationality": "CZE", "signature_png": SIG,
         "created_at": now, "updated_at": now,
     })
 
@@ -166,7 +187,7 @@ def issued(out, owner, apt):
 def cookies(out, owner, apt):
     secret = config.secret_key()
     out["claim_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-claim").dumps(
-        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1, str(out["res_issued_done"]): 1})
+        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1, str(out["res_issued_done"]): 1, str(out["res_fee"]): 1})
     out["owned_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-owned").dumps(
         [out["guest_complete"], out["guest_partial"]])
 
