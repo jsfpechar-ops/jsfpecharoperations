@@ -1,6 +1,6 @@
 # 2083: Pass the optional dashboard URL to the Go slots
 
-Status: todo
+Status: review
 Depends on: none | Base commit: f6be14e46b68677884e26533eef674b15cb89f6a | Branch: task/2083-go-posthog-dashboard-url-compose
 Executor: Luna | Fits one session: 30 tool calls, 60k tokens
 
