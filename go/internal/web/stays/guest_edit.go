@@ -591,7 +591,12 @@ func guestUpdateHandler(d guestEditDeps) http.HandlerFunc {
 			return
 		}
 		updates, state := guestUpdateFields(*guest, preview, signature, *res, c)
-		if !guestUpdateIf(r.Context(), c.pool, guestID, guest.submitState, updates, c.at) {
+		updated, updateErr := guestUpdateIf(r.Context(), c.pool, c.getenv, guestID, guest.submitState, updates, c.at)
+		if updateErr != nil {
+			guestEditServerError(w, updateErr)
+			return
+		}
+		if !updated {
 			hostweb.Back(w, r, fmt.Sprintf("/guests/%d", guestID), hostweb.Flash{},
 				c.flash("flash.error.guest_changed_retry", nil))
 			return
@@ -662,7 +667,15 @@ func guestUpdateFields(stored, proposed hostGuest, signature string, res hostRes
 	return updates, state
 }
 
-func guestUpdateIf(ctx context.Context, pool *pgxpool.Pool, guestID int64, expectState string, values map[string]any, at time.Time) bool {
+func guestUpdateIf(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, guestID int64, expectState string, values map[string]any, at time.Time) (bool, error) {
+	keys, err := secure.LoadDataKeys(getenv)
+	if err != nil {
+		return false, err
+	}
+	values, err = secure.GuestWriteValues(keys, values)
+	if err != nil {
+		return false, err
+	}
 	cutoff := float64(at.Unix()) - float64(ubyport.SubmissionClaimTTL)
 	var n int64
 	args := []any{guestID, expectState, cutoff}
@@ -674,17 +687,31 @@ func guestUpdateIf(ctx context.Context, pool *pgxpool.Pool, guestID int64, expec
 		i++
 	}
 	if len(sets) == 0 {
-		return true
+		return true, nil
 	}
 	q := `UPDATE guest SET ` + strings.Join(sets, ", ") + ` WHERE id = $1 AND submit_state = $2
 		AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $1 AND claimed_at >= $3)`
 	if err := pool.QueryRow(ctx, q+" RETURNING id", args...).Scan(&n); err != nil {
-		return false
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
 	}
-	return n == guestID
+	return n == guestID, nil
 }
 
 func insertHostGuest(ctx context.Context, c *guestEditCall, resID int64, payload hostGuest, signature, state string, isLead bool, stamp string) (int64, error) {
+	keys, err := secure.LoadDataKeys(c.getenv)
+	if err != nil {
+		return 0, err
+	}
+	protected, err := secure.GuestWriteValues(keys, map[string]any{
+		"birth_date": payload.birthDate, "doc_number": payload.docNumber, "visa_number": payload.visaNum,
+		"res_street": payload.resStreet, "res_city": payload.resCity, "signature_png": signature,
+	})
+	if err != nil {
+		return 0, err
+	}
 	lead := 0
 	if isLead {
 		lead = 1
@@ -696,16 +723,19 @@ func insertHostGuest(ctx context.Context, c *guestEditCall, resID int64, payload
 		identityBy = c.host.Account.ID
 	}
 	var id int64
-	err := c.pool.QueryRow(ctx,
+	err = c.pool.QueryRow(ctx,
 		`INSERT INTO guest (reservation_id, surname, first_name, birth_date, nationality,
 			doc_number, visa_number, res_street, res_city, res_country, purpose, note,
 			stay_from, stay_to, doc_type, is_lead, entered_by, signature_png, signed_at, filled_at,
-			submit_state, identity_verified_at, identity_verified_by, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'host',$17,$18,$18,$19,$20,$21,$18,$18) RETURNING id`,
-		resID, payload.surname, payload.firstName, payload.birthDate, payload.nationality,
-		payload.docNumber, payload.visaNum, payload.resStreet, payload.resCity, payload.resCountry,
+			submit_state, identity_verified_at, identity_verified_by, created_at, updated_at,
+			birth_date_enc, doc_number_enc, visa_number_enc, res_street_enc, res_city_enc, signature_png_enc)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'host',$17,$18,$18,$19,$20,$21,$18,$18,$22,$23,$24,$25,$26,$27) RETURNING id`,
+		resID, payload.surname, payload.firstName, protected["birth_date"], payload.nationality,
+		protected["doc_number"], protected["visa_number"], protected["res_street"], protected["res_city"], payload.resCountry,
 		payload.purpose, payload.note, payload.stayFrom, payload.stayTo, payload.docType, lead,
-		signature, stamp, state, nullIfEmpty(identityAt), identityBy,
+		protected["signature_png"], stamp, state, nullIfEmpty(identityAt), identityBy,
+		protected["birth_date_enc"], protected["doc_number_enc"], protected["visa_number_enc"],
+		protected["res_street_enc"], protected["res_city_enc"], protected["signature_png_enc"],
 	).Scan(&id)
 	return id, err
 }

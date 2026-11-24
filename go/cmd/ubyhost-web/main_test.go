@@ -1,16 +1,108 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
+
+type healthTestPool struct{ err error }
+
+func (p healthTestPool) QueryRow(context.Context, string, ...any) pgx.Row {
+	return healthTestRow{err: p.err}
+}
+
+type healthTestRow struct{ err error }
+
+func (r healthTestRow) Scan(dest ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+	if len(dest) != 1 {
+		return errors.New("unexpected health query result")
+	}
+	value, ok := dest[0].(*int)
+	if !ok {
+		return errors.New("unexpected health query destination")
+	}
+	*value = 1
+	return nil
+}
+
+func TestHealthzDataDirectory(t *testing.T) {
+	cases := []struct {
+		name       string
+		dirOK      bool
+		dbOK       bool
+		wantStatus int
+	}{
+		{name: "directory and database healthy", dirOK: true, dbOK: true, wantStatus: http.StatusOK},
+		{name: "directory invalid", dirOK: false, dbOK: true, wantStatus: http.StatusServiceUnavailable},
+		{name: "database unavailable", dirOK: true, dbOK: false, wantStatus: http.StatusServiceUnavailable},
+		{name: "both unavailable", dirOK: false, dbOK: false, wantStatus: http.StatusServiceUnavailable},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			dataDir := filepath.Join(root, "volume")
+			if tc.dirOK {
+				if err := os.Mkdir(dataDir, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			} else if err := os.WriteFile(dataDir, []byte("fixture"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			var queryErr error
+			if !tc.dbOK {
+				queryErr = errors.New("database unavailable")
+			}
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+			healthzAt(healthTestPool{err: queryErr}, dataDir).ServeHTTP(recorder, request)
+			if recorder.Code != tc.wantStatus {
+				t.Fatalf("status = %d, want %d", recorder.Code, tc.wantStatus)
+			}
+			var got health
+			if err := json.NewDecoder(recorder.Body).Decode(&got); err != nil {
+				t.Fatal(err)
+			}
+			if got.DataDirWritable != tc.dirOK || got.DatabaseOK != tc.dbOK {
+				t.Fatalf("health flags = directory:%t database:%t, want directory:%t database:%t", got.DataDirWritable, got.DatabaseOK, tc.dirOK, tc.dbOK)
+			}
+			wantStatus := "ok"
+			if !tc.dirOK || !tc.dbOK {
+				wantStatus = "degraded"
+			}
+			if got.Status != wantStatus {
+				t.Fatalf("health status = %q, want %q", got.Status, wantStatus)
+			}
+			if strings.Contains(recorder.Body.String(), dataDir) {
+				t.Fatal("health response exposed the local data directory")
+			}
+			if tc.dirOK {
+				entries, err := os.ReadDir(dataDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(entries) != 0 {
+					t.Fatalf("health probe left %d files in the data directory", len(entries))
+				}
+			}
+		})
+	}
+}
 
 func TestParseGoKindsPush(t *testing.T) {
 	kinds, err := parseGoKinds("push")
