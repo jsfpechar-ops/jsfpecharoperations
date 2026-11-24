@@ -168,21 +168,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if child {
 		sig = ""
 	}
-	from, to := parseDate(stayFrom), parseDate(stayTo)
-	issues := validation.ValidateGuestForm(values, &from, &to, legalToday(d.now), raw)
-	// guest.py:2462 — a new guest with no expected total gives a party size of 1–60.
-	if existing == nil && headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests) == nil {
-		if n, err := strconv.Atoi(validation.Strip(form["party_size"])); err != nil || n < 1 || n > 60 {
-			issues = append(issues, validation.Issue{Field: "party_size", Message: stringsCatalog.T(lang, "error_party_size", nil), Severity: "error"})
-		}
-	}
-	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
-		issues = append(issues, *si)
-	}
-	// guest.py:2480 — the guest must confirm the legal notice.
-	if form["legal_ack"] == "" {
-		issues = append(issues, validation.Issue{Field: "legal_ack", Message: stringsCatalog.T(lang, "legal_ack_missing", nil), Severity: "error"})
-	}
+	issues := guestSaveValidateIssues(form, res, values, raw, stayFrom, stayTo, sig, child, existing, legalToday(d.now), lang)
 	// guest.py:2483 — a required-photo property needs a passport photo from a foreign guest.
 	// The file is read and validated before anything is written; a valid upload is stored after the row.
 	var photoBody []byte
@@ -367,6 +353,28 @@ func guestSaveClaimVersion(ctx context.Context, pool *pgxpool.Pool, resID int64)
 		return -1
 	}
 	return claim.tokenVersion
+}
+
+// guestSaveValidateIssues is the save route's database-free checks, in the
+// order of guest.py: the form, the signature, then the legal acknowledgement.
+// The two sentences owned by this function are worded in the guest's language.
+func guestSaveValidateIssues(form map[string]string, res guestResMeta, values validation.GuestRow, raw map[string]string, stayFrom, stayTo, sig string, child bool, existing *guestSaveRow, today time.Time, lang string) []validation.Issue {
+	from, to := parseDate(stayFrom), parseDate(stayTo)
+	issues := validation.ValidateGuestForm(values, &from, &to, today, raw)
+	// guest.py:2462 — a new guest with no expected total gives a party size of 1–60.
+	if existing == nil && headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests) == nil {
+		if n, err := strconv.Atoi(validation.Strip(form["party_size"])); err != nil || n < 1 || n > 60 {
+			issues = append(issues, validation.Issue{Field: "party_size", Message: stringsCatalog.T(lang, "error_party_size", nil), Severity: "error"})
+		}
+	}
+	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
+		issues = append(issues, *si)
+	}
+	// guest.py:2480 — the guest must confirm the legal notice.
+	if form["legal_ack"] == "" {
+		issues = append(issues, validation.Issue{Field: "legal_ack", Message: stringsCatalog.T(lang, "legal_ack_missing", nil), Severity: "error"})
+	}
+	return issues
 }
 
 func postForm(r *http.Request) map[string]string {

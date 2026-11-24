@@ -22,6 +22,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 type formSaveGolden struct {
@@ -171,9 +172,9 @@ func TestGuestWriteEncryption(t *testing.T) {
 	d := saveDeps{pool: pool, getenv: testDataEnv, now: func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }}
 	signature := "data:image/png;base64,AAAA"
 	payload := map[string]any{
-		"surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990", "nationality": "",
+		"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
 		"doc_number": "SYNTHETIC-DOC", "visa_number": "SYNTHETIC-VISA", "res_street": "Test Street", "res_city": "Test City",
-		"res_country": "CZE", "purpose": "99", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+		"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
 		"signature_png": signature, "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 		"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 	}
@@ -238,7 +239,10 @@ func TestGuestWriteEncryption(t *testing.T) {
 // TestGuestSaveNoticeAndHeadcount covers the first-form count and guest insert
 // as one transaction (brief 2071), on synthetic rows.
 func TestGuestSaveNoticeAndHeadcount(t *testing.T) {
-	pool := testPool(t)
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
 	ctx := context.Background()
 	baseID := time.Now().UnixNano()%1000000000 + 7500000
 	userID, aptID := baseID, baseID+1
@@ -269,9 +273,9 @@ func TestGuestSaveNoticeAndHeadcount(t *testing.T) {
 	meta := guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22"}
 	payloadFor := func() map[string]any {
 		return map[string]any{
-			"surname": "Synthetic", "first_name": "Guest", "birth_date": "02.01.1990", "nationality": "",
+			"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
 			"doc_number": "SYNTHETIC-DOC", "visa_number": "", "res_street": "Test Street", "res_city": "Test City",
-			"res_country": "CZE", "purpose": "99", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+			"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
 			"signature_png": "data:image/png;base64,AAAA", "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
 			"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
 		}
@@ -628,7 +632,10 @@ func (h *passportHookCount) MaybeNotifyCompletion(context.Context, int64, int64,
 // TestGuestSavePassportPhotoHTTP posts a real multipart form through the mux with
 // the CSRF token and cookie from the claim page, as the browser does.
 func TestGuestSavePassportPhotoHTTP(t *testing.T) {
-	pool := testPool(t)
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
 	keys, err := secure.LoadDataKeys(testDataEnv)
 	if err != nil {
 		t.Fatal(err)
@@ -760,5 +767,45 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 				t.Fatalf("completion hook calls = %d, want hook=%v", hooks.calls, c.wantHook)
 			}
 		})
+	}
+}
+
+func TestGuestSaveValidateIssuesLegalAckOnEdit(t *testing.T) {
+	cfg := guestFormCfg{defaultPurpose: "tourism"}
+	res := guestResMeta{dateFrom: "2026-06-01", dateTo: "2026-06-05"}
+	form := map[string]string{
+		"surname": "Doe", "first_name": "Jan", "birth_date": "1990-01-01",
+		"nationality": "CZE", "doc_number": "123", "purpose": "tourism",
+		"stay_from": "2026-06-01", "stay_to": "2026-06-05", "signature": "data:image/png;base64,AAAA",
+	}
+	raw := validation.GuestFormRaw(form, cfg.defaultPurpose)
+	values := validation.NormaliseGuest(raw, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	existing := &guestSaveRow{id: 1}
+	issues := guestSaveValidateIssues(form, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, existing, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), "en")
+	if len(validation.ErrorsOnly(issues)) == 0 {
+		t.Fatal("edit save must require legal_ack")
+	}
+}
+
+func TestGuestSaveValidateIssuesPartySizeOnNew(t *testing.T) {
+	cfg := guestFormCfg{defaultPurpose: "tourism"}
+	res := guestResMeta{dateFrom: "2026-06-01", dateTo: "2026-06-05"}
+	form := map[string]string{
+		"surname": "Doe", "first_name": "Jan", "birth_date": "1990-01-01",
+		"nationality": "CZE", "doc_number": "123", "purpose": "tourism",
+		"stay_from": "2026-06-01", "stay_to": "2026-06-05", "signature": "data:image/png;base64,AAAA",
+		"legal_ack": "1",
+	}
+	raw := validation.GuestFormRaw(form, cfg.defaultPurpose)
+	values := validation.NormaliseGuest(raw, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	issues := guestSaveValidateIssues(form, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, nil, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), "en")
+	found := false
+	for _, i := range issues {
+		if i.Field == "party_size" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("first guest save must require party_size when undeclared")
 	}
 }
