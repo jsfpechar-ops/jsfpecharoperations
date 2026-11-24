@@ -145,7 +145,7 @@ func mustVisible(ctx context.Context, pool *pgxpool.Pool, apt pickApartment, tod
 func registrationComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, res pickReservation, today time.Time) bool {
 	var override, declared, reduced *int64
 	err := pool.QueryRow(ctx,
-		`SELECT declared_guests, guest_count_override, guest_count_reduced FROM reservation WHERE id = $1`,
+		`SELECT declared_guests, expected_guests_override, lead_reduced_guests FROM reservation WHERE id = $1`,
 		res.ID).Scan(&declared, &override, &reduced)
 	if err != nil {
 		return false
