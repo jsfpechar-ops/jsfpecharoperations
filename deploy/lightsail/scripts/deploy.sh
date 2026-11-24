@@ -40,7 +40,7 @@ fi
 # Checked here, before anything touches the stack.
 SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-go}"
 # go-only compose cannot apply schema with Python.
-if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
   echo "ERROR: UBYHOST_SCHEMA_APPLY=python with no ubyhost service in compose (Go-only stack)." >&2
   exit 1
 fi
@@ -64,7 +64,7 @@ esac
 source ./scripts/lib-docker.sh
 
 compose_has_go_service() {
-  docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
+  docker compose --profile go config --services 2>/dev/null | grep -x ubyhost-go >/dev/null
 }
 
 # The two-copy deploy starts the *idle* slot and then stops the old one, so the
@@ -74,9 +74,9 @@ compose_has_go_service() {
 # print) talks to a stopped container and fails a deploy that is fine.
 go_exec() {
   local svc=""
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go
-  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go-b
   else
     echo "ERROR: ubyhost-go is not running (checked ubyhost-go and ubyhost-go-b)." >&2
@@ -86,7 +86,7 @@ go_exec() {
 }
 
 running_python_app() {
-  docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .
+  docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null     && docker compose ps -q --status running ubyhost 2>/dev/null | grep . >/dev/null
 }
 
 app_data_exec() {
@@ -150,7 +150,7 @@ rollback() {
     source ./scripts/go-slot.sh
     go_rollback_slots || true
   fi
-  if docker compose --profile go config --services 2>/dev/null | grep -qx 'ubyhost-go'; then
+  if docker compose --profile go config --services 2>/dev/null | grep -x 'ubyhost-go' >/dev/null; then
     # shellcheck disable=SC2046
     docker compose up -d --no-build --remove-orphans $(go_non_slot_services) || true
   else
@@ -218,7 +218,7 @@ if [ -z "${UBYHOST_SECRET_KEY:-}" ] && { \
     { compose_has_go_service \
         && docker compose --profile go run --rm --no-deps -T --entrypoint sh ubyhost-go \
           -c 'test -s /data/secret_key' >/dev/null 2>&1; } \
-    || { docker compose config --services 2>/dev/null | grep -qx ubyhost \
+    || { docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null \
         && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
           -c 'test -s /data/secret_key' >/dev/null 2>&1; }; \
   }; then
@@ -264,7 +264,7 @@ BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && compose_has_go_service; then
-  if ! { ubyhost_app_service | grep -qx 'ubyhost-go\(-b\)\?'; }; then
+  if ! { ubyhost_app_service | grep -x 'ubyhost-go\(-b\)\?' >/dev/null; }; then
     echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
     exit 1
   fi
@@ -285,13 +285,13 @@ if ubyhost_app_service >/dev/null; then
     # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
     # and integrity check below do not apply to it.
     PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
-    if ! app_data_exec "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
+    if ! app_data_exec "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep 'age-encryption.org/v1' >/dev/null"; then
       echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
     echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
   else
-    if ! app_data_exec "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+    if ! app_data_exec "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep 'age-encryption.org/v1' >/dev/null; else [ -s \"\$p\" ]; fi"; then
       echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
@@ -350,7 +350,7 @@ else
   docker compose --profile go build --pull ubyhost-go
 fi
 
-if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   # A compose build tags slot-a, not :local. A CI pull already put the new
@@ -385,7 +385,7 @@ if [ "${PG_MODE}" = "1" ]; then
       echo "Goose apply failed." >&2
       exit 1
     fi
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  elif docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
     echo "==> Applying PostgreSQL goose migrations (new image)"
     if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
       scripts/pg_schema.py apply --expect-database ubyhost; then
@@ -408,7 +408,7 @@ elif [ -n "${BACKUP_STAMP}" ]; then
   echo "Migration dry-run passed."
 fi
 
-if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
+if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker compose config --services | grep -x 'ubyhost-go' >/dev/null; then
   # 1171: build on the server only when no Go image was pulled above (manual
   # deploy, or an old workflow run without UBYHOST_GO_IMAGE). A pulled Go image is never rebuilt.
   # Rebuild the local Go image so a merged change reaches production.
@@ -424,7 +424,7 @@ fi
 
 echo "==> Starting stack"
 docker compose pull caddy
-if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   go_ensure_slot_images
@@ -446,7 +446,7 @@ fi
 # place, so a deploy has a few seconds of downtime but never holds two copies in
 # memory. That is the setting for a 1 GB staging box; production keeps the
 # default 2 (no downtime at all).
-if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null \
   && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh

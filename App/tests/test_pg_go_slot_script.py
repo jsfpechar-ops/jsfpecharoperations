@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import stat
 import subprocess
 from pathlib import Path
@@ -349,3 +350,44 @@ def test_deploy_failures_after_switch_print_the_rollback_command():
     assert "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow." in text
     tail = text.split('echo "==> Removing retired compose services"', 1)[1]
     assert tail.count("fail_after_switch ") == 6
+
+
+def _pipefail_script_files() -> list[Path]:
+    files = [
+        path
+        for path in sorted(SCRIPTS.glob("*.sh"))
+        if "pipefail" in path.read_text(encoding="utf-8")
+        or path.name in {"lib-docker.sh", "go-slot.sh", "rollback-schema-prep.sh"}
+    ]
+    files.append(ROOT / "scripts/rollback-prod.sh")
+    return files
+
+
+def _grep_hits(pattern: re.Pattern[str]) -> list[str]:
+    hits = []
+    for path in _pipefail_script_files():
+        for num, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if pattern.search(line):
+                hits.append(f"{path.relative_to(ROOT)}:{num}")
+    return hits
+
+
+def test_pipefail_scripts_never_grep_q_on_a_pipe():
+    # grep -q exits at the first match; the producer then dies of SIGPIPE (141) and under
+    # pipefail the pipeline reports failure although the line matched. Use grep >/dev/null.
+    hits = _grep_hits(re.compile(r"\|\s*grep\s+-[A-Za-z]*q"))
+    assert not hits, (
+        "grep -q exits at the first match, the producer then dies of SIGPIPE (141) and under "
+        "pipefail the pipeline reports failure although the line matched; use `grep ... >/dev/null`: "
+        + ", ".join(hits)
+    )
+
+
+def test_pipefail_scripts_grep_has_no_lone_dash_argument():
+    # A bare `grep - PATTERN FILE` reads `-` as the pattern and PATTERN as a file name,
+    # so the check never matches what it was meant to match. Drop the lone `-`.
+    hits = _grep_hits(re.compile(r"\bgrep\s+-(\s|$)"))
+    assert not hits, (
+        "lone `-` argument after grep: grep takes `-` as the PATTERN and the real pattern as a "
+        "file name; write `grep PATTERN >/dev/null` without the `-`: " + ", ".join(hits)
+    )

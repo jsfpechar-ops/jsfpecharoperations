@@ -4,11 +4,11 @@
 # the project directory (ubyhost-ubyhost-go-1) and on the blue/green slot.
 
 compose_has_go_app() {
-  docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
+  docker compose --profile go config --services 2>/dev/null | grep -x ubyhost-go >/dev/null
 }
 
 compose_has_python_app() {
-  docker compose config --services 2>/dev/null | grep -qx ubyhost
+  docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null
 }
 
 # One-off shell in a disposable app container (reads /data even when none are running).
@@ -28,7 +28,7 @@ ubyhost_app_run_sh() {
 ubyhost_restore_stop_services() {
   local out=""
   if compose_has_python_app; then
-    docker compose config --services 2>/dev/null | grep -qx worker && out="worker"
+    docker compose config --services 2>/dev/null | grep -x worker >/dev/null && out="worker"
     out="${out}${out:+ }ubyhost"
   fi
   if compose_has_go_app; then
@@ -59,13 +59,13 @@ ubyhost_app_healthz_ok() {
 ubyhost_app_service() {
   local svc
   for svc in ubyhost-go ubyhost-go-b; do
-    if docker compose --profile go ps -q --status running "${svc}" 2>/dev/null | grep -q .; then
+    if docker compose --profile go ps -q --status running "${svc}" 2>/dev/null | grep . >/dev/null; then
       printf '%s\n' "${svc}"
       return 0
     fi
   done
-  if docker compose config --services 2>/dev/null | grep -qx ubyhost \
-    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
+  if docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null \
+    && docker compose ps -q --status running ubyhost 2>/dev/null | grep . >/dev/null; then
     printf '%s\n' ubyhost
     return 0
   fi
