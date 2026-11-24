@@ -91,6 +91,93 @@ def table_cases(refs: dict, seed: dict, py: dict, go: dict):
             yield (f"{name}-{lang}", f"{filled}{sep}lang={lang}", py_cookie, go_cookie, group)
 
 
+def _capture(playwright, base, path, width, dest, cookie, mask, texts):
+    """One screenshot. Returns dict(status, error, texts). Never raises on HTTP >= 400; masks QR images."""
+    from tests.browser_support import chromium_launch_kwargs, settle_motion
+
+    out = {"status": None, "error": "", "texts": {}, "shot": False, "body": ""}
+    browser = playwright.chromium.launch(**chromium_launch_kwargs())
+    try:
+        context = browser.new_context(viewport={"width": width, "height": 900})
+        if cookie:
+            context.add_cookies([{"name": "ubyhost_session", "value": cookie, "url": base + "/"}])
+        page = context.new_page()
+        try:
+            response = page.goto(base.rstrip("/") + path, wait_until="networkidle")
+            out["status"] = response.status if response else None
+            if out["status"] and out["status"] >= 400:
+                out["error"] = (page.inner_text("body") or "")[:200].replace("\n", " ")
+            settle_motion(page)
+            for sel in mask:  # hidden keeps the layout; only the QR pixels disappear
+                page.evaluate("s => document.querySelectorAll(s).forEach(e => e.style.visibility = 'hidden')", sel)
+            for spec in texts:
+                value = ""
+                for alt in spec.split("|"):
+                    sel, _, attr = alt.partition("@")
+                    el = page.query_selector(sel)
+                    if el:
+                        value = (el.get_attribute(attr) if attr else el.inner_text()) or ""
+                        break
+                out["texts"][spec] = value.replace(base, "<BASE>").strip()
+            page.evaluate("window.scrollTo(0, 0)")
+            page.screenshot(path=str(dest), full_page=True)
+            out["shot"] = True
+        except Exception as exc:  # timeout, navigation error: record the message, no screenshot
+            out["error"] = (out["error"] or str(exc))[:200]
+        context.close()
+    finally:
+        browser.close()
+    return out
+
+
+def _shape(text: str) -> str:
+    """A TOTP secret is random per render: compare its shape (length, groups), with the secret= value blanked."""
+    import re
+    text = re.sub(r"secret=[A-Za-z0-9]+", "secret=X", text)
+    return re.sub(r"[A-Z2-7]", "X", text)
+
+
+def run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre_sql):
+    import playwright.sync_api as sync_api
+
+    cfg = parity_cases.QR_PAYLOAD_CASES.get(base_name, {"mask": [], "texts": []})
+    slug = shots._slug(name)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    results = []
+    with sync_api.sync_playwright() as pw:
+        for width in widths:
+            f = {k: out_dir / f"{slug}-{width}-{k}.png" for k in ("py", "go", "side", "diff")}
+            shots._run_pre_sql(pre_sql)
+            a = _capture(pw, py_base, path, width, f["py"], py_cookie, cfg["mask"], cfg["texts"])
+            shots._run_pre_sql(pre_sql)
+            b = _capture(pw, go_base, path, width, f["go"], go_cookie, cfg["mask"], cfg["texts"])
+            sa, sb = a["status"], b["status"]
+            msg = f"py={sa} go={sb}" + (f" py_err={a['error']}" if a["error"] else "") + (f" go_err={b['error']}" if b["error"] else "")
+            if a["shot"] and b["shot"]:
+                shots.write_side_by_side(f["py"], f["go"], f["side"])
+                shots.write_diff_image(f["py"], f["go"], f["diff"])
+                verdict, max_delta, diff_px, _total, note = shots.compare_images(f["py"], f["go"])
+            else:
+                one = f["py"] if a["shot"] else (f["go"] if b["shot"] else None)
+                if one:
+                    shutil.copy(one, f["side"])
+                verdict, max_delta, diff_px, note = ("error", None, None, "no screenshot on either side")
+                if one:
+                    verdict, note = "visible", "one side failed to load"
+            if (sa or 0) >= 400 or (sb or 0) >= 400 or not a["shot"] or not b["shot"]:
+                if sa != sb:                      # error on one side only: a status mismatch, always a visible row
+                    verdict = "visible" if (a["shot"] or b["shot"]) else "error"
+                note = (note + " | " + msg).strip(" |")
+            for spec in cfg["texts"]:             # QR payload text: must match (secret compared by shape)
+                x, y = a["texts"].get(spec, ""), b["texts"].get(spec, "")
+                if x != y and _shape(x) != _shape(y):
+                    verdict = "visible" if verdict in ("identical", "invisible") else verdict
+                    note += f" | QR payload differs [{spec}] py={x[:60]!r} go={y[:60]!r}"
+            results.append({"width": width, "verdict": verdict, "max_delta": max_delta, "diff_pixels": diff_px,
+                            "note": note, "side_png": str(f["side"]), "diff_png": str(f["diff"])})
+    return results
+
+
 def main() -> int:
     only = {x for x in os.environ.get("PARITY_ONLY", "").split(",") if x}
     groups = {g for g in os.environ.get("PARITY_GROUP", "A,B,C,D").split(",") if g}
