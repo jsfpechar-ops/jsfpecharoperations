@@ -27,6 +27,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/maildetails"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/guest"
 )
 
 var version = "dev"
@@ -150,19 +151,31 @@ func healthzAt(pool healthQueryer, dataDir string) http.HandlerFunc {
 
 // notFound is the catch-all 404: the branded host page, as Python's error.html
 // (error_kind=not_found), not net/http's bare text. A guest link keeps the plain
-// 404 until the Go guest lane gets the guest lane's own error page.
+// 404 for non-HTML clients; HTML guest errors use the localized bad_link page.
 func notFound(mux *http.ServeMux) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		status := http.StatusNotFound
 		if allow := allowedMethods(mux, r); allow != "" {
 			w.Header().Set("Allow", allow)
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
+			status = http.StatusMethodNotAllowed
 		}
-		if hostweb.GuestPath(r) {
+		html := hostweb.WantsHTML(r)
+		switch {
+		case hostweb.GuestPath(r):
+			if html {
+				guest.WriteBadLinkPage(w, r, status)
+				return
+			}
+			if status == http.StatusMethodNotAllowed {
+				w.WriteHeader(status)
+				return
+			}
 			http.NotFound(w, r)
-			return
+		case html:
+			hostweb.NotFoundHTML(w, r, status)
+		default:
+			w.WriteHeader(status)
 		}
-		hostweb.NotFoundPage(w, r)
 	}
 }
 
