@@ -135,6 +135,95 @@ func TestFormSaveAccess(t *testing.T) {
 	}
 }
 
+func TestGuestWriteEncryption(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	ctx := context.Background()
+	baseID := time.Now().UnixNano()%1000000000 + 7400000
+	userID, aptID, resID := baseID, baseID+1, baseID+2
+	stamp := "2026-01-01T00:00:00Z"
+	tok := fmt.Sprintf("guestwrite%d", aptID)
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3)`, userID, fmt.Sprintf("gw%d@example.test", userID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at)
+		VALUES ($1, $2, 'Synthetic', 'Prague', 1, $3, $4)`, aptID, userID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, declared_guests, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', '2026-06-20', '2026-06-22', 1, $4, $4)`, resID, aptID, fmt.Sprintf("gw-%d", resID), stamp)
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM guest WHERE reservation_id = $1`, resID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM reservation WHERE id = $1`, resID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM apartment WHERE id = $1`, aptID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM user_account WHERE id = $1`, userID)
+	})
+	one := int64(1)
+	d := saveDeps{pool: pool, getenv: testDataEnv, now: func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }}
+	signature := "data:image/png;base64,AAAA"
+	payload := map[string]any{
+		"surname": "Synthetic", "first_name": "Guest", "birth_date": "1990-01-02", "nationality": "",
+		"doc_number": "SYNTHETIC-DOC", "visa_number": "SYNTHETIC-VISA", "res_street": "Test Street", "res_city": "Test City",
+		"res_country": "CZ", "purpose": "tourism", "note": "", "stay_from": "2026-06-20", "stay_to": "2026-06-22",
+		"signature_png": signature, "notice_version": "v1", "notice_lang": "en", "notice_ack_at": stamp,
+		"filled_at": stamp, "entered_by": "guest", "updated_at": stamp, "signed_at": stamp, "submit_state": guestSubmitPending,
+	}
+	guestID, err := insertGuestSaveRow(ctx, d, payload, resID, guestResMeta{apartmentID: aptID, dateFrom: "2026-06-20", dateTo: "2026-06-22", declaredGuests: &one})
+	if err != nil || guestID == 0 {
+		t.Fatalf("guest self-save insert failed: %v", err)
+	}
+	var birth, birthEnc, doc, docEnc, visa, visaEnc, street, streetEnc, city, cityEnc, sig, sigEnc string
+	if err := pool.QueryRow(ctx, `SELECT COALESCE(birth_date,''), COALESCE(birth_date_enc,''), COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+		COALESCE(visa_number,''), COALESCE(visa_number_enc,''), COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''), COALESCE(signature_png,''), COALESCE(signature_png_enc,'') FROM guest WHERE id = $1`, guestID).Scan(
+		&birth, &birthEnc, &doc, &docEnc, &visa, &visaEnc, &street, &streetEnc, &city, &cityEnc, &sig, &sigEnc); err != nil {
+		t.Fatal("raw guest field read failed")
+	}
+	if birth != "" || doc != "" || visa != "" || street != "" || city != "" || sig != "" ||
+		birthEnc == "" || docEnc == "" || visaEnc == "" || streetEnc == "" || cityEnc == "" || sigEnc == "" {
+		t.Fatal("guest insert did not place the field in ciphertext only")
+	}
+	for token, want := range map[string]string{
+		birthEnc: "1990-01-02", docEnc: "SYNTHETIC-DOC", visaEnc: "SYNTHETIC-VISA",
+		streetEnc: "Test Street", cityEnc: "Test City", sigEnc: signature,
+	} {
+		if got, err := decryptGuestField(testDataEnv, d.now, token, ""); err != nil || got != want {
+			t.Fatal("guest insert ciphertext did not hydrate")
+		}
+	}
+	mustExecGuest(t, ctx, pool, `UPDATE guest SET birth_date='legacy-birth', birth_date_enc=NULL,
+		doc_number='legacy-doc', doc_number_enc=NULL, visa_number='legacy-visa', visa_number_enc=NULL,
+		res_city='legacy-city', res_city_enc=NULL, res_street='untouched-legacy', res_street_enc=NULL,
+		signature_png='untouched-signature', signature_png_enc=NULL WHERE id = $1`, guestID)
+	existing := &guestSaveRow{id: guestID, submitState: guestSubmitPending}
+	updated, err := updateGuestSaveRow(ctx, d, existing, map[string]any{
+		"birth_date": "1992-03-04", "doc_number": "REPLACED-DOC", "visa_number": "", "res_city": "Replacement City",
+	})
+	if err != nil || !updated {
+		t.Fatal("guest self-save update failed")
+	}
+	var birthPlain, docPlain, visaPlain, cityPlain, streetPlain, sigPlain string
+	if err := pool.QueryRow(ctx, `SELECT COALESCE(birth_date,''), COALESCE(birth_date_enc,''), COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+		COALESCE(visa_number,''), COALESCE(visa_number_enc,''), COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_street,''), COALESCE(signature_png,'') FROM guest WHERE id = $1`, guestID).Scan(
+		&birthPlain, &birthEnc, &docPlain, &docEnc, &visaPlain, &visaEnc, &cityPlain, &cityEnc, &streetPlain, &sigPlain); err != nil {
+		t.Fatal("raw guest update read failed")
+	}
+	if birthPlain != "" || docPlain != "" || visaPlain != "" || cityPlain != "" || birthEnc == "" || docEnc == "" || cityEnc == "" || visaEnc != "" || streetPlain != "untouched-legacy" || sigPlain != "untouched-signature" {
+		t.Fatal("guest update did not clear only the touched legacy fields")
+	}
+	for token, want := range map[string]string{birthEnc: "1992-03-04", docEnc: "REPLACED-DOC", cityEnc: "Replacement City"} {
+		if got, err := decryptGuestField(testDataEnv, d.now, token, ""); err != nil || got != want {
+			t.Fatal("guest replacement ciphertext did not hydrate")
+		}
+	}
+	if got, err := decryptGuestField(testDataEnv, d.now, visaEnc, visaPlain); err != nil || got != "" {
+		t.Fatal("explicit empty guest field did not clear")
+	}
+	if _, err := updateGuestSaveRow(ctx, d, existing, map[string]any{"doc_number": 123}); err == nil {
+		t.Fatal("wrong protected field type must fail before writing")
+	}
+}
+
 func mustRequest(method, target string) *http.Request {
 	r := httptest.NewRequest(method, target, nil)
 	r.SetPathValue("token", "tok")
@@ -203,19 +292,28 @@ func testDataEnv(k string) string {
 
 func TestEncryptSaveFieldsWritesEncColumns(t *testing.T) {
 	out, err := encryptSaveFields(testDataEnv, map[string]any{
-		"birth_date": "1990-01-01", "surname": "Novak", "signature_png": "",
+		"birth_date": "1990-01-01", "surname": "Novak", "signature_png": "", "fee_host_reason": "synthetic reason",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := out["birth_date"]; ok {
-		t.Fatal("plaintext birth_date must not be written")
+	if value, ok := out["birth_date"]; !ok || value != nil {
+		t.Fatal("legacy birth_date must be cleared on write")
 	}
 	if tok, _ := out["birth_date_enc"].(string); tok == "" {
 		t.Fatal("birth_date_enc missing")
 	}
+	if value, ok := out["signature_png"]; !ok || value != nil {
+		t.Fatal("legacy signature_png must be cleared on write")
+	}
 	if out["signature_png_enc"] != nil {
 		t.Fatal("empty signature must store nil enc, not wipe later reads")
+	}
+	if value, ok := out["fee_host_reason"]; !ok || value != nil {
+		t.Fatal("legacy fee_host_reason must be cleared on write")
+	}
+	if tok, _ := out["fee_host_reason_enc"].(string); tok == "" {
+		t.Fatal("fee_host_reason_enc missing")
 	}
 	if out["surname"] != "Novak" {
 		t.Fatalf("surname: %v", out["surname"])

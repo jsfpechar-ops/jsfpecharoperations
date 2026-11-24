@@ -438,24 +438,7 @@ func encryptSaveFields(getenv func(string) string, payload map[string]any) (map[
 	if err != nil {
 		return nil, err
 	}
-	out := map[string]any{}
-	for k, v := range payload {
-		switch k {
-		case "birth_date", "doc_number", "visa_number", "res_street", "res_city", "signature_png":
-			if s, ok := v.(string); ok && s != "" {
-				tok, err := keys.EncryptString(s)
-				if err != nil {
-					return nil, err
-				}
-				out[k+"_enc"] = tok
-				continue
-			}
-			out[k+"_enc"] = nil
-			continue
-		}
-		out[k] = v
-	}
-	return out, nil
+	return secure.GuestWriteValues(keys, payload)
 }
 
 func auditGuestFormSaved(ctx context.Context, pool *pgxpool.Pool, guestID, resID, owner int64, lang string, now func() time.Time) error {
