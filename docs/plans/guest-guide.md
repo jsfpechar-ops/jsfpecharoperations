@@ -41,6 +41,22 @@ Czech: "Dobrý večer, Anno, vítejte na Vinohradech. Topení zapnete kulatým t
 
 Booking (Apify voyager/booking-scraper): address, check-in and check-out times, a generated description, photos, rating. No house rules, facilities list or FAQ. Airbnb: the host's own description with house rules, fees, quiet hours and equipment, but no check-in time. Descriptions contain filler ("boating and scuba diving" in Prague 3) and host editing notes, so imports use them only as hints for cards.
 
+## Import pipeline (worker)
+
+The host pastes links on the Guest guide tab (`App/app/templates/guest_guide.html`; Go: `go/internal/web/ai/guide_index.go`). Each accepted link inserts a `guide_import` row with `status = queued`.
+
+| Source | What the host pastes | Apify actor (`go/internal/guideimport/apify.go`) |
+|---|---|---|
+| `booking` | `booking.com` hotel URL | `voyager~booking-scraper` |
+| `airbnb` | `airbnb.com` rooms URL | `tri_angle~airbnb-rooms-urls-scraper` |
+| `url` | Any `https` public page (e.g. Notion); queued on the Go guide UI | `apify~website-content-crawler` |
+
+Job kind `guide_import` runs every 60 minutes (`docs/context/job-ownership.md`). **Production today:** Python `App/app/guest_guide_import.py` (Apify fetch) and `guest_guide_merge.py` (one Haiku call per import, AI feature `guide_import`, key = property id). **Go port:** `go/internal/guideimport` plus `go/cmd/ubyhost-web/register_job_guide_import.go` when the kind is in both `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_GO_JOB_KINDS` — not on the production list yet ([python-retirement-plan](python-retirement-plan.md) gate G1). The Go job uses the same `guide_import` table and Anthropic helper as Python.
+
+After fetch, the Go path runs a **code filter** ([2035](../tasks/2035-guide-import-code-filter.md), `FilterCodes` in `codefilter.go`) on scraped text and again on each draft card field. Spans that look like door codes, PINs or Wi-Fi passwords are removed; the row stores how much was stripped in `codes_left_out`. The guide UI shows the host a count and points them to entry codes / Wi-Fi cards ([entry-code + external guide](entry-code-external-guide.md) decision D4). Public-page import ([2034](../tasks/2034-guide-import-public-url.md)) writes draft cards only (`state = check`).
+
+Merge never promotes a card to `done` — only `check` drafts the host must confirm. Listing text retention: [RETENTION](../privacy/RETENTION.md) (`guide_import.raw_json`). Tests: `App/tests/test_guest_guide*.py`; Go `go test ./internal/guideimport/...` (DB tests need `UBYHOST_TEST_DATABASE_URL`).
+
 ## Briefs
 
 Numbers: this plan owns tasks 0341 to 0359 (renumbered from 0291 to 0305 on 2026-10-24: another thread used 0291 to 0302 on main) and migrations 0013, 0014 and 0016. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0346 and later build on.
@@ -59,6 +75,8 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 2 | 0346 | Dropped: the shared core 0310 already has per-feature switches and caps; the "leon" and "guide_import" settings ride in 0348 and 0350 | | | | | dropped |
 | 2 | [0347](../tasks/0347-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Haiku | todo |
 | 2 | [0348](../tasks/0348-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Haiku | todo |
+| 2 | [2035](../tasks/2035-guide-import-code-filter.md) | Code filter on imported text; `codes_left_out` on the import row | yes: secrets in listings | Fable | n/a | Haiku | review (#1280) |
+| 2 | [2034](../tasks/2034-guide-import-public-url.md) | Public `https` URL source (Notion first), drafts only, code filter | yes: outbound Apify | Fable | n/a | Haiku | done (#1286) |
 | 2 | [0349](../tasks/0349-guide-drafts.md) | Draft review: source line and "Discard this draft" on the card editor (paste box dropped to keep AI cost down) | no | Opus | no | Haiku | todo |
 | 3 | [0350](../tasks/0350-leon-core.md) | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Haiku | review |
 | 3 | [0351](../tasks/0351-guest-handoff.md) | Host handoff: "needs you" alert and one mail per batch, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | review |
