@@ -29,7 +29,6 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -630,14 +629,18 @@ func confirmClaim(ctx context.Context, pool *pgxpool.Pool, resID int64, secret s
 	if tag.RowsAffected() != 1 {
 		return false, nil
 	}
-	if state == claimStateProvisional && declared != nil && *declared > 0 {
-		exp := headcount.Expected(stay.override, stay.declared, stay.leadReduced)
-		target := int(*declared)
-		if exp != nil && int(*exp) > target {
-			target = int(*exp)
-		}
-		if _, err := tx.Exec(ctx, `UPDATE reservation SET declared_guests = $1 WHERE id = $2`, target, resID); err != nil {
-			return false, err
+	if state == claimStateProvisional && declared != nil {
+		pending := int(*declared)
+		// Python claim.confirm calls headcount.apply_declared_in(pending).
+		// Raising pending to Expected() kept lead_reduced_guests in force, so a
+		// guest who confirmed 3 people on a lead-reduced stay of 2 still filed 2.
+		// A host override refuses the write (HOST_SET).
+		if pending >= 1 && (stay.override == nil || *stay.override == 0) {
+			if _, err := tx.Exec(ctx, `UPDATE reservation SET declared_guests = $1,
+				lead_reduced_guests = NULL, lead_reduced_from = NULL, lead_reduced_at = NULL,
+				updated_at = $2 WHERE id = $3`, pending, stamp, resID); err != nil {
+				return false, err
+			}
 		}
 	}
 	if _, err := tx.Exec(ctx, `UPDATE reservation_claim SET declared_guests = NULL WHERE reservation_id = $1`, resID); err != nil {
