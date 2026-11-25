@@ -112,6 +112,15 @@ func TestGuestEditKeepsSignature(t *testing.T) {
 	_ = now
 }
 
+func TestSubmissionClaimCutoffUsesSeconds(t *testing.T) {
+	at := time.Unix(1_700_000_000, 0)
+	got := submissionClaimCutoff(at)
+	want := float64(1_700_000_000 - 5*60)
+	if got != want {
+		t.Fatalf("submissionClaimCutoff = %v, want %v (unix seconds minus 5 minutes)", got, want)
+	}
+}
+
 func TestGuestWriteEncryption(t *testing.T) {
 	pool := guestWriteTestPool(t)
 	if pool == nil {
@@ -203,6 +212,26 @@ func TestGuestWriteEncryption(t *testing.T) {
 	}
 	if _, err := guestUpdateIf(ctx, pool, getenv, guestID, "pending", map[string]any{"doc_number": 123}, time.Now()); err == nil {
 		t.Fatal("wrong protected value type must fail before writing")
+	}
+
+	at := time.Now().UTC()
+	if _, err := pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'stale', $2)`,
+		guestID, float64(at.Unix())-600); err != nil {
+		t.Fatal("stale submission_claim insert failed")
+	}
+	staleOK, err := guestUpdateIf(ctx, pool, getenv, guestID, "pending", map[string]any{"note": "after-stale-claim"}, at)
+	if err != nil || !staleOK {
+		t.Fatal("stale submission_claim blocked host guest save")
+	}
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, float64(at.Unix())-30, guestID); err != nil {
+		t.Fatal("live submission_claim update failed")
+	}
+	liveOK, err := guestUpdateIf(ctx, pool, getenv, guestID, "pending", map[string]any{"note": "during-live-claim"}, at)
+	if err != nil {
+		t.Fatal("live submission_claim check failed")
+	}
+	if liveOK {
+		t.Fatal("live submission_claim must refuse host guest save")
 	}
 }
 
