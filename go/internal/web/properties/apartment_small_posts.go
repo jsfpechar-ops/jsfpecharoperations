@@ -112,7 +112,7 @@ func (s *server) apartmentAutomationTiming(w http.ResponseWriter, r *http.Reques
 		}
 		if formStr(r, "setup_step") == "automation" {
 			returnTo := formReturnTo(r, onboarding.WizardURL(a.ID, "automation"), false)
-			q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+			q.back(w, r, returnTo, hostweb.Flash{}, msg)
 			return
 		}
 		q.back(w, r, propertySummaries, hostweb.Flash{}, msg)
@@ -259,7 +259,18 @@ func (s *server) apartmentAddFeed(w http.ResponseWriter, r *http.Request, fetch 
 	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d?view=bookings#calendars", a.ID), false)
 	wizardPrefix := fmt.Sprintf("/apartments/%d/setup/", a.ID)
 	if len(fieldErrors) > 0 {
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		firstKey := ""
+		for _, f := range []string{"label", "label_other", "own_name", "url"} {
+			if k := fieldErrors[f]; k != "" {
+				firstKey = k
+				break
+			}
+		}
+		flash := smallPostsFlash(q, firstKey, nil)
+		if flash.Text == "" || flash.Text == firstKey {
+			flash = q.flash(firstKey, nil)
+		}
+		q.back(w, r, returnTo, hostweb.Flash{}, flash)
 		return
 	}
 	dup, err := feedAlreadyAdded(ctx, s.pool, a.ID, url)
@@ -540,13 +551,16 @@ func (s *server) apartmentPoliceLetter(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	msg := hostweb.Flash{Text: letterJSONMessage(q.lang, status, filled, missing)}
+	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
 	if formStr(r, "setup_step") == "police" {
-		returnTo := formReturnTo(r, onboarding.WizardURL(a.ID, "police"), false)
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		returnTo = formReturnTo(r, onboarding.WizardURL(a.ID, "police"), false)
+	}
+	if status == "ok" {
+		q.back(w, r, returnTo, msg, hostweb.Flash{})
 		return
 	}
-	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
-	q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+	q.back(w, r, returnTo, hostweb.Flash{}, msg)
 }
 
 func (s *server) apartmentRefreshCodelists(w http.ResponseWriter, r *http.Request) {

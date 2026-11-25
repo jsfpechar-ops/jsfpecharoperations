@@ -253,12 +253,20 @@ func SharedPageHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		p, found, err := sharedPayload(r, pool, getenv, lang, at)
 		switch {
 		case !found && err == nil:
+			if hostweb.WantsHTML(r) {
+				hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+				return
+			}
 			writeDetail(w, http.StatusNotFound, "Not Found")
 			return
 		case errors.Is(err, errDates):
 			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Entity")
 			return
 		case errors.Is(err, errNotFound):
+			if hostweb.WantsHTML(r) {
+				hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+				return
+			}
 			writeDetail(w, http.StatusNotFound, "Not Found")
 			return
 		case err != nil:

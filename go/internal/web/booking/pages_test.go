@@ -73,6 +73,9 @@ func TestTermsRetiredNotice(t *testing.T) {
 			if strings.Contains(body, conditional) != (setting == "1") {
 				t.Errorf("unexpected availability notice for %s, retired=%q", tc.lang, setting)
 			}
+			if setting == "1" && strings.Contains(body, "Stripe") {
+				t.Errorf("retired terms page still rendered Stripe clauses for %s", tc.lang)
+			}
 		}
 	}
 }

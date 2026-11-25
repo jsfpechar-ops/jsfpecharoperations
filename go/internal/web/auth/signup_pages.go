@@ -120,6 +120,10 @@ func (d deps) signupFormView(r *http.Request, secret string, attr map[string]str
 // signupForm is GET /signup (signup_form).
 func (d deps) signupForm(w http.ResponseWriter, r *http.Request) {
 	if !signup.Enabled(d.getenv) {
+		if hostweb.WantsHTML(r) {
+			hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+			return
+		}
 		httpError(w, http.StatusNotFound)
 		return
 	}
@@ -221,6 +225,10 @@ func (d deps) signupSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !signup.Enabled(d.getenv) {
+		if hostweb.WantsHTML(r) {
+			hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+			return
+		}
 		httpError(w, http.StatusNotFound)
 		return
 	}
@@ -305,6 +313,10 @@ func signupVerifyView(token string, expired bool, errKey string, status int) sig
 // link that is forged, expired, superseded or already used.
 func (d deps) signupVerifyForm(w http.ResponseWriter, r *http.Request) {
 	if !signup.Enabled(d.getenv) {
+		if hostweb.WantsHTML(r) {
+			hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+			return
+		}
 		httpError(w, http.StatusNotFound)
 		return
 	}
@@ -340,6 +352,10 @@ func (d deps) signupVerifySubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !signup.Enabled(d.getenv) {
+		if hostweb.WantsHTML(r) {
+			hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+			return
+		}
 		httpError(w, http.StatusNotFound)
 		return
 	}
