@@ -18,9 +18,9 @@ func env(m map[string]string) func(string) (string, bool) {
 
 func TestConfigFromEnvSwitches(t *testing.T) {
 	for _, c := range []struct {
-		vars  map[string]string
-		dry   bool
-		warn  bool
+		vars map[string]string
+		dry  bool
+		warn bool
 	}{
 		{map[string]string{}, true, false},
 		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1"}, true, false},
