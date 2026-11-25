@@ -77,7 +77,7 @@
     </small>
   </td>
   <td class="nowrap stays-col-guests" data-card="guests" data-label="{{t "stays.table.guests"}}">
-    {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted">–</span><span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}
+    {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-label="{{t "common.guests_unknown"}}">–</span>{{end}}
   </td>
   <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
@@ -217,7 +217,7 @@
 <div class="stays-index-card stays-links stays-phone-links">
   <a class="airbnb-index-row" href="/submissions"><span class="airbnb-icon">{{icon "shield" 24}}</span><span class="airbnb-label">{{t "tabs.stays.reports"}}</span>{{icon "chevron-right" 16}}</a>
   <a class="airbnb-index-row" href="/housebook"><span class="airbnb-icon">{{icon "book-open" 24}}</span><span class="airbnb-label">{{t "tabs.stays.register"}}</span>{{icon "chevron-right" 16}}</a>
-  <a data-turbo="false" class="airbnb-index-row" href="/reservations.csv?{{.CSVExportParams}}" data-csv-export="/reservations.csv" data-csv-params="{{.CSVExportParams}}" data-csv-scope-label="{{.StayProperty}}"><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 20}}</a>
+  <a data-turbo="false" class="airbnb-index-row" href="/reservations.csv?{{.CSVExportParams}}"><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 20}}</a>
   <a data-turbo="false" class="airbnb-index-row stays-phone-only" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook-phone><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "stays.housebook_download"}}<small>{{t "stays.housebook_hint"}}</small></span>{{icon "chevron-right" 20}}</a>
 </div>
 {{end}}

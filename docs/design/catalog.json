@@ -524,7 +524,24 @@
     "havel-guide-link",
     "guide-ask",
     "guest-name-link",
-    "bsite-bookings"
+    "bsite-bookings",
+    "stays-head-menu",
+    "stays-head-menu-btn",
+    "stays-toolbar",
+    "stays-toolbar-controls",
+    "stays-search",
+    "stays-search-input",
+    "stays-filter-btn",
+    "stays-toolbar-meta",
+    "stays-workspace",
+    "stays-workspace-main",
+    "stays-col-prop",
+    "stays-col-guests",
+    "stays-drawer",
+    "stays-phone-links",
+    "stay-prop-inline",
+    "stay-dates-span",
+    "stays-list"
   ],
   "hooks": [
     "sr-only",
@@ -1378,5 +1395,24 @@
   },
   "page_classes": {
     "App/app/templates/booking_site_setup.html": []
+  },
+  "notes": {
+    "stays-head-menu": "Stays list header overflow menu wrapper (⋮).",
+    "stays-head-menu-btn": "Stays list header overflow menu trigger button.",
+    "stays-toolbar": "Stays list unified toolbar row (scope pills, live search, Filters button).",
+    "stays-toolbar-controls": "Stays list right-aligned toolbar controls (search and Filters).",
+    "stays-search": "Stays list live search input container.",
+    "stays-search-input": "Stays list live search input.",
+    "stays-filter-btn": "Stays list Filters toggle button in toolbar.",
+    "stays-toolbar-meta": "Stays list active filter summary and reset row.",
+    "stays-workspace": "Stays list desktop split workspace container (table + slide-over drawer).",
+    "stays-workspace-main": "Stays list main table/card column inside stays-workspace.",
+    "stays-col-prop": "Stays desktop table Property column (compacted into Guest cell while drawer is open).",
+    "stays-col-guests": "Stays desktop table Guests count column.",
+    "stays-drawer": "Stays list right-side slide-over Stay detail drawer (desktop >=1024px).",
+    "stays-phone-links": "Stays list mobile-only bottom links card (hidden on desktop >=1024px).",
+    "stay-prop-inline": "Stays row inline property label shown under Guest while side drawer is open.",
+    "stay-dates-span": "Stays row merged arrival-departure date range.",
+    "stays-list": "Stays desktop table tbody."
   }
 }

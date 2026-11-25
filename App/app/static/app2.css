@@ -3645,10 +3645,11 @@ body.v2 .stays-head-menu-btn{width:38px;min-width:38px;padding:0;display:inline-
 body.v2 .stays-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px}
 body.v2 .stays-toolbar .stays-pills{margin:0;flex:1 1 auto;min-width:0}
 body.v2 .stays-toolbar .stays-pills .settings-pills{margin:0}
-body.v2 .stays-toolbar-controls{display:flex;align-items:center;gap:8px;flex:none}
+body.v2 .stays-toolbar-controls{display:flex;align-items:center;gap:12px;flex:none}
 body.v2 .stays-search{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink3);box-sizing:border-box}
 body.v2 .stays-search:focus-within{border-color:var(--ink2)}
-body.v2 .stays-search-input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;width:190px;min-width:0;padding:4px 0;outline:0}
+body.v2 .stays-search-input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;width:190px;min-width:0;padding:4px 0}
+body.v2 .stays-search-input:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
 body.v2 .stays-search-input::placeholder{color:var(--ink3)}
 body.v2 .stays-filter-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px}
 body.v2 .stays-toolbar-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
@@ -3656,7 +3657,7 @@ body.v2 .stays-toolbar-meta>p.sub{margin:0}
 body.v2 .stays-desk .stay-prop-inline{display:none}
 body.v2 .stays-desk td.stays-col-guests{color:var(--ink2)}
 body.v2 .stays-desk tbody tr.clickable-row{cursor:pointer}
-body.v2 .stays-desk tbody tr.clickable-row:hover td,body.v2 .stays-desk tbody tr.clickable-row.is-selected td{background:var(--side2)}
+body.v2 .stays-desk tbody tr.clickable-row:hover,body.v2 .stays-desk tbody tr.clickable-row.is-selected{background:var(--side2)}
 body.v2 .stays-desk tbody tr[data-search-hidden]{display:none}
 body.v2 .stays-phone a.card.stay[data-search-hidden]{display:none}
 body.v2 .stays-drawer[hidden]{display:none}

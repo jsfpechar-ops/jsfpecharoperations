@@ -308,7 +308,8 @@ def test_the_guest_links_page_and_stay_page_copy_the_slug(flat):
     detail = client.get(f"/reservations/{flat['stay']}?lang=en").text
     assert f"/l/{flat['slug']}/{flat['stay']}" in detail
     listing = client.get("/reservations?range=all&lang=en").text
-    assert f"/l/{flat['slug']}/{flat['stay']}" in listing
+    assert f'/reservations/{flat["stay"]}?' in listing
+    assert f"/l/{TOKEN}" not in listing
 
 
 def test_the_readable_part_follows_the_property_name_and_keeps_the_code(flat):

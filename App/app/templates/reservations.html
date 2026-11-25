@@ -237,7 +237,7 @@
           </small>
         </td>
         <td class="nowrap stays-col-guests" data-card="guests" data-label="{{ t('stays.table.guests') }}">
-          {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted">–</span><span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}
+          {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted" aria-label="{{ t('common.guests_unknown') }}">–</span>{% endif %}
         </td>
         <td data-card="badge" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
@@ -296,7 +296,7 @@
 <div class="stays-index-card stays-links stays-phone-links">
   <a class="airbnb-index-row" href="/submissions"><span class="airbnb-icon">{{ icon('shield', 24) }}</span><span class="airbnb-label">{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
   <a class="airbnb-index-row" href="/housebook"><span class="airbnb-icon">{{ icon('book-open', 24) }}</span><span class="airbnb-label">{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
-  <a data-turbo="false" class="airbnb-index-row" href="/reservations.csv?{{ csv_export_params }}" data-csv-export="/reservations.csv" data-csv-params="{{ csv_export_params }}" data-csv-scope-label="{{ stay_property.label }}"><span class="airbnb-icon">{{ icon('download', 24) }}</span><span class="airbnb-label">{{ t('csv.export_stays') }}</span>{{ icon('chevron-right', 20) }}</a>
+  <a data-turbo="false" class="airbnb-index-row" href="/reservations.csv?{{ csv_export_params }}"><span class="airbnb-icon">{{ icon('download', 24) }}</span><span class="airbnb-label">{{ t('csv.export_stays') }}</span>{{ icon('chevron-right', 20) }}</a>
   <a data-turbo="false" class="airbnb-index-row stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span class="airbnb-icon">{{ icon('download', 24) }}</span><span class="airbnb-label">{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('chevron-right', 20) }}</a>
 </div>
 {% endblock %}

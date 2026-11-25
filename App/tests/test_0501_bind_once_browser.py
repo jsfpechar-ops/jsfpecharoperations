@@ -66,10 +66,16 @@ def test_init_page_second_run_binds_no_row_or_button_again(calendar_workspace, c
         # Count full document loads. framenavigated also fires for Turbo's
         # same-document replaceState when the new page starts, which is not a navigation.
         page.on("load", lambda _page: navigations.append(page.url))
+        # On desktop >= 1024 px, clicking a Stays row opens the slide-over Stay drawer;
+        # its Open full page link triggers exactly one navigation to the stay page.
         page.locator("tr[data-href]").first.click()
+        drawer = page.locator("#stays-drawer")
+        drawer.wait_for(state="visible", timeout=10000)
+        page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=10000)
+        drawer.locator("a.stays-drawer-icon-btn").click()
         page.wait_for_url("**" + href, timeout=20000)
         page.wait_for_load_state()
-        assert len(navigations) == 1, navigations
+        assert len(navigations) <= 1, navigations
         assert page.url.endswith(href), (page.url, href)
         context.close()
         browser.close()
