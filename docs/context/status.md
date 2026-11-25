@@ -1,20 +1,21 @@
 # Status
 
-Updated: 2026-11-22.
+Updated: 2026-11-25.
+
+## Go cutover (11-25)
+- PR #1319: 2040–2085 done, `parity_gate.sh` PASS, main merged. Owner: `scripts/merge-pr-on-green.sh 1319`, then deploy (autopurge off week 1).
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres live. Billing ON. `COMPOSE_PROFILES=walg,monitoring,go`. SQLite rollback: pg-cutover.
 - Payments retired (`UBYHOST_PAYMENTS_RETIRED`); Stripe off; code and data kept. Billing on.
 - Go jobs = queue (billing_snapshot, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
-- Go routes live: [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, reload caddy.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Guest QR 404 without IBAN.
 - Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
 - 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
-- Go parity: **fail 0** — 843 rows, 6 languages (#1258); 447 incl. PIN (#1252, #1255); visual 33/33 (#1259).
-- 2011-2018 merged (#1252); 2021, 2028 done; 2022 needs owner.
+- Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 merged (#1252).
 - 2000: no police nags on Overview without UbyPort login.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): A2 done (2029); A6 waits on Python retirement.
@@ -29,7 +30,6 @@ Updated: 2026-11-22.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
 - Login wording: 1762-1764 (blocked on 1704); after 1760, exact-diff pass first.
-- Stays Go-only: 1855-1858; `/reservations` in `UBYHOST_GO_PATHS` after 1856.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing K-F03, K-F07: AI-reviewed 11-15, not lawyer items (see go-sqlite-final §7); secrets K-S10.

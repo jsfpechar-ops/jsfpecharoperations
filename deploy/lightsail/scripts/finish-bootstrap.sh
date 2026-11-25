@@ -25,7 +25,7 @@ if ! command -v docker >/dev/null 2>&1; then
   ${SUDO} bash "${INSTALL_DIR}/deploy/lightsail/scripts/setup-server.sh"
 fi
 
-if ! groups | grep -q docker; then
+if ! groups | grep docker >/dev/null; then
   echo "Note: re-login or run: sg docker -c '$0'" >&2
   if [ -n "${SUDO}" ]; then
     exec sg docker -c "bash $0"
@@ -68,7 +68,7 @@ echo "==> Public health check"
 curl -sS -m 20 "https://${DOMAIN}/healthz" || curl -sS -m 10 "http://127.0.0.1/healthz" || true
 
 CRON_LINE="0 3 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup.sh >> ${HOME}/ubyhost-backup.log 2>&1"
-if ! crontab -l 2>/dev/null | grep -q ubyhost-backup; then
+if ! crontab -l 2>/dev/null | grep ubyhost-backup >/dev/null; then
   (crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
   echo "==> Backup cron installed"
 fi

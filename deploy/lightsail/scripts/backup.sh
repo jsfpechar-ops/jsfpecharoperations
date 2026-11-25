@@ -49,7 +49,7 @@ data_sh() {
 }
 
 run_backup_snapshot() {
-  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  if docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
     docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
     return
   fi

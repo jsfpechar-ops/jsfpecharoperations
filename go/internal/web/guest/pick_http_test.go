@@ -130,7 +130,7 @@ func TestStayOverviewBySlugRedirectsToNew(t *testing.T) {
 		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
 
 	mux := http.NewServeMux()
-	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d?lang=en", slug, resID), nil)
 	rec := httptest.NewRecorder()

@@ -1,0 +1,164 @@
+"""Page table for the visual parity run (briefs 2040-2042). Data only.
+
+One row = (name, path template, persona, group). Persona is "host" (user h1) or "admin".
+Anonymous pages are out of scope. Placeholders are filled by page_parity_visual.fill():
+{apt} {res} {guest} {inv} {hinv} {fee_a} {alfa} {tok}
+Groups: A account+admin, B host core, C money, D setup+cleaning+guide (empty states).
+Brief 2041 adds EXTRA_CASES (groups E, F, G, populated pages from seed_parity_extra.py).
+"""
+
+GUIDE_QUICK_STEPS = ("times", "rules", "access", "kitchen", "comfort")  # from guide_facts.STEPS
+
+CASES = [
+    # A: account and admin
+    ("home-host", "/", "host", "A"),
+    ("2fa-setup", "/account/2fa/setup", "host", "A"),
+    ("2fa-setup-moved", "/account/2fa/setup?moved=1", "host", "A"),
+    ("admin-home", "/admin", "admin", "A"),
+    ("admin-operations", "/admin/operations", "admin", "A"),
+    ("admin-ops-alerts", "/admin/operations/alerts", "admin", "A"),
+    ("admin-customers", "/admin/customers", "admin", "A"),
+    ("admin-customers-overdue", "/admin/customers?state=overdue", "admin", "A"),
+    ("admin-customers-trialing", "/admin/customers?state=trialing", "admin", "A"),
+    ("admin-customer", "/admin/customers/{alfa}", "admin", "A"),
+    ("admin-fakturace", "/admin/fakturace", "admin", "A"),
+    ("privacy-requests", "/privacy-requests", "admin", "A"),
+    ("dev-ui", "/dev/ui", "admin", "A"),
+    # B: host core
+    ("menu", "/menu", "host", "B"),
+    ("settings", "/settings", "host", "B"),
+    ("settings-archived", "/settings/archived", "host", "B"),
+    ("predplatne", "/predplatne", "host", "B"),
+    ("onboarding", "/onboarding", "host", "B"),
+    ("entities", "/entities", "host", "B"),
+    ("apartments", "/apartments", "host", "B"),
+    ("apartments-new", "/apartments/new", "host", "B"),
+    ("apartment-detail", "/apartments/{apt}", "host", "B"),
+    ("reservations", "/reservations", "host", "B"),
+    ("reservation-detail", "/reservations/{res}", "host", "B"),
+    ("guest-form-new", "/reservations/{res}/guests/new", "host", "B"),
+    ("guest-detail", "/guests/{guest}", "host", "B"),
+    ("housebook", "/housebook", "host", "B"),
+    ("submissions", "/submissions", "host", "B"),
+    # C: money
+    ("stay-fees", "/stay-fees", "host", "C"),
+    ("stay-fee-detail", "/stay-fees/{fee_a}", "host", "C"),
+    ("invoices", "/invoices", "host", "C"),
+    ("invoices-new", "/invoices/new", "host", "C"),
+    ("invoice-detail", "/invoices/{hinv}", "host", "C"),
+    # D: setup, cleaning, guide (empty states: no data is seeded for these yet)
+    ("cleaning", "/cleaning", "host", "D"),
+    ("cleaning-new", "/cleaning/new", "host", "D"),
+    ("cleaning-properties", "/cleaning/properties", "host", "D"),
+    ("cleaning-property", "/cleaning/properties/{apt}", "host", "D"),
+    ("cleaning-shares", "/cleaning/shares", "host", "D"),
+    ("havel", "/havel", "host", "D"),
+    ("guide", "/guide", "host", "D"),
+    ("apt-guide", "/apartments/{apt}/guide", "host", "D"),
+    ("apt-guide-qr", "/apartments/{apt}/guide/qr", "host", "D"),
+    ("apt-guide-questions", "/apartments/{apt}/guide/questions", "host", "D"),
+    ("leon-settings", "/apartments/{apt}/leon", "host", "D"),
+] + [
+    (f"wizard-{s}", f"/apartments/{{apt}}/setup/{s}", "host", "D")
+    for s in ("property", "calendar", "door_lock", "automation", "guest_link", "police", "stay_fee", "try_it", "done")
+] + [
+    (f"leon-setup-{s}", f"/apartments/{{apt}}/leon/setup/{s}", "host", "D")
+    for s in ("cards", "import", "try", "switch_on", "done")
+]
+
+# One case that shows the two-factor prompt modal on purpose in both stacks (PRE_SQL clears the prompt).
+MODAL_CASES = [
+    ("two-factor-modal", "/reservations", "host", "B"),
+]
+
+# Deliberate differences, kept as Go has them. Key = case name without "-cs"/"-en". Reported separately, not failures.
+ACCEPTED = {
+    "apt-guide": "Go keeps the newer External guide link card (Link (https) / Save link) above the Booking or Airbnb import; Python lacks it. Python import-title spacing differs as a consequence.",
+    "dev-ui": "dev_ui is not ported; it is deleted with Python (docs/plans/go-full-move.md). The only diff is a CSS spinner frame.",
+    "apt-guide-full": "Go keeps the External guide card (2045) and the Leon help mark in the section heading (2051 section 10, accepted); Python lacks the card and has the title spacing quirk (see apt-guide-qr).",
+    "apt-guide-qr": "Section title spacing: Python's flex h2 drops the space (New link shown as one word); Go keeps it with a no-break space on purpose (brief 2036, go/internal/web/ai/guide_common.go).",
+    "guide-item": "Go has one Save per form (Save and next card, or Save on the last card): design-system rule 5; Python shows two buttons (brief 2051 section 11, accepted).",
+    "reservation-detail": "Go-only desktop stay page layout at 1024 px and up (brief 1862, owner decisions 2026-11-19; decisions.md line 66). The back arrow and Generate invoice button already match (brief 2046).",
+}
+
+# Cases with a QR image: its pixels are masked, and its payload text is compared separately.
+QR_PAYLOAD_CASES = {
+    "2fa-setup": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
+    "2fa-setup-moved": {"mask": ["img.auth-setup-qr"], "texts": ["a.auth-setup-open@href", ".auth-setup-key|#totp-setup-key"]},
+    "apt-guide-qr": {"mask": ["img.guide-qr"], "texts": [".ui-mono"]},
+    "g-stay-fee": {"mask": ["img.g-fee-qr-img"], "texts": [".g-fee-amt", ".g-fee-calc", ".g-fee-iban", ".g-fee-rail .g-summary-list"]},
+}
+
+# Brief 2041. Placeholders not produced by seed_parity_extra.py skip their row as SKIPPED.
+# Persona "anon_invite": no cookie on either stack (the invite link works signed out).
+EXTRA_CASES = [
+    # E: populated versions of pages that were empty in 2040
+    ("cleaning-full", "/cleaning", "host", "E"),
+    ("cleaning-edit", "/cleaning/events/{cleaning_event}/edit", "host", "E"),
+    ("cleaning-shares-full", "/cleaning/shares", "host", "E"),
+    ("havel-full", "/havel", "host", "E"),
+    ("privacy-requests-full", "/privacy-requests", "admin", "E"),
+    ("submissions-full", "/submissions", "host", "E"),
+    ("submission-draft", "/submissions/{submission_id}", "host", "E"),
+    ("submission-sent", "/submissions/{submission_sent}", "host", "E"),
+    ("submission-ok", "/submissions/{submission_ok}", "host", "E"),
+    ("submission-transport", "/submissions/{submission_transport}", "host", "E"),
+    ("submission-running", "/submissions/{submission_running}", "host", "E"),
+    ("submission-legacy-null", "/submissions/{submission_legacy}", "host", "E"),
+    ("apartments-full", "/apartments", "host", "E"),
+    ("property-detail", "/apartments/{property_id}", "host", "E"),
+    ("account-accept", "/account/accept?token={invite_token}", "anon_invite", "E"),
+    # F: guide, questions, Leon (populated)
+    ("apt-guide-full", "/apartments/{apt}/guide", "host", "F"),
+    ("guide-item", "/apartments/{apt}/guide/{guide_item}", "host", "F"),
+    ("guide-questions-full", "/apartments/{apt}/guide/questions", "host", "F"),
+    ("guide-question", "/apartments/{apt}/guide/questions/{question_id}", "host", "F"),
+    ("guide-question-answered", "/apartments/{apt}/guide/questions/{question_answered}", "host", "F"),
+    ("guide-question-urgent-unread", "/apartments/{apt}/guide/questions/{question_urgent_unread}", "host", "F"),
+    ("guide-question-dismissed", "/apartments/{apt}/guide/questions/{question_dismissed}", "host", "F"),
+    ("guide-quick-done", "/apartments/{apt}/guide/quick/done", "host", "F"),
+    ("leon-settings-full", "/apartments/{apt}/leon", "host", "F"),
+    ("leon-setup-cards-full", "/apartments/{apt}/leon/setup/cards", "host", "F"),
+] + [
+    (f"guide-quick-{s}", f"/apartments/{{apt}}/guide/quick/{s}", "host", "F")
+    for s in GUIDE_QUICK_STEPS
+] + [
+    # G: variants of existing pages (query parameters checked in the routes)
+    # "invoices-new-picker" (/invoices/new?step=) and "settings-tab-account" (/settings?tab=) removed: no such variant.
+    ("reservations-past", "/reservations?range=past", "host", "G"),
+    ("stay-fees-oct", "/stay-fees?month=2026-10", "host", "G"),
+]
+
+GUEST_CASES = [
+    # H1: hub and stay states (no cookie = a stranger with the link)
+    ("g-hub", "/l/{tok}", [], "H"),
+    ("g-hub-claimed", "/l/{tok}", ["claim"], "H"),
+    ("g-privacy", "/l/{tok}/privacy", [], "H"),
+    ("g-stay-unclaimed", "/l/{tok}/{res_unclaimed}", [], "H"),
+    ("g-stay-provisional", "/l/{tok}/{res_provisional}", [], "H"),
+    ("g-stay-claimed", "/l/{tok}/{res_claimed}", ["claim"], "H"),
+    ("g-stay-claimed-nocookie", "/l/{tok}/{res_claimed}", [], "H"),
+    ("g-stay-fee", "/l/{tok_fee}/{res_fee}", ["claim"], "H"),
+    ("g-stay-issued", "/l/{tok}/{res_issued}", ["claim"], "H"),
+    ("g-stay-issued-done", "/l/{tok}/{res_issued_done}", ["claim"], "H"),
+    ("g-stay-locked", "/l/{tok}/{res_locked}", ["claim"], "H"),
+    ("g-stay-gone", "/l/{tok}/{res_gone}", [], "H"),
+    ("g-claim-landing", "/l/{tok}/{res_provisional}/claim", [], "H"),
+    # H2: the guest form
+    ("g-form-new", "/l/{tok}/{res_claimed}/new", ["claim"], "H"),
+    ("g-form-edit-complete", "/l/{tok}/{res_claimed}/edit/{guest_complete}", ["claim", "owned"], "H"),
+    ("g-form-edit-partial", "/l/{tok}/{res_claimed}/edit/{guest_partial}", ["claim", "owned"], "H"),
+    ("g-remove", "/l/{tok}/{res_claimed}/remove/{guest_complete}", ["claim", "owned"], "H"),
+    # H3: guide and Leon
+    ("g-guide-apt", "/g/{gtok}", [], "H"),
+    ("g-guide-stay", "/l/{tok}/{res_claimed}/guide", ["claim"], "H"),
+    ("g-leon-apt", "/g/{gtok}/leon", [], "H"),
+    ("g-leon-stay", "/l/{tok}/{res_claimed}/guide/leon", ["claim"], "H"),
+    # H4: other token links (no login)
+    ("t-cleaner-share", "/cleaning/shared/{share_token}", [], "H"),
+    ("t-unsubscribe", "/mail/unsubscribe/{unsub_token}", [], "H"),
+]
+PIN_CASES = [
+    ("g-pin-hub", "/l/{tok}", [], "P"),
+    ("g-pin-demo", "/l/{tok}/demo/{res_claimed}", [], "P"),
+]

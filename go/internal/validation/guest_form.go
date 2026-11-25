@@ -335,6 +335,15 @@ func CertainlyUnderAge(birth string, when *time.Time, years int) bool {
 	return certainlyUnderAge(birth, *when, years)
 }
 
+// CertainlyAtLeastAge is validation.certainly_at_least_age (00 month -> 12,
+// 00 day -> month's last day).
+func CertainlyAtLeastAge(birth string, when *time.Time, years int) bool {
+	if when == nil {
+		return false
+	}
+	return certainlyAtLeastAge(birth, *when, years)
+}
+
 // ValidateStayDates is validation.validate_stay_dates (tolerance 0 days).
 func ValidateStayDates(stayFrom, stayTo, allowedFrom, allowedTo *time.Time) []Issue {
 	var issues []Issue
@@ -375,4 +384,10 @@ func GuestFormSignatureIssue(value string, under15 bool) *Issue {
 		return &Issue{"signature", signatureInvalidMessage, severityError}
 	}
 	return nil
+}
+
+// IsValidSignature is validation.is_valid_signature: true only for a valid
+// drawn signature image data URL (rejects empty and the host "imported" marker).
+func IsValidSignature(value string) bool {
+	return GuestFormSignatureIssue(value, false) == nil
 }

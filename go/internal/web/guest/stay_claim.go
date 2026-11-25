@@ -28,6 +28,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
@@ -43,10 +44,16 @@ const (
 	claimTokenBytes     = 24
 )
 
+// DoorCodeViewer is door_codes.view for one stay (*doorcodes.Service).
+type DoorCodeViewer interface {
+	ViewForStay(ctx context.Context, reservationID, apartmentID int64) (*doorcodes.Shown, error)
+}
+
 type stayClaimDeps struct {
-	pool   *pgxpool.Pool
-	getenv func(string) string
-	now    func() time.Time
+	pool      *pgxpool.Pool
+	getenv    func(string) string
+	now       func() time.Time
+	doorCodes DoorCodeViewer
 }
 
 type scApt struct {
@@ -77,8 +84,8 @@ type scClaim struct {
 }
 
 // RegisterStayClaim wires brief 1721 routes (dormant until UBYHOST_GO_PATHS).
-func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
+func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodes DoorCodeViewer) {
+	d := stayClaimDeps{pool: pool, getenv: getenv, now: now, doorCodes: doorCodes}
 	mux.Handle("POST /l/{token}/{reservation_id}/claim/confirm", wrap("POST /l/{token}/{reservation_id}/claim/confirm", WithPOSTCSRF(getenv, now, d.claimConfirm)))
 	mux.Handle("GET /l/{token}/{rest...}", wrap("GET /l/{token}/{rest...}", d.dispatchGET))
 }
@@ -191,7 +198,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
-			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
+			d.renderAssignedPage(w, r, token, lang, aptRow, stay, row)
 			return
 		}
 	}
@@ -205,7 +212,16 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		d.redirectLang(w, r, target, lang)
 		return
 	}
-	renderGuestPage(w, "stay", lang, claimPage{Token: token, ResID: resID, Stay: stay, Claim: row})
+	var door *doorcodes.Shown
+	if d.doorCodes != nil {
+		shown, err := d.doorCodes.ViewForStay(r.Context(), resID, apt.id)
+		if err != nil {
+			log.Printf("door_code_view_failed reservation=%d err=%v", resID, err)
+		} else {
+			door = shown
+		}
+	}
+	d.renderStayPage(w, r, token, lang, aptRow, stay, row, billingjob.MailEnabled(), door)
 }
 
 func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
@@ -327,8 +343,6 @@ type claimPage struct {
 
 var guestTemplates = template.Must(template.New("guest").Parse(
 	`{{define "claim"}}<!doctype html><html lang="{{.Lang}}"><head><title>claim</title></head><body class="guest-claim"></body></html>{{end}}` +
-		`{{define "assigned"}}<!doctype html><html lang="{{.Lang}}"><head><title>assigned</title></head><body class="guest-assigned"></body></html>{{end}}` +
-		`{{define "stay"}}<!doctype html><html lang="{{.Lang}}"><head><title>stay</title></head><body class="guest-stay"></body></html>{{end}}` +
 		`{{define "confirm"}}<!doctype html><html lang="{{.Lang}}"><head><title>confirm</title></head><body class="guest-confirm"></body></html>{{end}}` +
 		`{{define "unavailable"}}<!doctype html><html lang="{{.Lang}}"><head><title>unavailable</title></head><body class="guest-unavailable"></body></html>{{end}}`,
 ))

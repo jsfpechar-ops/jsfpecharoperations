@@ -89,6 +89,9 @@ type DetailsRenderer interface {
 // render_receipt_details); until then such rows are put back untouched.
 var obDefaultDetails DetailsRenderer
 
+// SetDefaultDetails installs the renderer used when Config.Details is nil.
+func SetDefaultDetails(d DetailsRenderer) { obDefaultDetails = d }
+
 // ErrNoDetailsRenderer means a body carries {{guest_details}} or
 // {{receipt_details}} and no renderer is set. It is a setup problem, not a
 // failed send: the row goes back to queued without an attempt counted.
