@@ -67,7 +67,7 @@
     {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
     {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
     {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
-    <small><span class="stay-prop-inline">{{$res.InternalName}} &middot; </span>{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
+    <small>{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
   </td>
   <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
   <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}">
@@ -126,9 +126,8 @@
     </form>
   </div>
 </div>
-<div class="stays-toolbar">
-  <div class="stays-pills">{{template "stays_chips" .}}</div>
-  <div class="stays-toolbar-controls ph-hide">
+<div class="stays-toolbar ph-hide">
+  <div class="stays-toolbar-controls">
     <label class="stays-search">
       <span class="sr-only">{{t "stays.search.placeholder"}}</span>
       {{icon "search" 16}}
@@ -136,18 +135,19 @@
     </label>
     <button class="btn ghost stays-filter-btn" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{icon "sliders-horizontal" 16}}<span>{{t "host.filter.filters"}}</span></button>
   </div>
-</div>
-<div class="stays-toolbar-meta ph-hide">
-  <p class="sub" data-filter-summary><span>{{.StayProperty}}</span><span aria-hidden="true"> · </span><span>{{t (printf "stays.filter.state.%s" .Status)}}</span>
-    {{if and (eq .DateRange "custom") (or .DateFrom .DateTo)}}<span aria-hidden="true"> · </span>
-      {{if and .DateFrom .DateTo}}{{t "host.filter.range_between" (kv "start" (date_cz .DateFrom) "end" (date_cz .DateTo))}}
-      {{else if .DateFrom}}{{t "host.filter.range_from" (kv "date" (date_cz .DateFrom))}}
-      {{else}}{{t "host.filter.range_until" (kv "date" (date_cz .DateTo))}}{{end}}{{end}}</p>
-  {{if or (ne .ApartmentID 0) (ne .Status "active") (eq .DateRange "custom")}}<p class="sub stays-scope-reset"><a data-stays-reset href="{{if .ShowArchive}}/reservations?range=archive{{else}}/reservations?range=all{{end}}">{{t "stays.filter.reset_scope"}}</a></p>{{end}}
+  <div class="stays-toolbar-meta">
+    <p class="sub" data-filter-summary><span>{{.StayProperty}}</span><span aria-hidden="true"> · </span><span>{{t (printf "stays.filter.state.%s" .Status)}}</span>
+      {{if and (eq .DateRange "custom") (or .DateFrom .DateTo)}}<span aria-hidden="true"> · </span>
+        {{if and .DateFrom .DateTo}}{{t "host.filter.range_between" (kv "start" (date_cz .DateFrom) "end" (date_cz .DateTo))}}
+        {{else if .DateFrom}}{{t "host.filter.range_from" (kv "date" (date_cz .DateFrom))}}
+        {{else}}{{t "host.filter.range_until" (kv "date" (date_cz .DateTo))}}{{end}}{{end}}</p>
+    {{if or (ne .ApartmentID 0) (ne .Status "active") (eq .DateRange "custom")}}<p class="sub stays-scope-reset"><a data-stays-reset href="{{if .ShowArchive}}/reservations?range=archive{{else}}/reservations?range=all{{end}}">{{t "stays.filter.reset_scope"}}</a></p>{{end}}
+  </div>
 </div>
 <div class="saved-views" data-saved-views data-label="{{t "stays.filter.saved_views"}}"></div>
 {{if .ShowArchive}}<p class="sub ph-hide">{{t "stays.archive_note"}}</p>{{end}}
 <form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel stays-filter is-collapsed" data-filter-panel data-filter-route="stays" data-original-range="{{.DateRange}}">
+  <div class="stays-pills">{{template "stays_chips" .}}</div>
   <div class="filter-fields">
     <div class="ui-field"><label for="apartment">{{t "stays.filter.apartment"}}</label>
       <select id="apartment" name="apartment"><option value="">{{t "host.filter.all_properties"}}</option>{{range .Apartments}}<option value="{{.ID}}" {{if eq .ID $.ApartmentID}}selected{{end}}>{{.Name}}</option>{{end}}</select></div>
@@ -194,7 +194,8 @@
 {{if .View.NextURL}}<div class="list stays-more" data-stays-more><a class="link" href="{{.View.NextURL}}" rel="next"><span>{{t "stays.more"}}</span>{{icon "chevron-right" 16}}</a></div>{{end}}
 {{end}}
 </div>
-<aside id="stays-drawer" class="card stays-drawer" data-stays-drawer hidden aria-label="{{t "stays.drawer.title"}}"
+<div class="stays-drawer-backdrop" data-stays-drawer-backdrop hidden></div>
+<aside id="stays-drawer" class="stays-drawer" data-stays-drawer hidden aria-label="{{t "stays.drawer.title"}}"
   data-open-full-label="{{t "stays.drawer.open_full"}}"
   data-close-label="{{t "common.close"}}"
   data-loading-label="{{t "stays.drawer.loading"}}"

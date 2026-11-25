@@ -400,7 +400,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     page.goto(base + route + "?lang=" + lang)
                     if route == "/invoices":
                         page.wait_for_function("document.documentElement.classList.contains('has-js')")
-                    lane = ".stays-pills" if route == "/reservations" else "[data-filter-toolbar]"
+                    lane = (".stays-toolbar" if width >= 1024 else ".stays-pills") if route == "/reservations" else "[data-filter-toolbar]"
                     toolbar = page.locator(lane).first
                     assert toolbar.is_visible(), f"{width}px {lang} {route}"
                     capture = width in (390, 1280)

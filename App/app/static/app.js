@@ -793,6 +793,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   function initStaysDrawer() {
     var workspace = document.querySelector("[data-stays-workspace]");
     var drawer = workspace ? workspace.querySelector("[data-stays-drawer]") : null;
+    var backdrop = workspace ? workspace.querySelector("[data-stays-drawer-backdrop]") : null;
     if (!workspace || !drawer) return;
 
     var activeRow = null;
@@ -801,6 +802,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     function closeDrawer(restoreFocus) {
       workspace.classList.remove("has-drawer");
       drawer.hidden = true;
+      if (backdrop) backdrop.hidden = true;
       drawer.textContent = "";
       if (activeRow) {
         activeRow.classList.remove("is-selected");
@@ -1046,6 +1048,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       activeRow = row;
       activeRow.classList.add("is-selected");
       workspace.classList.add("has-drawer");
+      if (backdrop) backdrop.hidden = false;
       drawer.hidden = false;
       drawer.textContent = "";
       var loading = document.createElement("p");
@@ -1069,6 +1072,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
           window.location.assign(href);
         });
     };
+
+    if (backdrop && claimNode(backdrop, "initStaysDrawerBackdrop")) {
+      backdrop.addEventListener("click", function () { closeDrawer(true); });
+    }
 
     if (claimNode(document, "initStaysDrawerEsc")) {
       document.addEventListener("keydown", function (event) {

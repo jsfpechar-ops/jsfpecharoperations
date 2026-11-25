@@ -541,7 +541,8 @@
     "stays-phone-links",
     "stay-prop-inline",
     "stay-dates-span",
-    "stays-list"
+    "stays-list",
+    "stays-drawer-backdrop"
   ],
   "hooks": [
     "sr-only",
@@ -1413,6 +1414,7 @@
     "stays-phone-links": "Stays list mobile-only bottom links card (hidden on desktop >=1024px).",
     "stay-prop-inline": "Stays row inline property label shown under Guest while side drawer is open.",
     "stay-dates-span": "Stays row merged arrival-departure date range.",
-    "stays-list": "Stays desktop table tbody."
+    "stays-list": "Stays desktop table tbody.",
+    "stays-drawer-backdrop": "Translucent backdrop behind the floating Stays detail drawer (desktop >=1024px)."
   }
 }

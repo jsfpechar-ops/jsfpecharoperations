@@ -96,9 +96,8 @@
 {% set _ = stays_pills.append({'label': t('stays.chip.archive'), 'href': '/reservations?range=archive&status=' ~ status ~ '&apartment=' ~ (apartment_id or ''), 'current': show_archive}) %}
 {% set pills = stays_pills %}
 {% set aria_label = t('stays.title') %}
-<div class="stays-toolbar">
-  <div class="stays-pills">{% with wrap_on_phone=true %}{% include "partials/settings_pills.html" %}{% endwith %}</div>
-  <div class="stays-toolbar-controls ph-hide">
+<div class="stays-toolbar ph-hide">
+  <div class="stays-toolbar-controls">
     <label class="stays-search">
       <span class="sr-only">{{ t('stays.search.placeholder') }}</span>
       {{ icon('search', 16) }}
@@ -106,10 +105,10 @@
     </label>
     <button class="btn ghost stays-filter-btn" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{ icon('sliders-horizontal', 16) }}<span>{{ t('host.filter.filters') }}</span></button>
   </div>
-</div>
-<div class="stays-toolbar-meta ph-hide">
-  <p class="sub" data-filter-summary>{{ stay_summary }}</p>
-  {% if apartment_id or status != 'active' or date_range == 'custom' %}<p class="sub stays-scope-reset"><a data-stays-reset href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('stays.filter.reset_scope') }}</a></p>{% endif %}
+  <div class="stays-toolbar-meta">
+    <p class="sub" data-filter-summary>{{ stay_summary }}</p>
+    {% if apartment_id or status != 'active' or date_range == 'custom' %}<p class="sub stays-scope-reset"><a data-stays-reset href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('stays.filter.reset_scope') }}</a></p>{% endif %}
+  </div>
 </div>
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 
@@ -117,6 +116,7 @@
 <p class="sub ph-hide">{{ t('stays.archive_note') }}</p>
 {% endif %}
 <form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel stays-filter is-collapsed" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
+  <div class="stays-pills">{% with wrap_on_phone=true %}{% include "partials/settings_pills.html" %}{% endwith %}</div>
   <div class="filter-fields">
     <div class="ui-field">
       <label for="apartment">{{ t('stays.filter.apartment') }}</label>
@@ -224,7 +224,7 @@
           {% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>
           {% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>
           {% if reservation.status == 'active' %}<a class="stay-noname-action" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stays.row.add_guest') }}</a>{% endif %}{% endif %}
-          <small><span class="stay-prop-inline">{{ reservation.internal_name }} &middot; </span>{{ source_badge(reservation.source, source_label(reservation)) }}</small>
+          <small>{{ source_badge(reservation.source, source_label(reservation)) }}</small>
         </td>
         <td class="stays-col-prop" data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
         <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}">
@@ -262,7 +262,8 @@
   {% if next_page_url %}<div class="list stays-more" data-stays-more><a class="link" href="{{ next_page_url }}" rel="next"><span>{{ t('stays.more') }}</span>{{ icon('chevron-right', 16) }}</a></div>{% endif %}
 {% endif %}
 </div>
-<aside id="stays-drawer" class="card stays-drawer" data-stays-drawer hidden aria-label="{{ t('stays.drawer.title') }}"
+<div class="stays-drawer-backdrop" data-stays-drawer-backdrop hidden></div>
+<aside id="stays-drawer" class="stays-drawer" data-stays-drawer hidden aria-label="{{ t('stays.drawer.title') }}"
   data-open-full-label="{{ t('stays.drawer.open_full') }}"
   data-close-label="{{ t('common.close') }}"
   data-loading-label="{{ t('stays.drawer.loading') }}"

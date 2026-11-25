@@ -3638,37 +3638,40 @@ body.v2 .ui-page:has(.invoice-form) > .ui-ph{max-width:720px;width:100%;margin-l
    selector and declaration as the calendar sheet, so nothing changes once it lands. */
 @media (min-width:1024px){body.v2 .cleaning-head .btn.soft{background:#f2f2f0;color:var(--ink)}}
 
-/* stays-layout-wolt: layout-only Stays toolbar, 5-column table, header overflow, and slide-over detail drawer. Uses existing tokens only. */
+/* stays-layout-wolt: layout-only Stays toolbar (Search + Filters), scope pills tucked inside Filters on desktop, full-width 5-col long rows, and floating right-edge slide-over Stay detail drawer. Existing tokens only. */
 body.v2 .stays-head-actions{align-items:center}
 body.v2 .stays-head-menu{display:inline-flex;align-items:center}
 body.v2 .stays-head-menu-btn{width:38px;min-width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--ink2);letter-spacing:0}
-body.v2 .stays-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px}
-body.v2 .stays-toolbar .stays-pills{margin:0;flex:1 1 auto;min-width:0}
-body.v2 .stays-toolbar .stays-pills .settings-pills{margin:0}
+body.v2 .stays-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px}
 body.v2 .stays-toolbar-controls{display:flex;align-items:center;gap:12px;flex:none}
 body.v2 .stays-search{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink3);box-sizing:border-box}
 body.v2 .stays-search:focus-within{border-color:var(--ink2)}
-body.v2 .stays-search-input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;width:190px;min-width:0;padding:4px 0}
+body.v2 .stays-search-input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;width:220px;min-width:0;padding:4px 0}
 body.v2 .stays-search-input:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
 body.v2 .stays-search-input::placeholder{color:var(--ink3)}
 body.v2 .stays-filter-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px}
-body.v2 .stays-toolbar-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+body.v2 .stays-toolbar-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 body.v2 .stays-toolbar-meta>p.sub{margin:0}
-body.v2 .stays-desk .stay-prop-inline{display:none}
+body.v2 form.stays-filter:not(.is-collapsed){flex-wrap:wrap}
+body.v2 .stays-filter .stays-pills{flex:1 0 100%;margin:0 0 4px}
+@media (min-width:1024px){
+  body.v2 form.stays-filter .filter-fields{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+  body.v2 form.stays-filter .filter-fields>.ui-field,body.v2 form.stays-filter .filter-fields>.field{flex:1 1 160px;min-width:0;margin:0}
+  .has-js body.v2 form.stays-filter .date-range-fields{display:none}
+}
+body.v2 .stays-filter .stays-pills .settings-pills{margin:0}
 body.v2 .stays-desk td.stays-col-guests{color:var(--ink2)}
 body.v2 .stays-desk tbody tr.clickable-row{cursor:pointer}
 body.v2 .stays-desk tbody tr.clickable-row:hover,body.v2 .stays-desk tbody tr.clickable-row.is-selected{background:var(--side2)}
 body.v2 .stays-desk tbody tr[data-search-hidden]{display:none}
 body.v2 .stays-phone a.card.stay[data-search-hidden]{display:none}
-body.v2 .stays-drawer[hidden]{display:none}
+body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:none}
 @media (min-width:1024px){
   body.v2 .stays-index-card.stays-phone-links{display:none}
   body.v2 .stays-workspace{display:block}
-  body.v2 .stays-workspace.has-drawer{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:20px;align-items:start}
   body.v2 .stays-workspace-main{min-width:0}
-  body.v2 .stays-workspace.has-drawer .stays-col-prop{display:none}
-  body.v2 .stays-workspace.has-drawer .stay-prop-inline{display:inline}
-  body.v2 .stays-drawer{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto;padding:20px;margin:0;display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
+  body.v2 .stays-drawer-backdrop{position:fixed;inset:0;z-index:55;background:rgba(32,32,30,.18)}
+  body.v2 .stays-drawer{position:fixed;top:0;right:0;bottom:0;z-index:60;width:420px;max-width:calc(100vw - 32px);overflow-y:auto;padding:24px;margin:0;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--surface);box-shadow:-8px 0 32px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
   body.v2 .stays-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
   body.v2 .stays-drawer-head-main{min-width:0;flex:1 1 auto}
   body.v2 .stays-drawer-title{font-size:19px;font-weight:700;line-height:1.25;margin:8px 0 2px;color:var(--ink);overflow-wrap:anywhere}
@@ -3676,7 +3679,6 @@ body.v2 .stays-drawer[hidden]{display:none}
   body.v2 .stays-drawer-head-btns{display:flex;align-items:center;gap:4px;flex:none}
   body.v2 .stays-drawer-icon-btn{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--ink2);cursor:pointer;text-decoration:none}
   body.v2 .stays-drawer-icon-btn:hover{background:var(--side2);color:var(--ink)}
-  body.v2 .stays-workspace.has-drawer .stays-desk .stay-noname-action{display:block;margin-left:0}
   body.v2 .stays-drawer-actions{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
   body.v2 .stays-drawer-actions .stays-drawer-primary{flex:1 1 auto;min-width:0;display:flex}
   body.v2 .stays-drawer-actions .stays-drawer-primary>*{width:100%;justify-content:center;padding-left:12px;padding-right:12px;font-size:13px;white-space:nowrap}
@@ -3704,6 +3706,8 @@ body.v2 .stays-drawer[hidden]{display:none}
   body.v2 .stays-drawer-empty{font-size:13px;color:var(--ink3);margin:4px 0 0}
 }
 @media (max-width:1023px){
-  body.v2 .stays-drawer{display:none!important}
-  body.v2 .stays-toolbar{margin-bottom:16px}
+  body.v2 .stays-drawer,body.v2 .stays-drawer-backdrop{display:none!important}
+  body.v2 .stays-filter.is-collapsed{display:block;padding:0;margin:0 0 16px;border:0;border-radius:0;background:transparent;box-shadow:none}
+  body.v2 .stays-filter.is-collapsed .stays-pills{margin:0}
+  body.v2 .stays-filter.is-collapsed .filter-fields,body.v2 .stays-filter.is-collapsed .filter-panel-actions{display:none}
 }
