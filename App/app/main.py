@@ -516,7 +516,7 @@ def tdmrep():
 # Brief 0219: the installable app. The manifest and the service worker sit at
 # the root so the worker's scope covers the whole app. Both are public, like
 # robots.txt, and carry nothing about any account.
-_PWA_ICON_KEY = "20261021-0203"
+_PWA_ICON_KEY = "20261125-logo"
 _MANIFEST = {
     "id": "/",
     "name": "UbyHost",
