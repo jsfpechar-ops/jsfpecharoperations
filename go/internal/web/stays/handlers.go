@@ -57,6 +57,7 @@ type listPage struct {
 	Groups            map[string][]Row
 	Banner            Banner
 	Lang              string
+	OldUnfilledCount  int
 }
 
 // ListHandler serves GET /reservations (admin.py reservations_list).
@@ -102,6 +103,12 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			return
 		}
 		lang := hostweb.Lang(r)
+		oldUnfilled := 0
+		if !p.ShowArchive {
+			if n, err := CountOldUnfilled(ctx, pool, owner, pragueToday(at)); err == nil {
+				oldUnfilled = n
+			}
+		}
 		data := listPage{
 			View: v, Apartments: apts, Status: p.Status, Report: p.Report,
 			ApartmentID: p.ApartmentID, DateFrom: p.DateFrom, DateTo: p.DateTo,
@@ -111,7 +118,7 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			StayProperty:    propLabel, PaymentsHidden: paymentsHidden(getenv),
 			PublicBase: publicBaseURL(getenv), Today: pragueToday(at), PageSize: PageSize,
 			PrevURL: v.PrevURL, NextURL: v.NextURL, Groups: groups, Banner: banner,
-			Lang: lang,
+			Lang: lang, OldUnfilledCount: oldUnfilled,
 		}
 		page := layout.Page{
 			Title: catalog.T(hostweb.Lang(r), "stays.title", nil),

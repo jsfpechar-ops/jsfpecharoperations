@@ -1,0 +1,20 @@
+{
+  "en": {
+    "needs_you.guest_link_nudge.title": "Guests are not filling in the form yet (%(stays)s stays)",
+    "needs_you.guest_link_nudge.body": "Add your guest link to Airbnb or Booking messages (%(properties)s properties).",
+    "needs_you.guest_link_nudge.body.one": "Add your guest link to Airbnb or Booking messages (1 property).",
+    "needs_you.guest_link_nudge.action": "Set up guest link"
+  },
+  "cs": {
+    "needs_you.guest_link_nudge.title": "Hosté ještě nevyplňují formulář (%(stays)s pobytů)",
+    "needs_you.guest_link_nudge.body": "Přidejte odkaz pro hosty do zpráv na Airbnb nebo Bookingu (%(properties)s byty).",
+    "needs_you.guest_link_nudge.body.one": "Přidejte odkaz pro hosty do zpráv na Airbnb nebo Bookingu (1 byt).",
+    "needs_you.guest_link_nudge.action": "Nastavit odkaz"
+  },
+  "vi": {
+    "needs_you.guest_link_nudge.title": "Khách chưa điền biểu mẫu (%(stays)s lượt lưu trú)",
+    "needs_you.guest_link_nudge.body": "Thêm liên kết cho khách vào tin nhắn Airbnb hoặc Booking (%(properties)s chỗ ở).",
+    "needs_you.guest_link_nudge.body.one": "Thêm liên kết cho khách vào tin nhắn Airbnb hoặc Booking (1 chỗ ở).",
+    "needs_you.guest_link_nudge.action": "Thiết lập liên kết"
+  }
+}

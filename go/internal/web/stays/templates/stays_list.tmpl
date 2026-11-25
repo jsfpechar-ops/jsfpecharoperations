@@ -116,6 +116,10 @@
   <button class="btn ghost ph-hide" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{t "host.filter.filters"}}</button>
 </div>{{end}}</div>
 {{template "stays_onboarding_banner" .}}
+{{if and (not .ShowArchive) (gt .OldUnfilledCount 0)}}<aside class="onboarding-banner old-unfilled-strip" data-old-unfilled-strip>
+  <span>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.label.one"}}{{else}}{{t "stays.old_unfilled.label" (kv "count" .OldUnfilledCount)}}{{end}}</span>
+  <form method="post" action="/reservations/archive-old-unfilled" class="inline" data-confirm data-confirm-message="{{t "stays.old_unfilled.confirm" (kv "count" .OldUnfilledCount)}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost sm" type="submit">{{t "stays.old_unfilled.action"}}</button></form>
+</aside>{{end}}
 {{if .Apartments}}
 <div id="add-stay-panel" class="action-panel hidden stays-panel">
   <div class="ui-section">

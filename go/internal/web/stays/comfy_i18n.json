@@ -1,0 +1,26 @@
+{
+  "en": {
+    "stays.old_unfilled.label": "%(count)s older stays have no guest forms.",
+    "stays.old_unfilled.label.one": "1 older stay has no guest form.",
+    "stays.old_unfilled.action": "Archive old unfilled stays",
+    "stays.old_unfilled.confirm": "Archive %(count)s past stays that have no guest forms? Stays with guest records are never touched.",
+    "flash.stays.archived_old_unfilled": "Archived %(count)s old unfilled stays.",
+    "flash.stays.archived_old_unfilled.none": "No old unfilled stays to archive."
+  },
+  "cs": {
+    "stays.old_unfilled.label": "%(count)s starších pobytů nemá vyplněný formulář hosta.",
+    "stays.old_unfilled.label.one": "1 starší pobyt nemá vyplněný formulář hosta.",
+    "stays.old_unfilled.action": "Archivovat staré nevyplněné",
+    "stays.old_unfilled.confirm": "Archivovat %(count)s starších pobytů bez formulářů hostů? Pobyty s údaji hostů zůstanou nedotčené.",
+    "flash.stays.archived_old_unfilled": "Archivováno %(count)s starších nevyplněných pobytů.",
+    "flash.stays.archived_old_unfilled.none": "Žádné starší nevyplněné pobyty k archivaci."
+  },
+  "vi": {
+    "stays.old_unfilled.label": "%(count)s lượt lưu trú cũ chưa có biểu mẫu khách.",
+    "stays.old_unfilled.label.one": "1 lượt lưu trú cũ chưa có biểu mẫu khách.",
+    "stays.old_unfilled.action": "Lưu trữ các lượt cũ chưa điền",
+    "stays.old_unfilled.confirm": "Lưu trữ %(count)s lượt lưu trú cũ chưa có biểu mẫu khách? Các lượt đã có thông tin khách sẽ không bị ảnh hưởng.",
+    "flash.stays.archived_old_unfilled": "Đã lưu trữ %(count)s lượt lưu trú cũ chưa điền.",
+    "flash.stays.archived_old_unfilled.none": "Không có lượt lưu trú cũ chưa điền nào để lưu trữ."
+  }
+}

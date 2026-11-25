@@ -30,11 +30,11 @@
   <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}{{if $d.NyLines}} <span class="ui-badge ui-badge-action">{{len $d.NyLines}}</span>{{end}}</h2>
   {{- if $d.NyLines}}
   <ul class="needs-you-list">
-    {{- range $i, $line := $d.NyLines}}{{if lt $i 5}}{{template "dash.ny_row" (kv "line" $line "first" (eq $i 0))}}{{end}}{{end}}
+    {{- range $i, $line := $d.NyLines}}{{if lt $i 3}}{{template "dash.ny_row" (kv "line" $line "first" (eq $i 0))}}{{end}}{{end}}
   </ul>
-  {{- if gt (len $d.NyLines) 5}}
-  <details class="needs-you-more ov-section"><summary>{{tp "needs_you.more" (add (len $d.NyLines) -5)}}</summary>
-    <ul class="needs-you-list">{{range $i, $line := $d.NyLines}}{{if ge $i 5}}{{template "dash.ny_row" (kv "line" $line "first" false)}}{{end}}{{end}}</ul>
+  {{- if gt (len $d.NyLines) 3}}
+  <details class="needs-you-more ov-section"><summary>{{tp "needs_you.more" (add (len $d.NyLines) -3)}}</summary>
+    <ul class="needs-you-list">{{range $i, $line := $d.NyLines}}{{if ge $i 3}}{{template "dash.ny_row" (kv "line" $line "first" false)}}{{end}}{{end}}</ul>
   </details>
   {{- end}}
   {{- else}}
@@ -94,12 +94,13 @@
   <form method="post" action="/onboarding/dismiss"><input type="hidden" name="return_to" value="/"><button class="onboarding-skip-link" type="submit">{{t "onboarding.skip"}}</button></form>
 </aside>{{end}}{{end}}
 
-{{define "dash.ny_row"}}{{$line := .line}}{{$first := .first}}<li class="card needs-you-item need" data-tone="{{$line.Tone}}" data-needs-you="{{$line.Kind}}"{{if $line.StayID}} data-needs-you-stay="{{$line.StayID}}"{{end}}{{if $line.DismissID}} data-notification{{end}}>
+{{define "dash.ny_row"}}{{$line := .line}}{{$first := .first}}<li class="card needs-you-item need" data-tone="{{$line.Tone}}" data-needs-you="{{$line.Kind}}"{{if $line.StayID}} data-needs-you-stay="{{$line.StayID}}"{{end}}{{if or $line.DismissID (eq $line.Kind "guest_link_nudge")}} data-notification{{end}}>
   <div class="needs-you-copy"><strong>{{if $line.Text}}{{$line.Text}}{{else}}{{$line.Subject}}{{end}}</strong>{{if $line.Text}}<span>{{$line.Subject}}</span>{{end}}</div>
-  {{- if or $line.Href $line.DismissID}}
+  {{- if or $line.Href $line.DismissID (eq $line.Kind "guest_link_nudge")}}
   <div class="needs-you-actions">
     {{- if $line.Href}}<a class="btn sm{{if not $first}} ghost line{{end}}" href="{{$line.Href}}" data-needs-you-go>{{$line.Action}}</a>{{end}}
-    {{- if $line.DismissID}}<form method="post" action="/alerts/{{$line.DismissID}}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>{{end}}
+    {{- if $line.DismissID}}<form method="post" action="/alerts/{{$line.DismissID}}/dismiss" class="needs-you-dismiss" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>
+    {{- else if eq $line.Kind "guest_link_nudge"}}<form method="post" action="/dashboard/dismiss-guest-link-nudge" class="needs-you-dismiss" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>{{end}}
   </div>
   {{- end}}
 </li>{{end}}

@@ -118,6 +118,10 @@ func DashboardHandler(pool *pgxpool.Pool, getenv func(string) string, lookupEnv 
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+		if err := applyCalmNeedsYou(r.Context(), pool, host.Workspace.ID, today, &data); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 		page := layout.Page{
 			Title:    dashStrings.T(hw.Lang(r), "dashboard.title", nil),
 			Nav:      "dashboard",
