@@ -71,7 +71,7 @@ func (s *server) apartmentWizardStepSave(w http.ResponseWriter, r *http.Request,
 	cols, extra := wizardStepPayload(r, step, pay)
 	if cols == nil && step == "stay_fee" {
 		returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		q.back(w, r, returnTo, hostweb.Flash{}, q.flash("flash.stay_fees.account_invalid", nil))
 		return
 	}
 	if len(cols) > 0 {
