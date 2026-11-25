@@ -67,7 +67,7 @@
     <div class="stay-guest-line">{{ $mark := source_mark $res.Source }}{{ $srcLabel := source_label $root.Lang $res.Source }}<span class="stay-source-icon" title="{{$srcLabel}}">{{if $mark}}{{$mark}}{{else}}{{icon "calendar-days" 15}}{{end}}<span class="sr-only">{{$srcLabel}}</span></span>{{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>{{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>{{end}}{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}</div>
   </td>
   <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
-  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}"><span class="stay-dates-span">{{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}</span></td>
+  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}"><span class="stay-dates-span" title="{{tp "stays.table.nights" (nights $res.DateFrom $res.DateTo)}}">{{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}</span></td>
   <td class="nowrap stays-col-guests" data-card="guests" data-label="{{t "stays.table.guests"}}">
     {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
   </td>

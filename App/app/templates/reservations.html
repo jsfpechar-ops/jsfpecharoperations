@@ -227,7 +227,7 @@
           <div class="stay-guest-line"><span class="stay-source-icon" title="{{ src_label }}">{% if src_mark %}{{ src_mark | safe }}{% else %}{{ icon('calendar-days', 15) }}{% endif %}<span class="sr-only">{{ src_label }}</span></span>{% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>{% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>{% endif %}{% if progress.expected is none and not progress.guests %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}</div>
         </td>
         <td class="stays-col-prop" data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
-        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}"><span class="stay-dates-span">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></td>
+        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}"><span class="stay-dates-span" title="{{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></td>
         <td class="nowrap stays-col-guests" data-card="guests" data-label="{{ t('stays.table.guests') }}">
           {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted" aria-hidden="true">–</span>{% endif %}
         </td>

@@ -3731,11 +3731,11 @@ body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:non
 }
 @media (min-width:1024px){
   body.v2 .stays-workspace .stays-desk>table{table-layout:fixed;width:100%}
-  body.v2 .stays-workspace .stays-desk th:nth-child(1),body.v2 .stays-workspace .stays-desk td:nth-child(1){width:18%}
-  body.v2 .stays-workspace .stays-desk th:nth-child(2),body.v2 .stays-workspace .stays-desk td:nth-child(2){width:13%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  body.v2 .stays-workspace .stays-desk th:nth-child(3),body.v2 .stays-workspace .stays-desk td:nth-child(3){width:26%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.v2 .stays-workspace .stays-desk th:nth-child(1),body.v2 .stays-workspace .stays-desk td:nth-child(1){width:21%}
+  body.v2 .stays-workspace .stays-desk th:nth-child(2),body.v2 .stays-workspace .stays-desk td:nth-child(2){width:12%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.v2 .stays-workspace .stays-desk th:nth-child(3),body.v2 .stays-workspace .stays-desk td:nth-child(3){width:25%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   body.v2 .stays-workspace .stays-desk th:nth-child(4),body.v2 .stays-workspace .stays-desk td:nth-child(4){width:9%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  body.v2 .stays-workspace .stays-desk th:nth-child(5),body.v2 .stays-workspace .stays-desk td:nth-child(5){width:18%;white-space:nowrap}
+  body.v2 .stays-workspace .stays-desk th:nth-child(5),body.v2 .stays-workspace .stays-desk td:nth-child(5){width:17%;white-space:nowrap}
   body.v2 .stays-workspace .stays-desk th:nth-child(6),body.v2 .stays-workspace .stays-desk td:nth-child(6){width:16%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   body.v2 .stays-workspace .stays-desk .stay-dates-span,body.v2 .stays-workspace .stays-desk td.stays-col-guests,body.v2 .stays-workspace .stays-desk td.stays-col-deadline{font-variant-numeric:tabular-nums}
   body.v2 .stays-workspace .stays-desk td.stays-col-deadline{color:var(--ink3);font-size:13px}
