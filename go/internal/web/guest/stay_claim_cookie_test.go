@@ -108,6 +108,52 @@ func TestConfirmClaimAppliesDeclaredGuests(t *testing.T) {
 	}
 }
 
+func TestConfirmClaimClearsLeadReduction(t *testing.T) {
+	pool := testPool(t)
+	if pool == nil {
+		t.Skip("UBYHOST_TEST_DATABASE_URL")
+	}
+	ctx := context.Background()
+	var schemaOK int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'apartment'`).Scan(&schemaOK); err != nil || schemaOK == 0 {
+		t.Skip("needs migrated Postgres schema")
+	}
+	secret, err := newClaimSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stamp := isoNow(time.Now().UTC())
+	hash := claimTokenHash(secret)
+	aptID := int64(172298)
+	resID := int64(172299)
+	mustExec(t, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, permalink_token, active, created_at)
+		VALUES ($1, 1, 'Flat', 'claimtok-leadred', 1, $2) ON CONFLICT (id) DO NOTHING`, aptID, stamp)
+	mustExec(t, pool, `INSERT INTO reservation (id, uid, apartment_id, status, source, date_from, date_to, declared_guests, lead_reduced_guests, lead_reduced_from, created_at, updated_at)
+		VALUES ($1, 'uid-' || $1::bigint::text, $2, 'active', 'ical', '2026-06-01', '2026-06-05', 4, 2, 4, $3, $3)
+		ON CONFLICT (id) DO UPDATE SET declared_guests = 4, lead_reduced_guests = 2, lead_reduced_from = 4, status = 'active'`, resID, aptID, stamp)
+	mustExec(t, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, declared_guests, created_at, updated_at)
+		VALUES ($1, $2, $3, 1, 3, $4, $4) ON CONFLICT (reservation_id) DO UPDATE SET
+			state = EXCLUDED.state, token_hash = EXCLUDED.token_hash, token_version = 1, declared_guests = 3`,
+		resID, claimStateProvisional, hash, stamp)
+	ok, err := confirmClaim(ctx, pool, resID, secret, &scApt{id: aptID, token: "claimtok-leadred"}, &scStay{id: resID, status: "active"}, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("confirm should succeed")
+	}
+	var declared, reduced *int64
+	if err := pool.QueryRow(ctx, `SELECT declared_guests, lead_reduced_guests FROM reservation WHERE id = $1`, resID).Scan(&declared, &reduced); err != nil {
+		t.Fatal(err)
+	}
+	if declared == nil || *declared != 3 {
+		t.Fatalf("declared_guests=%v want 3", declared)
+	}
+	if reduced != nil {
+		t.Fatalf("lead_reduced_guests=%v want NULL after claim confirm", reduced)
+	}
+}
+
 func TestStayOverviewMailOnHonorsClaimCookie(t *testing.T) {
 	pool := testPool(t)
 	if pool == nil {
