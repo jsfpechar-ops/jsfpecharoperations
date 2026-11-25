@@ -3,7 +3,7 @@
 Updated: 2026-11-25.
 
 ## Go cutover (11-25)
-- PR #1319 (`claude/nice-hawking-fw98ct`): briefs 2040–2085 complete, `parity_gate.sh` PASS, main merged. Next: owner runs `scripts/merge-pr-on-green.sh 1319`, then staging + prod deploy (autopurge off week 1).
+- PR #1319: 2040–2085 done, `parity_gate.sh` PASS, main merged. Owner: `scripts/merge-pr-on-green.sh 1319`, then deploy (autopurge off week 1).
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -15,8 +15,7 @@ Updated: 2026-11-25.
 
 ## Next
 - 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
-- Go parity: **GATE: PASS** on PR #1319 (2040–2085, incl. passport photo, child signer, correction reset, immediate stay filing, removal cleanup, Prague midnight date fix); ready to merge via `scripts/merge-pr-on-green.sh 1319`.
-- 2011-2018 merged (#1252); 2021, 2028 done; 2022 needs owner.
+- Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 merged (#1252).
 - 2000: no police nags on Overview without UbyPort login.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): A2 done (2029); A6 waits on Python retirement.
