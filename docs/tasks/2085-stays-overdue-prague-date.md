@@ -1,6 +1,6 @@
 # 2085: Use Prague civil date in Go stays overdue window, ordering, and range defaults
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 3a4e1e88ca4f23fbbde6dc26c45d45c9c29b421b | Branch: claude/nice-hawking-fw98ct
 Executor: Gemini 4 Neon (medium) | Fits one session: 30 tool calls, 60k tokens
 
