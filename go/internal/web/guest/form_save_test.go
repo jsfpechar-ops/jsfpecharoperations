@@ -179,6 +179,27 @@ func TestEncryptSaveFieldsWritesEncColumns(t *testing.T) {
 	}
 }
 
+func TestBuildSavePayloadResetsSubmitAttempts(t *testing.T) {
+	row := guestRowForPayloadTest()
+	existing := &guestSaveRow{id: 1, submitState: "error", lastErrors: "soap fault"}
+	p := buildSavePayload(row, "2026-06-01", "2026-06-05", "data:image/png;base64,AAAA", false, "en", "v1", "now", existing)
+	if p["submit_attempts"] != int64(0) {
+		t.Fatalf("correction must reset submit_attempts, got %v", p["submit_attempts"])
+	}
+	dup := &guestSaveRow{id: 2, submitState: "blocked", lastErrors: "duplicate uid"}
+	p2 := buildSavePayload(row, "2026-06-01", "2026-06-05", "data:image/png;base64,AAAA", false, "en", "v1", "now", dup)
+	if _, ok := p2["submit_attempts"]; ok {
+		t.Fatal("duplicate-blocked edit must not reset submit_attempts")
+	}
+}
+
+func guestRowForPayloadTest() validation.GuestRow {
+	return validation.GuestRow{
+		Surname: "Doe", FirstName: "Jan", BirthDate: "1990-01-01",
+		Nationality: "CZE", DocNumber: "123456", Purpose: "tourism",
+	}
+}
+
 func TestDecryptGuestFieldEmptyUsesPlain(t *testing.T) {
 	got, err := decryptGuestField(testDataEnv, time.Now, "", "kept-sig")
 	if err != nil || got != "kept-sig" {
