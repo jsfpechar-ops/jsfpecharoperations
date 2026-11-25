@@ -666,6 +666,14 @@ func guestUpdateFields(stored, proposed hostGuest, signature string, res hostRes
 	return updates, state
 }
 
+// submissionClaimCutoff is now minus SUBMISSION_CLAIM_TTL_SECONDS.
+// claimed_at is unix seconds (double precision). Subtracting the Duration as
+// float64 would subtract nanoseconds and treat every leftover submission_claim
+// as still live, so a host could not correct a guest after a failed send.
+func submissionClaimCutoff(at time.Time) float64 {
+	return float64(at.Unix()) - ubyport.SubmissionClaimTTL.Seconds()
+}
+
 func guestUpdateIf(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, guestID int64, expectState string, values map[string]any, at time.Time) (bool, error) {
 	keys, err := secure.LoadDataKeys(getenv)
 	if err != nil {
@@ -675,7 +683,7 @@ func guestUpdateIf(ctx context.Context, pool *pgxpool.Pool, getenv func(string) 
 	if err != nil {
 		return false, err
 	}
-	cutoff := float64(at.Unix()) - float64(ubyport.SubmissionClaimTTL)
+	cutoff := submissionClaimCutoff(at)
 	var n int64
 	args := []any{guestID, expectState, cutoff}
 	sets := make([]string, 0, len(values))
