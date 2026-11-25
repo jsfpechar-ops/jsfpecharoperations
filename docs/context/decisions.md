@@ -71,3 +71,4 @@ Append-only.
 - 2026-11-22 [product] Entry codes + Notion import: entry-code plan D1-D4 | owner
 - 2026-11-22 [product] 2029 `UBYHOST_PAYMENTS_RETIRED`; D1-D4 in brief; no delete (A6 later) | owner
 - 2026-11-24 [product] Go = Python (Option 1); deploy after `parity_gate.sh` PASS; autopurge off week 1; replaces 11-22 parity/ux. 2040-2064 | owner
+- 2026-11-25 [workflow] PR #1319 cutover blockers 2072–2076 + CI/main merge (2084) + Prague midnight date fix (2085) completed using Gemini 4 Neon (briefs + medium executor); superseded PRs #1310 and #1260 closed | owner
