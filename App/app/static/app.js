@@ -739,26 +739,347 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
        rows): click or Enter/Space opens it; controls inside keep their own
        action, and selecting text in a row does not navigate. */
     bindHostNodes(ROW_SELECTOR, function (row) {
-      function openRow() {
+      function openRow(event) {
+        var workspace = row.closest("[data-stays-workspace]");
+        var drawer = workspace ? workspace.querySelector("[data-stays-drawer]") : null;
+        var modified = event && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+        if (drawer && !modified && window.innerWidth >= 1024 && typeof window._ubyOpenStayDrawer === "function") {
+          window._ubyOpenStayDrawer(row);
+          return;
+        }
         if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
       row.addEventListener("click", function (event) {
         if (event.defaultPrevented || event.button !== 0) return;
+        var identityLink = event.target.closest("a.stay-identity-link");
+        if (identityLink && row.closest("[data-stays-workspace]") && window.innerWidth >= 1024 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+          event.preventDefault();
+          openRow(event);
+          return;
+        }
         if (event.target.closest("a, button, input, select, textarea, label, form, summary, details, dialog, .row-menu, .row-actions, .dashboard-row-actions")) return;
         var selection = window.getSelection ? String(window.getSelection()) : "";
         if (selection && row.contains(window.getSelection().anchorNode)) return;
-        openRow();
+        openRow(event);
       });
 
       row.addEventListener("keydown", function (event) {
         if (event.key !== "Enter" && event.key !== " ") return;
         if (event.target !== row) return;
         event.preventDefault();
-        openRow();
+        openRow(event);
       });
     });
+  }
+
+  function initStaysSearch() {
+    document.querySelectorAll("[data-stays-search]").forEach(function (input) {
+      if (!claimNode(input, "initStaysSearch")) return;
+      input.addEventListener("input", function () {
+        var q = String(input.value || "").trim().toLowerCase();
+        document.querySelectorAll("[data-stay-search-item]").forEach(function (item) {
+          var text = (item.textContent || "").toLowerCase();
+          var aria = (item.getAttribute("aria-label") || "").toLowerCase();
+          var match = !q || text.indexOf(q) >= 0 || aria.indexOf(q) >= 0;
+          if (match) item.removeAttribute("data-search-hidden");
+          else item.setAttribute("data-search-hidden", "1");
+        });
+      });
+    });
+  }
+
+  function initStaysDrawer() {
+    var workspace = document.querySelector("[data-stays-workspace]");
+    var drawer = workspace ? workspace.querySelector("[data-stays-drawer]") : null;
+    if (!workspace || !drawer) return;
+
+    var activeRow = null;
+    var reqSeq = 0;
+
+    function closeDrawer(restoreFocus) {
+      workspace.classList.remove("has-drawer");
+      drawer.hidden = true;
+      drawer.textContent = "";
+      if (activeRow) {
+        activeRow.classList.remove("is-selected");
+        var toFocus = activeRow;
+        activeRow = null;
+        if (restoreFocus && document.body.contains(toFocus)) {
+          toFocus.focus({ preventScroll: true });
+        }
+      }
+    }
+
+    function textOf(el) {
+      return el ? String(el.textContent || "").replace(/\s+/g, " ").trim() : "";
+    }
+
+    function initialsOf(name) {
+      var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return "?";
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function kvRow(label, value, sub) {
+      var row = document.createElement("div");
+      row.className = "stays-drawer-kv-row";
+      var k = document.createElement("span");
+      k.className = "stays-drawer-kv-k";
+      k.textContent = label;
+      var v = document.createElement("span");
+      v.className = "stays-drawer-kv-v";
+      v.textContent = value;
+      if (sub) {
+        var s = document.createElement("small");
+        s.textContent = sub;
+        v.appendChild(s);
+      }
+      row.appendChild(k);
+      row.appendChild(v);
+      return row;
+    }
+
+    function renderStayDrawer(doc, href, fallbackRow) {
+      drawer.textContent = "";
+      var stayLink = doc.getElementById("stay-link");
+      if (stayLink && stayLink.value) {
+        var hiddenInput = document.createElement("input");
+        hiddenInput.type = "text";
+        hiddenInput.id = "stay-link";
+        hiddenInput.className = "sr-only";
+        hiddenInput.readOnly = true;
+        hiddenInput.tabIndex = -1;
+        hiddenInput.setAttribute("aria-hidden", "true");
+        hiddenInput.value = stayLink.value;
+        drawer.appendChild(hiddenInput);
+      }
+
+      // Header: 1 status pill + title + property & dates + open-full + close
+      var head = document.createElement("div");
+      head.className = "stays-drawer-head";
+      var headMain = document.createElement("div");
+      headMain.className = "stays-drawer-head-main";
+
+      var pillSrc = doc.querySelector("#now .pill") || fallbackRow.querySelector("td[data-card='badge'] .pill");
+      if (pillSrc) headMain.appendChild(pillSrc.cloneNode(true));
+
+      var titleText = textOf(doc.querySelector(".airbnb-title .ph-hide") || doc.querySelector(".airbnb-title")) || textOf(fallbackRow.querySelector(".stay-identity-link"));
+      var h2 = document.createElement("h2");
+      h2.className = "stays-drawer-title";
+      h2.textContent = titleText || drawer.getAttribute("data-open-full-label") || "Stay";
+      headMain.appendChild(h2);
+
+      var sepText = textOf(doc.querySelector("#now .stay-sep"));
+      if (sepText) {
+        var sub = document.createElement("p");
+        sub.className = "stays-drawer-sub";
+        sub.textContent = sepText;
+        headMain.appendChild(sub);
+      }
+      head.appendChild(headMain);
+
+      var headBtns = document.createElement("div");
+      headBtns.className = "stays-drawer-head-btns";
+
+      var openFull = document.createElement("a");
+      openFull.className = "stays-drawer-icon-btn";
+      openFull.href = href;
+      openFull.setAttribute("aria-label", drawer.getAttribute("data-open-full-label") || "Open full page");
+      openFull.title = drawer.getAttribute("data-open-full-label") || "Open full page";
+      openFull.innerHTML = '<svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
+      headBtns.appendChild(openFull);
+
+      var closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "stays-drawer-icon-btn";
+      closeBtn.setAttribute("data-stays-drawer-close", "");
+      closeBtn.setAttribute("aria-label", drawer.getAttribute("data-close-label") || "Close");
+      closeBtn.title = drawer.getAttribute("data-close-label") || "Close";
+      closeBtn.innerHTML = '<svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+      closeBtn.addEventListener("click", function () { closeDrawer(true); });
+      headBtns.appendChild(closeBtn);
+      head.appendChild(headBtns);
+      drawer.appendChild(head);
+
+      // Action row: 1 primary CTA, 1 quiet Invoice link, 1 overflow menu
+      var actions = document.createElement("div");
+      actions.className = "stays-drawer-actions";
+      var ctaWrap = doc.querySelector(".stay-head-cta");
+      if (ctaWrap) {
+        var primaryEl = ctaWrap.querySelector("form, a.btn, button.btn:not(.ghost)") || ctaWrap.querySelector("button[data-stay-header-copy]");
+        if (primaryEl) {
+          var primHost = document.createElement("div");
+          primHost.className = "stays-drawer-primary";
+          var clonedPrimary = primaryEl.cloneNode(true);
+          clonedPrimary.classList.remove("ph-hide");
+          primHost.appendChild(clonedPrimary);
+          actions.appendChild(primHost);
+        }
+      }
+      var invLink = doc.querySelector('.stay-head-actions a[href^="/invoices"]');
+      if (invLink) {
+        var clonedInv = invLink.cloneNode(true);
+        clonedInv.classList.remove("ph-hide");
+        actions.appendChild(clonedInv);
+      }
+      var headMenu = doc.querySelector(".stay-head-actions .row-menu");
+      if (headMenu) {
+        var clonedMenu = headMenu.cloneNode(true);
+        clonedMenu.querySelectorAll(".row-menu-item.ph-only").forEach(function (n) {
+          if (n.matches("button[data-copy]")) { n.classList.remove("ph-only"); return; }
+          n.remove();
+        });
+        clonedMenu.querySelectorAll(".ph-hide").forEach(function (n) { n.classList.remove("ph-hide"); });
+        actions.appendChild(clonedMenu);
+      }
+      if (actions.childNodes.length) drawer.appendChild(actions);
+
+      // Police reporting note (if present)
+      var policeHead = textOf(doc.querySelector("#police-card > b"));
+      if (policeHead) {
+        var note = document.createElement("p");
+        note.className = "stays-drawer-note";
+        note.textContent = policeHead;
+        drawer.appendChild(note);
+      }
+
+      // Flat key-value details
+      var kv = document.createElement("div");
+      kv.className = "stays-drawer-kv";
+      var propName = textOf(doc.querySelector("#now .stay-sep a")) || textOf(fallbackRow.querySelector(".stays-col-prop"));
+      var datesText = textOf(fallbackRow.querySelector(".stay-dates-span"));
+      var datesSub = textOf(fallbackRow.querySelector("td[data-card='secondary'] small"));
+      var guestsNode = doc.querySelector("#guests .stay-guests-h h2 .sub");
+      var guestsText = textOf(guestsNode) || "–";
+      var deadlineSub = textOf(fallbackRow.querySelector("td[data-card='badge'] small"));
+      if (propName) kv.appendChild(kvRow(drawer.getAttribute("data-label-property") || "Property", propName));
+      if (datesText) kv.appendChild(kvRow(drawer.getAttribute("data-label-dates") || "Dates", datesText, datesSub));
+      if (guestsText) kv.appendChild(kvRow(drawer.getAttribute("data-label-guests") || "Guests", guestsText));
+      if (deadlineSub) kv.appendChild(kvRow(drawer.getAttribute("data-label-reporting") || "Reporting", deadlineSub));
+      if (kv.childNodes.length) drawer.appendChild(kv);
+
+      // Guests list with circular avatars
+      var guestsSec = document.createElement("div");
+      guestsSec.className = "stays-drawer-guests";
+      var gHead = document.createElement("div");
+      gHead.className = "stays-drawer-guests-h";
+      var gTitle = document.createElement("h3");
+      var gLabel = drawer.getAttribute("data-label-guests") || "Guests";
+      gTitle.textContent = guestsText && guestsText !== "–" ? gLabel + " (" + guestsText + ")" : gLabel;
+      gHead.appendChild(gTitle);
+
+      var addGuestLink = doc.querySelector('#guests a[href$="/guests/new"]');
+      if (addGuestLink) {
+        var addA = document.createElement("a");
+        addA.className = "stays-drawer-add-guest";
+        addA.href = addGuestLink.getAttribute("href");
+        addA.textContent = "+ " + (drawer.getAttribute("data-label-add-guest") || "Add guest");
+        gHead.appendChild(addA);
+      }
+      guestsSec.appendChild(gHead);
+
+      var guestRows = doc.querySelectorAll("#guests tbody tr");
+      if (guestRows.length) {
+        guestRows.forEach(function (tr) {
+          var nameLink = tr.querySelector("a.guest-name-link");
+          if (!nameLink) return;
+          var gName = textOf(nameLink);
+          var gRow = document.createElement("a");
+          gRow.className = "stays-drawer-guest";
+          gRow.href = nameLink.getAttribute("href");
+
+          var ava = document.createElement("span");
+          ava.className = "stays-drawer-ava";
+          ava.textContent = initialsOf(gName);
+          gRow.appendChild(ava);
+
+          var meta = document.createElement("span");
+          meta.className = "stays-drawer-guest-meta";
+          var b = document.createElement("b");
+          b.textContent = gName;
+          meta.appendChild(b);
+          var idLine = textOf(tr.querySelector(".guest-id-line"));
+          var docType = textOf(tr.querySelector(".guest-doc"));
+          var parts = [];
+          if (idLine) parts.push(idLine);
+          if (docType && docType !== "—") parts.push(docType);
+          if (parts.length) {
+            var sm = document.createElement("small");
+            sm.textContent = parts.join(" · ");
+            meta.appendChild(sm);
+          }
+          gRow.appendChild(meta);
+
+          var statePill = tr.querySelector("td:nth-child(3) .pill, td:nth-child(3) .ui-badge");
+          if (statePill) gRow.appendChild(statePill.cloneNode(true));
+          guestsSec.appendChild(gRow);
+        });
+      } else {
+        var emptyText = textOf(doc.querySelector("#guests .card p")) || textOf(doc.querySelector("#guests .sub"));
+        if (emptyText) {
+          var emp = document.createElement("p");
+          emp.className = "stays-drawer-empty";
+          emp.textContent = emptyText;
+          guestsSec.appendChild(emp);
+        }
+      }
+      drawer.appendChild(guestsSec);
+
+      // Rebind interactive controls inside drawer (menus, copy buttons, confirm dialogs)
+      initRowMenus();
+      initCopy();
+      initConfirmDialog();
+    }
+
+    window._ubyOpenStayDrawer = function (row) {
+      var href = row.getAttribute("data-href");
+      if (!href) return;
+      if (activeRow === row && !drawer.hidden) {
+        closeDrawer(false);
+        return;
+      }
+      if (activeRow) activeRow.classList.remove("is-selected");
+      activeRow = row;
+      activeRow.classList.add("is-selected");
+      workspace.classList.add("has-drawer");
+      drawer.hidden = false;
+      drawer.textContent = "";
+      var loading = document.createElement("p");
+      loading.className = "sub";
+      loading.textContent = drawer.getAttribute("data-loading-label") || "Loading...";
+      drawer.appendChild(loading);
+
+      var mySeq = ++reqSeq;
+      fetch(href, { credentials: "same-origin", headers: { "Accept": "text/html" } })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error("status " + resp.status);
+          return resp.text();
+        })
+        .then(function (html) {
+          if (mySeq !== reqSeq || drawer.hidden) return;
+          var doc = new DOMParser().parseFromString(html, "text/html");
+          renderStayDrawer(doc, href, row);
+        })
+        .catch(function () {
+          if (mySeq !== reqSeq) return;
+          window.location.assign(href);
+        });
+    };
+
+    if (claimNode(document, "initStaysDrawerEsc")) {
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          var d = document.querySelector("[data-stays-drawer]");
+          if (d && !d.hidden) {
+            var close = d.querySelector("[data-stays-drawer-close]");
+            if (close) close.click();
+          }
+        }
+      });
+    }
   }
 
   /* The menu behaves like a drawer on a phone and like a collapsible rail on a
@@ -2990,6 +3311,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();
+    initStaysSearch();
+    initStaysDrawer();
     initNavigation();
     initTogglePanels();
     initDismissBanners();
