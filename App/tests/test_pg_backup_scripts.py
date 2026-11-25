@@ -960,3 +960,55 @@ def test_walg_backup_refuses_without_the_encryption_key(tmp_path):
     assert "backup-push" not in recorded
     assert "delete retain" not in recorded
     assert "ping.invalid" not in recorded
+
+
+def test_pg_restore_file_form_go_only_starts_live_slot_with_go_profile(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + FILING_OFF)
+    (root / ".go-slot").write_text("b\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
+                                   "GO_ONLY": "1", "GO_SLOT": "b"})
+    assert result.returncode == 0, result.stderr
+    up_lines = [l for l in calls(log).splitlines() if "up -d" in l]
+    assert up_lines, calls(log)
+    assert any("--profile go up -d" in l and "ubyhost-go-b" in l for l in up_lines), up_lines
+    assert all(" ubyhost-go " not in f"{l} " for l in up_lines), up_lines
+
+
+def test_pg_restore_stamp_go_only_starts_only_live_slot_b(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    (root / ".go-slot").write_text("b\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    result = run_script("pg-restore.sh", root, bindir, log, args=["20260101T000000Z"],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
+                                   "GO_ONLY": "1", "GO_SLOT": "b"})
+    assert result.returncode == 0, result.stderr
+    up_lines = [l for l in calls(log).splitlines() if "up -d" in l]
+    assert any("--profile go up -d" in l and "ubyhost-go-b" in l for l in up_lines), up_lines
+    assert all(" ubyhost-go " not in f"{l} " for l in up_lines), up_lines
+
+
+def test_ubyhost_app_service_prefers_live_slot_from_dot_go_slot_when_both_running(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    (root / ".go-slot").write_text("b\n")
+    env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "STUB_LOG": str(log),
+           "GO_ONLY": "1", "GO_SLOT": "both"}
+    # Both ubyhost-go and ubyhost-go-b report running; .go-slot=b must win.
+    stub = bindir / "docker"
+    stub.write_text(stub.read_text().replace(
+        "[ \"${GO_SLOT:-a}\" = b ]",
+        "{ [ \"${GO_SLOT:-a}\" = b ] || [ \"${GO_SLOT:-a}\" = both ]; }",
+    ).replace(
+        "[ \"${GO_SLOT:-a}\" = a ]",
+        "{ [ \"${GO_SLOT:-a}\" = a ] || [ \"${GO_SLOT:-a}\" = both ]; }",
+    ))
+    result = subprocess.run(
+        ["bash", "-c", "source scripts/lib-docker.sh && ubyhost_app_service"],
+        cwd=root, env=env, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "ubyhost-go-b"
