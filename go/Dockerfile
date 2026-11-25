@@ -1,5 +1,5 @@
 # Build context is the repository root (see deploy/lightsail/docker-compose.yml).
-FROM golang:1.26-alpine@sha256:30b1e546a9c7fa3b747c2bdba3a0c7bdf3a02ebb4c5b8405d2f948d7e8aac4ec AS builder
+FROM golang:1.26-alpine@sha256:ecb67f987aa1a57794c91d19ade7ae0209f2f0f5496aaef9e6ae85ddf92d02ab AS builder
 ARG GIT_SHA=dev
 WORKDIR /src
 COPY go/go.mod go/go.sum ./
