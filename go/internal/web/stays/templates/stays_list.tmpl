@@ -64,10 +64,7 @@
 <tr class="clickable-row" data-href="{{$href}}" data-stay-id="{{$res.ID}}" data-stay-search-item tabindex="0" role="link"
     aria-label="{{$stayLabel}} · {{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}">
   <td data-card="primary" data-label="{{t "stays.table.guest"}}">
-    {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
-    {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
-    {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
-    <small>{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
+    <div class="stay-guest-line">{{ $mark := source_mark $res.Source }}{{ $srcLabel := source_label $root.Lang $res.Source }}<span class="stay-source-icon" title="{{$srcLabel}}">{{if $mark}}{{$mark}}{{else}}{{icon "calendar-days" 15}}{{end}}<span class="sr-only">{{$srcLabel}}</span></span>{{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>{{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>{{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}</div>
   </td>
   <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
   <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}">

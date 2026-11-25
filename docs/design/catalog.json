@@ -542,7 +542,9 @@
     "stay-prop-inline",
     "stay-dates-span",
     "stays-list",
-    "stays-drawer-backdrop"
+    "stays-drawer-backdrop",
+    "stay-guest-line",
+    "stay-source-icon"
   ],
   "hooks": [
     "sr-only",
@@ -1415,6 +1417,8 @@
     "stay-prop-inline": "Stays row inline property label shown under Guest while side drawer is open.",
     "stay-dates-span": "Stays row merged arrival-departure date range.",
     "stays-list": "Stays desktop table tbody.",
-    "stays-drawer-backdrop": "Translucent backdrop behind the floating Stays detail drawer (desktop >=1024px)."
+    "stays-drawer-backdrop": "Translucent backdrop behind the floating Stays detail drawer (desktop >=1024px).",
+    "stay-guest-line": "Stays desktop table single-line guest row with inline channel logo icon.",
+    "stay-source-icon": "Stays desktop table inline 16px channel logo icon next to guest name."
   }
 }
