@@ -94,8 +94,8 @@ func TestConfirmClaimRace(t *testing.T) {
 	resID := int64(172101)
 	mustExec(t, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, permalink_token, active, created_at)
 		VALUES (172101, 1, 'Flat', 'claimtok', 1, $1) ON CONFLICT (id) DO NOTHING`, stamp)
-	mustExec(t, pool, `INSERT INTO reservation (id, apartment_id, status, source, date_from, date_to, created_at)
-		VALUES ($1, 172101, 'active', 'ical', '2026-06-01', '2026-06-05', $2) ON CONFLICT (id) DO NOTHING`, resID, stamp)
+	mustExec(t, pool, `INSERT INTO reservation (id, uid, apartment_id, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, 'uid-' || $1::bigint::text, 172101, 'active', 'ical', '2026-06-01', '2026-06-05', $2, $2) ON CONFLICT (id) DO NOTHING`, resID, stamp)
 	mustExec(t, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
 		VALUES ($1, $2, $3, 1, $4, $4) ON CONFLICT (reservation_id) DO UPDATE SET state = EXCLUDED.state, token_hash = EXCLUDED.token_hash`,
 		resID, claimStateProvisional, hash, stamp)

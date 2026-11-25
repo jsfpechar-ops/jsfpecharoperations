@@ -25,6 +25,7 @@ type postDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	hooks  CompletionHooks
 }
 
 type postCall struct {
@@ -176,7 +177,7 @@ func writeCalendarCreated(w http.ResponseWriter, id int64) {
 
 // CreateHandler is POST /reservations (admin.py reservation_create).
 func CreateHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
-	d := postDeps{pool, getenv, now}
+	d := postDeps{pool: pool, getenv: getenv, now: now}
 	return func(w http.ResponseWriter, r *http.Request) {
 		c := d.enterPost(w, r)
 		if c == nil {

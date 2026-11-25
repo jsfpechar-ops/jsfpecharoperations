@@ -8,16 +8,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	_ "time/tzdata" // Europe/Prague must load on a slim image
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
 // Error is a failed, refused or unusable call (Python AIError and subclasses).
@@ -175,10 +177,9 @@ type Service struct {
 	Mistral   MistralDoer
 	Now       func() time.Time // default time.Now
 
-	sum    func(ctx context.Context, feature, fromDay, toDay string, key *string) (Tokens, error)
-	rec    func(ctx context.Context, feature, key string, u Usage) error
-	mu     sync.Mutex
-	warned map[string]bool
+	sum         func(ctx context.Context, feature, fromDay, toDay string, key *string) (Tokens, error)
+	rec         func(ctx context.Context, feature, key string, u Usage) error
+	queueBudget func(context.Context, ubyport.OutboxMail) (int64, error)
 }
 
 // NewService wires the real clients. It does not touch the pool or the network.
@@ -326,29 +327,71 @@ func (s *Service) record(ctx context.Context, feature, key string, u Usage) erro
 	return err
 }
 
-// warnBudget stands in for ai._warn_budget. PARITY GAP: Python mails the
-// operator once a month at 80 percent (mail_notify.ai_budget builds an HTML
-// mail and calls mail.enqueue); that builder is in go/internal/mail, which is
-// not this package's to use. Go logs one warning per feature and month instead.
+func (s *Service) budgetEnv(name string) string {
+	if s.Cfg.lookup == nil {
+		return ""
+	}
+	v, _ := s.Cfg.lookup(name)
+	return v
+}
+
+// warnBudget is ai._warn_budget. The outbox's persistent key owns deduplication
+// so a failed enqueue remains eligible on the next successful model call.
 func (s *Service) warnBudget(ctx context.Context, feature string) {
-	frac, err := s.BudgetFraction(ctx, feature, s.Today())
+	day := s.Today()
+	spent, err := s.MonthSpendUSD(ctx, feature, day)
 	if err != nil {
 		slog.Warn("ai budget check failed", "feature", feature)
 		return
 	}
+	capUSD := s.Cfg.MonthlyUSD(feature)
+	frac := 1.0
+	if capUSD > 0 {
+		frac = spent / capUSD
+	}
 	if frac < 0.8 {
 		return
 	}
-	month := s.Today().Format("2006-01")
-	s.mu.Lock()
-	if s.warned == nil {
-		s.warned = map[string]bool{}
+	month := day.Format("2006-01")
+	backend := strings.ToLower(strings.TrimSpace(s.budgetEnv("UBYHOST_MAIL_BACKEND")))
+	if backend != "console" && backend != "ses" {
+		return
 	}
-	seen := s.warned[feature+month]
-	s.warned[feature+month] = true
-	s.mu.Unlock()
-	if !seen {
-		slog.Warn("ai budget at 80 percent or more; operator mail is not sent by the Go port", "feature", feature, "month", month, "fraction", frac)
+	operator := strings.TrimSpace(s.budgetEnv("UBYHOST_OPERATOR_EMAIL"))
+	if operator == "" {
+		operator = "support@ubyhost.com"
+	}
+	recipient := ubyport.NormaliseEmail(operator)
+	if recipient == "" {
+		slog.Warn("ai budget mail skipped", "feature", feature, "month", month, "reason", "recipient")
+		return
+	}
+	publicBase := s.budgetEnv("UBYHOST_PUBLIC_BASE_URL")
+	if publicBase == "" {
+		publicBase = "http://127.0.0.1:8080"
+	}
+	appBase := strings.TrimRight(strings.TrimSpace(s.budgetEnv("UBYHOST_APP_BASE_URL")), "/")
+	if appBase == "" {
+		appBase = strings.TrimRight(publicBase, "/")
+	}
+	content := mail.BuildAIBudget(publicBase, appBase, operator, feature, month, spent, capUSD)
+	payload, err := json.Marshal(map[string]string{"text": content.Text, "html": content.HTML, "lang": "en"})
+	if err != nil {
+		slog.Warn("ai budget mail queue failed", "feature", feature, "month", month)
+		return
+	}
+	row := ubyport.OutboxMail{Kind: "ai_budget", Key: fmt.Sprintf("ai-budget-%s-%s", feature, month), OwnerUserID: nil,
+		To: recipient, Subject: content.Subject, Payload: string(payload)}
+	var enqueueErr error
+	if s.queueBudget != nil {
+		_, enqueueErr = s.queueBudget(ctx, row)
+	} else if s.Pool == nil {
+		enqueueErr = errors.New("outbox unavailable")
+	} else {
+		_, enqueueErr = ubyport.EnqueueMail(ctx, s.Pool, row)
+	}
+	if enqueueErr != nil {
+		slog.Warn("ai budget mail queue failed", "feature", feature, "month", month)
 	}
 }
 

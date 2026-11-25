@@ -343,12 +343,38 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 
 ## Scheduler
 
-`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler. Since WP06 it runs
-in the separate `worker` container (`UBYHOST_ROLE=worker`, `python -m
-app.worker`); the `ubyhost` container runs two uvicorn workers with
-`UBYHOST_ROLE=web` and never starts it. `./scripts/logs.sh worker` must show
-`scheduler started` exactly once per deploy. The stack needs at least the
-**2 GB** bundle; production runs on the 8 GB server (see **Sizing** below).
+The cutover uses the Go scheduler: set `UBYHOST_SCHEDULER=go` and
+`UBYHOST_ENABLE_SCHEDULER=1`. Keep `UBYHOST_GO_JOB_KINDS` and
+`UBYHOST_JOB_QUEUE_KINDS` identical to the 14-kind active plan documented in
+[ENVIRONMENT.md](ENVIRONMENT.md#scheduler). Set positive
+`UBYHOST_ICAL_POLL_MINUTES` and `UBYHOST_SUBMIT_SWEEP_MINUTES`; Go refuses the
+switch if either interval is zero or the job lists differ. The former Python
+worker fallback and mixed-stack queue descriptions are historical. Payments
+are retired, so `stripe_sweep` is not part of the active Go plan.
+
+### Owner cutover checks
+
+Before approving the cutover, verify these values in the private deployment
+configuration. Do not paste environment values, heartbeat URLs, or credentials
+into this runbook, a report, or a ticket.
+
+1. Confirm `UBYHOST_SCHEDULER=go` and `UBYHOST_ENABLE_SCHEDULER=1`.
+2. Confirm both job lists match the documented 14 active kinds exactly and
+   `UBYHOST_PAYMENTS_RETIRED=1`; confirm `stripe_sweep` is absent.
+3. Confirm the iCal and submission sweep intervals are positive.
+4. For the first cutover week, explicitly set
+   `UBYHOST_RETENTION_AUTOPURGE=0`. In production, setting it to `1` enables
+   live purge even when `UBYHOST_GO_RETENTION_APPLY` is unset or `0`. The Go
+   apply flag is additionally required for live purge outside production.
+   Review the dry-run retention counts before restoring the intended policy.
+5. Confirm the required heartbeat destinations are present in private config:
+   `UBYHOST_HEARTBEAT_URL`, `UBYHOST_HEARTBEAT_ICAL_URL`, and
+   `UBYHOST_HEARTBEAT_FILING_URL`. Record presence only, never the URL.
+6. Record each check as confirmed or pending. If sharing retention evidence,
+   include only aggregate counts with identifiers and row details removed.
+
+The former Python worker's every-minute queue fallback, and the associated
+mixed-stack rollback guidance, do not describe this Go-only cutover.
 
 ## Sizing (WP32)
 

@@ -47,8 +47,8 @@ if [ -n "${GRAFANA_PROM_URL:-}" ] && [ -n "${GRAFANA_PROM_USER:-}" ] && [ -n "${
       --data-urlencode "query=$1" "${query_url}" 2>/dev/null || echo ''
   }
   result="$(prom_query 'up')"
-  if echo "${result}" | grep -q '"status":"success"'; then
-    if echo "${result}" | grep -q '"job":"node"' && echo "${result}" | grep -q '"job":"cadvisor"' && echo "${result}" | grep -q '"job":"ubyhost"'; then
+  if echo "${result}" | grep '"status":"success"' >/dev/null; then
+    if echo "${result}" | grep '"job":"node"' >/dev/null && echo "${result}" | grep '"job":"cadvisor"' >/dev/null && echo "${result}" | grep '"job":"ubyhost"' >/dev/null; then
       ok "Grafana Cloud Prometheus has node, cadvisor and ubyhost series"
     else
       fail "Grafana Cloud Prometheus query worked but node/cadvisor/ubyhost series missing (remote-write broken?)"
@@ -59,8 +59,8 @@ if [ -n "${GRAFANA_PROM_URL:-}" ] && [ -n "${GRAFANA_PROM_USER:-}" ] && [ -n "${
   # 2b. Go slots: only when the "go" profile is on must a slot be up; with the
   # profile off there are no series at all and that is fine.
   go_result="$(prom_query 'up{job="ubyhost-go"}')"
-  if echo "${go_result}" | grep -q '"job":"ubyhost-go"'; then
-    if echo "${go_result}" | grep -q ',"1"]'; then
+  if echo "${go_result}" | grep '"job":"ubyhost-go"' >/dev/null; then
+    if echo "${go_result}" | grep ',"1"]' >/dev/null; then
       ok "at least one ubyhost-go slot is up"
     else
       fail "ubyhost-go series present but all down (go profile on, both slots dead?)"

@@ -63,12 +63,12 @@
   {{- $label := dash_label .Row.Reservation}}
   <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
     <span class="kind{{if eq .Kind "leaves"}} out{{else}} in{{end}}">{{if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "today"}}{{t "calendar.arrival"}}{{else}}{{t "dashboard.ph.kind.arrived"}}{{end}}</span>
-    <div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{dash_range .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</div></div></div>
+    <div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</div></div></div>
     {{template "dash.pill" .Row}}
   </a>
 {{- else}}
   {{- with $d.NextArrival}}{{$label := .Label}}
-  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}"><span class="kind in">{{t "dashboard.ph.kind.next"}}</span><div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{dash_range .Row.Reservation.DateFrom .Row.Reservation.DateTo}}</div></div></div>{{template "dash.pill" .Row}}</a>
+  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}"><span class="kind in">{{t "dashboard.ph.kind.next"}}</span><div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}</div></div></div>{{template "dash.pill" .Row}}</a>
   {{- end}}
 {{- end}}
 </div>

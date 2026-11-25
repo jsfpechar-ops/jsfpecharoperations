@@ -4,9 +4,11 @@ package guest
 // the QR door (App/app/templates/guest/guide.html, routes/guest_guide_view.py).
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 )
 
@@ -14,7 +16,7 @@ import (
 func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, lang string, apt *GuideApartment, res *GuideReservation, level, door, qrToken, backURL, leonURL string) {
 	access := guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}
 	var aptRow *Apartment
-	if row, _, _, ok := ResolveKey(r.Context(), h.pool, displayLink(qrToken)); ok {
+	if row, ok := loadApartmentByID(r.Context(), h.pool, apt.ID); ok {
 		aptRow = row
 	}
 	token := qrToken
@@ -34,6 +36,9 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	live := ai.LeonProgressOf(items).Live
+	if !live || !h.guideLeonOn(r.Context(), apt.ID) {
+		leonURL = ""
+	}
 	view := guidePageView{
 		Page:     page,
 		Door:     door,
@@ -41,21 +46,19 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 		NotReady: !live,
 		BackURL:  backURL,
 		LeonURL:  leonURL,
+		LeonHost: ai.LeonHostFirstName(page.Host.Name),
 	}
 	if live {
-		cards, err := h.store.GuestCards(r.Context(), apt.ID, level)
+		cards, err := h.store.GuestGuideCards(r.Context(), apt.ID, level)
 		if err != nil {
 			access.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 			return
 		}
-		view.Groups = groupCards(cards, level, token)
+		view.Groups = groupCards(cards, lang)
 	}
 	access.render(w, r, guideSet, view, http.StatusOK, hardenedHeaders, true)
 	_ = res
 }
-
-// displayLink is the link key a guide route puts back into its own links.
-func displayLink(token string) string { return token }
 
 // guidePageView is guest/guide.html.
 type guidePageView struct {
@@ -66,7 +69,24 @@ type guidePageView struct {
 	Translating bool
 	BackURL     string
 	LeonURL     string
+	LeonHost    string
 	Groups      []guideGroup
+}
+
+// guideLeonOn is the Leon chat gate of guest_guide_view._page: the feature is
+// on and the property has switched Leon on. Any error hides the chat.
+func (h *GuideHandlers) guideLeonOn(ctx context.Context, aptID int64) bool {
+	if !anthropic.ConfigFromEnv(h.store.HavelStore.Env).Enabled("leon") {
+		return false
+	}
+	var a ai.LeonApartment
+	err := h.pool.QueryRow(ctx, `SELECT id, owner_user_id, COALESCE(internal_name,''), leon_enabled <> 0, COALESCE(leon_terms_version,'')
+		FROM apartment WHERE id = $1`, aptID).Scan(&a.ID, &a.OwnerID, &a.Name, &a.Enabled, &a.TermsVersion)
+	if err != nil {
+		return false
+	}
+	on, err := h.store.SwitchedOn(ctx, a)
+	return err == nil && on
 }
 
 // T is the page translator.
@@ -93,23 +113,25 @@ type guideCardView struct {
 	Photos   []string
 }
 
-// groupCards builds the card groups guest_guide.TOPICS orders.
-func groupCards(cards []ai.LeonCard, level, token string) []guideGroup {
+// groupCards builds one group per topic in guest_guide.TOPICS order, only for
+// topics that have cards (guest_guide_view._groups). Titles follow the page language.
+func groupCards(cards []ai.GuideCard, lang string) []guideGroup {
 	if len(cards) == 0 {
 		return nil
 	}
-	views := make([]guideCardView, 0, len(cards))
-	for _, c := range cards {
+	byTopic := map[string][]guideCardView{}
+	for _, g := range cards {
+		c := g.Card
 		var steps []string
 		for _, line := range strings.Split(c.Steps, "\n") {
 			if trimmed := strings.TrimSpace(line); trimmed != "" {
 				steps = append(steps, trimmed)
 			}
 		}
-		views = append(views, guideCardView{
+		byTopic[g.Topic] = append(byTopic[g.Topic], guideCardView{
 			ID:       c.ID,
 			Kind:     c.Kind,
-			Title:    ai.LeonCardTitle(c),
+			Title:    ai.LeonCardTitleIn(c, lang),
 			Facts:    strings.Join(c.Facts, " "),
 			Location: c.Location,
 			Steps:    steps,
@@ -117,7 +139,11 @@ func groupCards(cards []ai.LeonCard, level, token string) []guideGroup {
 			VideoURL: c.VideoURL,
 		})
 	}
-	// The topic kicker is host copy (guest_guide.topic.*); it is left out until
-	// the topic is carried on the card, so no guest sees a wrong heading.
-	return []guideGroup{{Cards: views}}
+	var groups []guideGroup
+	for _, topic := range ai.GuideTopics() {
+		if views := byTopic[topic]; len(views) > 0 {
+			groups = append(groups, guideGroup{Title: ai.GuideTopicTitle(topic, lang), Cards: views})
+		}
+	}
+	return groups
 }

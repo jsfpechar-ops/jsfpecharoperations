@@ -34,10 +34,17 @@ func NotFoundPage(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	NotFoundHTML(w, r, http.StatusNotFound)
+}
+
+// NotFoundHTML writes the branded error page of the host lane with the given
+// status (404 or 405). The copy is the same for both: the page says the link is
+// wrong, and the Allow header is set by the caller.
+func NotFoundHTML(w http.ResponseWriter, r *http.Request, status int) {
 	lang := Lang(r)
 	title, body, home := notFoundCopy(lang)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusNotFound)
+	w.WriteHeader(status)
 	_, _ = io.WriteString(w, fmt.Sprintf(`<!doctype html><html lang="%s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>%s · UbyHost</title><link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/app.css"></head><body class="layout-host"><main class="ui-body ui-body-detail" style="max-width:560px;margin:2rem auto;padding:0 1rem"><h1 class="big">%s</h1><p>%s</p><p><a class="ui-btn ui-btn-primary" href="/">%s</a></p></main></body></html>`,
 		lang, title, title, body, home))
 }

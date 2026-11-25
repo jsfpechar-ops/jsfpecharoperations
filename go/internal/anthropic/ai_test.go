@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
 //go:embed testdata/golden.json
@@ -206,6 +208,100 @@ func svc(provider string) (*Service, *fakeDoer, *fakeMistral) {
 	s.sum = func(context.Context, string, string, string, *string) (Tokens, error) { return Tokens{}, nil }
 	s.rec = func(context.Context, string, string, Usage) error { return nil }
 	return s, d, m
+}
+
+type fakeBudgetQueue struct {
+	rows     map[string]ubyport.OutboxMail
+	calls    int
+	failNext bool
+}
+
+func (q *fakeBudgetQueue) enqueue(_ context.Context, row ubyport.OutboxMail) (int64, error) {
+	q.calls++
+	if q.failNext {
+		q.failNext = false
+		return 0, errors.New("synthetic queue failure")
+	}
+	if q.rows == nil {
+		q.rows = map[string]ubyport.OutboxMail{}
+	}
+	if _, ok := q.rows[row.Key]; !ok {
+		q.rows[row.Key] = row
+	}
+	return int64(len(q.rows)), nil
+}
+
+func TestAIBudgetWarning(t *testing.T) {
+	day := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
+	env := map[string]string{"UBYHOST_MAIL_BACKEND": "console", "UBYHOST_OPERATOR_EMAIL": " Ops@Example.Test ", "UBYHOST_PUBLIC_BASE_URL": "https://public.example", "UBYHOST_APP_BASE_URL": "https://app.example", "UBYHOST_AI_MONTHLY_USD_FEATURE": "100", "UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT": "10"}
+	s := &Service{Cfg: ConfigFromEnv(lookupOf(env)), Now: func() time.Time { return day }}
+	s.Cfg.Prices = Prices{Input: 1}
+	spend := 79.0
+	s.sum = func(context.Context, string, string, string, *string) (Tokens, error) {
+		return Tokens{In: int64(spend * 1_000_000)}, nil
+	}
+	q := &fakeBudgetQueue{}
+	s.queueBudget = q.enqueue
+	s.warnBudget(context.Background(), "feature")
+	if q.calls != 0 {
+		t.Fatal("queued below threshold")
+	}
+	spend = 80
+	s.warnBudget(context.Background(), "feature")
+	s.warnBudget(context.Background(), "feature")
+	if q.calls != 2 || len(q.rows) != 1 {
+		t.Fatalf("repeat calls=%d rows=%d", q.calls, len(q.rows))
+	}
+	row := q.rows["ai-budget-feature-2026-01"]
+	if row.Kind != "ai_budget" || row.To != "ops@example.test" || row.OwnerUserID != nil || row.Subject != "AI budget 80% spent: feature" {
+		t.Fatalf("row metadata kind=%q recipient=%q owner_nil=%v subject=%q", row.Kind, row.To, row.OwnerUserID == nil, row.Subject)
+	}
+	var payload map[string]string
+	if err := json.Unmarshal([]byte(row.Payload), &payload); err != nil || payload["lang"] != "en" {
+		t.Fatalf("payload language=%q err=%v", payload["lang"], err)
+	}
+	day = time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)
+	s.warnBudget(context.Background(), "feature")
+	s.warnBudget(context.Background(), "guide_import")
+	if _, ok := q.rows["ai-budget-feature-2026-02"]; !ok {
+		t.Fatal("new month not queued")
+	}
+	if _, ok := q.rows["ai-budget-guide_import-2026-02"]; !ok {
+		t.Fatal("other feature not queued")
+	}
+	before := q.calls
+	env["UBYHOST_OPERATOR_EMAIL"] = "invalid recipient"
+	day = time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
+	s.warnBudget(context.Background(), "feature")
+	if q.calls != before {
+		t.Fatal("invalid recipient reached queue")
+	}
+	env["UBYHOST_OPERATOR_EMAIL"] = "ops@example.test"
+	q.failNext = true
+	day = time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	s.warnBudget(context.Background(), "feature")
+	s.warnBudget(context.Background(), "feature")
+	if _, ok := q.rows["ai-budget-feature-2026-04"]; !ok {
+		t.Fatal("failed queue did not retry")
+	}
+
+	provider, d, _ := svc("anthropic")
+	provider.Cfg.lookup = lookupOf(env)
+	provider.Cfg.Prices = Prices{Input: 1}
+	provider.Now = func() time.Time { return day }
+	provider.sum = func(_ context.Context, _ string, from, to string, _ *string) (Tokens, error) {
+		if from == to {
+			return Tokens{}, nil
+		}
+		return Tokens{In: 8_000_000}, nil
+	}
+	provider.queueBudget = q.enqueue
+	q.failNext = true
+	d.resp = Response{Text: "{}", HasText: true, StopReason: "end_turn", Usage: Usage{InputTokens: 1}}
+	got, err := provider.Call(context.Background(), "guide_import", []string{"s"}, []Message{{Role: "user", Content: "synthetic"}}, json.RawMessage(`{}`), nil, 0)
+	if err != nil || got == nil {
+		t.Fatalf("queue result changed provider response: got=%v err=%v", got, err)
+	}
 }
 
 func msgs(in []msg) []Message {
