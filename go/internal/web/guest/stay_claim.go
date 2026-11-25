@@ -285,8 +285,13 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	// guest.py _open_link: a POST on an earlier slug is served in place, and an
 	// unknown key is the bad_link page, both before the form is read.
-	if _, _, early := OpenLink(r, d.pool, token, lang); early != nil {
+	if _, link, early := OpenLink(r, d.pool, token, lang); early != nil {
 		early.ServeHTTP(w, r)
+		return
+	} else if link != "" {
+		token = link
+	}
+	if redir := d.pinRedirect(w, r, token, lang, resID); redir {
 		return
 	}
 	if err := r.ParseForm(); err != nil {
