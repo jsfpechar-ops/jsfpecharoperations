@@ -53,8 +53,8 @@ func TestPartyStartClaimMailOn(t *testing.T) {
 	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
 
 	mux := http.NewServeMux()
-	RegisterStayClaim(mux, pool, getenv, now, wrap)
-	RegisterParty(mux, pool, getenv, now, wrap)
+	RegisterStayClaim(mux, pool, getenv, now, wrap, nil)
+	RegisterParty(mux, pool, getenv, now, wrap, nil)
 
 	aptID := time.Now().UnixNano()%8000000000 + 7000000
 	userID := aptID

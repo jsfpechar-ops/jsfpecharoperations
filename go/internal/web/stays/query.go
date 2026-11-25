@@ -9,6 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 )
 
 // Row is one line of the stays table (reservation + progress metadata).
@@ -38,7 +40,7 @@ type Reservation struct {
 
 // List runs the reservations_list query and builds the view model.
 func List(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, accountID int64, p Params, at time.Time) (View, error) {
-	todayISO := formatISODate(civilDate(at))
+	todayISO := formatISODate(civilDate(deadlines.LocalNow(at)))
 	var overdueIDs []int64
 	if p.DateRange == "upcoming" && p.DateFrom != "" {
 		var err error

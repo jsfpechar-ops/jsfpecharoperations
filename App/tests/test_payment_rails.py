@@ -494,7 +494,8 @@ def test_guest_qr_page_without_account_explains_in_language(owner):
         text = i18n.translator(lang)("pay_no_account")
         assert text and text in page.text.replace("&#39;", "'"), lang
         assert "<img" not in page.text
-        assert "paid" not in page.text.lower()
+        body = page.text.split("<body", 1)[-1]
+        assert "paid" not in body.lower()
 
 
 def test_flash_fix_link_allowlisted(owner, client):

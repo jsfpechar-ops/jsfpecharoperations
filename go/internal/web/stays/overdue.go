@@ -13,7 +13,7 @@ import (
 // overdueUnfinishedIDs is admin._overdue_unfinished_ids: stays the dashboard
 // still treats as overdue and unfinished (reporting.FINISHED_STATUSES excluded).
 func overdueUnfinishedIDs(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, ownerID int64, at time.Time) ([]int64, error) {
-	today := civilDate(at)
+	today := civilDate(deadlines.LocalNow(at))
 	start := formatISODate(today.AddDate(0, 0, -45))
 	end := formatISODate(today.AddDate(0, 0, 21))
 	rows, err := pool.Query(ctx, `SELECT r.id, r.date_from, r.date_to, r.declared_guests,

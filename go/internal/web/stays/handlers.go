@@ -73,7 +73,7 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 		}
 		owner := host.Workspace.ID
 		ctx := r.Context()
-		p := ParseParams(r.URL.Query(), at)
+		p := ParseParams(r.URL.Query(), pragueToday(at))
 		v, err := List(ctx, pool, getenv, owner, p, at)
 		if err != nil {
 			serverError(w, err)
