@@ -338,7 +338,7 @@ deep links and return navigation.
 
 ## Brand and logo
 
-The locked identity — the U–H ligature, the three versions, file names, display
+The locked identity — the coral Stay mark (two offset rounded cards), the three versions, file names, display
 sizes, and do/don't rules — is **[LOGO.md](LOGO.md)**. Follow that when adding
 or moving a logo. Do not restore the retired U-swoosh, and do not invent a
 fourth lockup.

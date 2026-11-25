@@ -8,12 +8,12 @@
    here. Bump VERSION whenever this file changes. */
 "use strict";
 
-var VERSION = "20261021-0203";
+var VERSION = "20261125-logo";
 var CACHE = "ubyhost-offline-" + VERSION;
 var OFFLINE_URL = "/offline";
 var LANGS = ["en", "cs", "vi"];
-var ICON = "/static/icons/icon-192.png?v=20261021-0203";
-var BADGE = "/static/icons/badge-96.png?v=20261021-0203";
+var ICON = "/static/icons/icon-192.png?v=20261125-logo";
+var BADGE = "/static/icons/badge-96.png?v=20261125-logo";
 
 function storeOffline(lang) {
   var url = LANGS.indexOf(lang) >= 0 ? OFFLINE_URL + "?lang=" + lang : OFFLINE_URL;

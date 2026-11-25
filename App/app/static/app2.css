@@ -78,7 +78,7 @@ body.v2 .hidden{display:none!important}
 .crow .bar .bar-label{overflow:hidden;text-overflow:ellipsis}
 .b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}.b-now{background:var(--info);color:#1f4e79}
 .note{background:var(--info);border-radius:10px;padding:10px 14px;color:#1d4f9e;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:8px}.mark{width:22px;height:22px;border-radius:7px;background:var(--acc);box-shadow:inset -6px -6px 0 rgba(255,255,255,.25)}
+.logo{display:flex;align-items:center;gap:8px}.mark{width:22px;height:22px}.mark:not(img){border-radius:7px;background:var(--acc);box-shadow:inset -6px -6px 0 rgba(255,255,255,.25)}
 .org i,.me i{background:var(--accs)!important;color:var(--acc-text)}
 .tile{background:linear-gradient(135deg,#fff 55%,#fdf1ee);border-top:3px solid var(--acc)}
 .chip.on{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff}

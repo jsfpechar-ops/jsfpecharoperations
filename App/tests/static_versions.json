@@ -28,12 +28,12 @@
     "v": "20261125-stays5"
   },
   "app2.css": {
-    "sha256": "01373d4da04d37109efeb274480437f3d29e6d76ee68f58305a19b7f6e137a61",
-    "v": "20261125-stays14"
+    "sha256": "ae028d328410e5469abafeee678a1dc6b82a8133c3ef34ca676aaa6634606853",
+    "v": "20261125-stays15"
   },
   "apple-touch-icon.png": {
-    "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
-    "v": "20261004a"
+    "sha256": "b599a3549c67593996839fbd820907289e39797249c1060f932b176ada48fb17",
+    "v": "20261125-logo"
   },
   "auth.js": {
     "sha256": "4e8f87ff689788f7f01049f8e55cd3bb37aba03c2f50b939ed6366ba1e9892da",
@@ -76,8 +76,8 @@
     "v": "20261004a"
   },
   "favicon.png": {
-    "sha256": "af1e1865b06ae0dcaecba51cae5e17440cdb97f8a393211ba98caac5e5779f4a",
-    "v": "20261004a"
+    "sha256": "7ad73bf878fd5f81d2e3dfb2b028de7cabeed336400f005a36ba8e8ef8afb6c1",
+    "v": "20261125-logo"
   },
   "fonts/Manrope-latin.woff2": {
     "sha256": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
@@ -180,16 +180,16 @@
     "v": "20261120-host-palette-1865bb"
   },
   "ubyhost-logo-stacked.png": {
-    "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
-    "v": "20261004a"
+    "sha256": "14dbeff1caac04479b1e78c5504e1307287639460d596ec5e0f857f7d7e6d8d5",
+    "v": "20261125-logo"
   },
   "ubyhost-logo.png": {
-    "sha256": "a4714f5a63d405b48db370f289a6e765554c7f873a7bbce6c10a60e3420419de",
-    "v": "20261004a"
+    "sha256": "fd8068d75b0868714d72465c460c5d093e1f28054d40527175e147ce69c1ba65",
+    "v": "20261125-logo"
   },
   "ubyhost-mark.png": {
-    "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
-    "v": "20261004a"
+    "sha256": "8a344b324e8a224c079c78f317e09e28bc9b55822b317bbc79104c2ff0c78bce",
+    "v": "20261125-logo"
   },
   "vendor/turbo-8.0.13.js": {
     "sha256": "bd97ca98e560e0825c57374004f5fb235e2d209c9e7c8a7eccace18e437c0495",

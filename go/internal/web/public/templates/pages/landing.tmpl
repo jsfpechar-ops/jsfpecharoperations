@@ -14,7 +14,9 @@
   <meta property="og:title" content="{{.T "landing.page_title"}}">
   <meta property="og:description" content="{{.T "landing.meta_description"}}">
   <meta property="og:url" content="{{.PublicBase}}/">
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <meta property="og:image" content="{{.PublicBase}}/static/apple-touch-icon.png?v=20261125-logo">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261125-logo">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261125-logo">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
   <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
   {{template "pposthog" .}}
@@ -49,7 +51,7 @@
         </div>
         <div class="reel-screen">
           <div class="reel-side" aria-hidden="true">
-            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+            <img src="/static/ubyhost-mark.png?v=20261125-logo" alt="">
             <i class="is-active"></i><i></i><i></i><i></i>
           </div>
           <div class="reel-scenes" role="img" aria-label="{{.T "landing.demo.label"}}">
@@ -145,7 +147,7 @@
     </section>
     {{template "privacy_first" .}}
     <section class="landing-final">
-      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+      <img src="/static/ubyhost-mark.png?v=20261125-logo" alt="">
       <div><h2>{{.T "landing.final.title"}}</h2><p>{{.T "landing.final.body"}}</p></div>
       {{if .SignupHref}}<a class="landing-button primary" href="{{.SignupHref}}">{{.T "landing.cta"}}</a>{{else}}<a class="landing-button primary" href="/login?lang={{.Lang}}">{{.T "landing.cta"}}</a>{{end}}
     </section>
