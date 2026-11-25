@@ -72,3 +72,4 @@ Append-only.
 - 2026-11-22 [product] 2029 `UBYHOST_PAYMENTS_RETIRED`; D1-D4 in brief; no delete (A6 later) | owner
 - 2026-11-24 [product] Go = Python (Option 1); deploy after `parity_gate.sh` PASS; autopurge off week 1. 2040–2085 | owner
 - 2026-11-25 [workflow] Gemini 4 Neon briefs + medium executor for 2072–2076, 2085; closed superseded #1310, #1260 | owner
+- 2026-11-26 [ux] Comfy Go refresh: 4-step strip, phone prop cal index + per-prop rails, calm alerts (2087–2090) | owner
