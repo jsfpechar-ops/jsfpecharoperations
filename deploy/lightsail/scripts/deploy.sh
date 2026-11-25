@@ -40,7 +40,7 @@ fi
 # Checked here, before anything touches the stack.
 SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-go}"
 # go-only compose cannot apply schema with Python.
-if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
   echo "ERROR: UBYHOST_SCHEMA_APPLY=python with no ubyhost service in compose (Go-only stack)." >&2
   exit 1
 fi
@@ -59,8 +59,12 @@ case "${SCHEMA_APPLY}" in
     ;;
 esac
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source ./scripts/lib-docker.sh
+
 compose_has_go_service() {
-  docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
+  docker compose --profile go config --services 2>/dev/null | grep -x ubyhost-go >/dev/null
 }
 
 # The two-copy deploy starts the *idle* slot and then stops the old one, so the
@@ -70,9 +74,9 @@ compose_has_go_service() {
 # print) talks to a stopped container and fails a deploy that is fine.
 go_exec() {
   local svc=""
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go
-  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go-b
   else
     echo "ERROR: ubyhost-go is not running (checked ubyhost-go and ubyhost-go-b)." >&2
@@ -82,17 +86,11 @@ go_exec() {
 }
 
 running_python_app() {
-  docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .
+  docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null     && docker compose ps -q --status running ubyhost 2>/dev/null | grep . >/dev/null
 }
 
 app_data_exec() {
-  if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    docker compose --profile go exec -T ubyhost-go sh -c "$1"
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
-    docker compose exec -T ubyhost sh -c "$1"
-  else
-    return 1
-  fi
+  ubyhost_app_exec sh -c "$1"
 }
 
 pg_count() {
@@ -102,6 +100,14 @@ pg_count() {
 # 0710: rollback target. .deployed-sha is written only when a deploy finished;
 # before the first one, ORIG_HEAD is the commit the workflow reset away from.
 PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
+
+# 2044: after the Go slot switch the site runs the new release. No automatic
+# rollback (owner decision); tell the operator exactly what to do.
+fail_after_switch() {
+  echo "$1" >&2
+  echo "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow. To go back run: ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" >&2
+  exit 1
+}
 
 # 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
 public_ok() {
@@ -119,6 +125,12 @@ public_ok() {
 # modified until the next deploy's git reset.
 rollback() {
   echo "==> Rolling back to ${PREV_SHA:-the previous image and Caddyfile}" >&2
+  # shellcheck source=rollback-schema-prep.sh
+  # shellcheck disable=SC1091
+  source ./scripts/rollback-schema-prep.sh
+  if ! rollback_drop_guide_import_00024; then
+    echo "ERROR: schema rollback prep failed; old release may not start" >&2
+  fi
   if [ -n "${PREV_SHA}" ]; then
     git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
   fi
@@ -138,7 +150,7 @@ rollback() {
     source ./scripts/go-slot.sh
     go_rollback_slots || true
   fi
-  if docker compose --profile go config --services 2>/dev/null | grep -qx 'ubyhost-go'; then
+  if docker compose --profile go config --services 2>/dev/null | grep -x 'ubyhost-go' >/dev/null; then
     # shellcheck disable=SC2046
     docker compose up -d --no-build --remove-orphans $(go_non_slot_services) || true
   else
@@ -163,8 +175,16 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 2044: .deploy-in-progress exists only while a deploy has not finished. If it is
+# already there, the last run failed part-way: keep the rollback copies it made.
+KEEP_ROLLBACK_COPIES=0
+if [ -f .deploy-in-progress ]; then
+  KEEP_ROLLBACK_COPIES=1
+  echo "NOTE: previous deploy did not finish; keeping existing rollback copies" >&2
+fi
+
 # 0710: keep the running Caddyfile for rollback.
-if [ -f caddy/Caddyfile.active ]; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && [ -f caddy/Caddyfile.active ]; then
   cp caddy/Caddyfile.active caddy/Caddyfile.previous
 fi
 
@@ -198,7 +218,7 @@ if [ -z "${UBYHOST_SECRET_KEY:-}" ] && { \
     { compose_has_go_service \
         && docker compose --profile go run --rm --no-deps -T --entrypoint sh ubyhost-go \
           -c 'test -s /data/secret_key' >/dev/null 2>&1; } \
-    || { docker compose config --services 2>/dev/null | grep -qx ubyhost \
+    || { docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null \
         && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
           -c 'test -s /data/secret_key' >/dev/null 2>&1; }; \
   }; then
@@ -226,8 +246,8 @@ chmod +x scripts/*.sh
 # without one would be locked out by this release, so refuse to deploy until
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
-if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-  MISSING_EMAIL="$(docker compose --profile go exec -T ubyhost-go ubyhost-web list-accounts-without-email 2>/dev/null \
+if compose_has_go_service && GO_APP_SVC="$(ubyhost_app_service)" && [ "${GO_APP_SVC}" != ubyhost ]; then
+  MISSING_EMAIL="$(docker compose --profile go exec -T "${GO_APP_SVC}" ubyhost-web list-accounts-without-email 2>/dev/null \
     | awk -F': ' '/active accounts without a login e-mail:/{print $2; exit}' || true)"
   [ -n "${MISSING_EMAIL}" ] || MISSING_EMAIL="?"
 elif running_python_app; then
@@ -244,12 +264,12 @@ BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && compose_has_go_service; then
-  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if ! { ubyhost_app_service | grep -x 'ubyhost-go\(-b\)\?' >/dev/null; }; then
     echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
     exit 1
   fi
 fi
-if (compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
+if ubyhost_app_service >/dev/null; then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
   BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
@@ -265,13 +285,13 @@ if (compose_has_go_service && docker compose --profile go ps -q --status running
     # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
     # and integrity check below do not apply to it.
     PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
-    if ! app_data_exec "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
+    if ! app_data_exec "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep 'age-encryption.org/v1' >/dev/null"; then
       echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
     echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
   else
-    if ! app_data_exec "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+    if ! app_data_exec "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep 'age-encryption.org/v1' >/dev/null; else [ -s \"\$p\" ]; fi"; then
       echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
@@ -296,14 +316,17 @@ if (compose_has_go_service && docker compose --profile go ps -q --status running
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
 
-if docker image inspect ubyhost:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost:local >/dev/null 2>&1; then
   docker tag ubyhost:local ubyhost:previous
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
-if docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   docker tag ubyhost-go:local ubyhost-go:previous
   echo "Kept the running Go image as ubyhost-go:previous for rollback."
 fi
+# 2044: the rollback copies now hold the running release; from here a failed run
+# must not overwrite them, so mark the deploy as in progress.
+git rev-parse HEAD > .deploy-in-progress
 
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
@@ -327,7 +350,7 @@ else
   docker compose --profile go build --pull ubyhost-go
 fi
 
-if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   # A compose build tags slot-a, not :local. A CI pull already put the new
@@ -362,7 +385,7 @@ if [ "${PG_MODE}" = "1" ]; then
       echo "Goose apply failed." >&2
       exit 1
     fi
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  elif docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
     echo "==> Applying PostgreSQL goose migrations (new image)"
     if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
       scripts/pg_schema.py apply --expect-database ubyhost; then
@@ -385,7 +408,7 @@ elif [ -n "${BACKUP_STAMP}" ]; then
   echo "Migration dry-run passed."
 fi
 
-if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
+if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker compose config --services | grep -x 'ubyhost-go' >/dev/null; then
   # 1171: build on the server only when no Go image was pulled above (manual
   # deploy, or an old workflow run without UBYHOST_GO_IMAGE). A pulled Go image is never rebuilt.
   # Rebuild the local Go image so a merged change reaches production.
@@ -401,7 +424,7 @@ fi
 
 echo "==> Starting stack"
 docker compose pull caddy
-if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   go_ensure_slot_images
@@ -410,9 +433,9 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
   # copy is not recreated and a stopped idle A cannot take Caddy traffic.
   go_pin_live_slot_image
   # shellcheck disable=SC2046
-  docker compose up -d --remove-orphans $(go_non_slot_services)
+  docker compose up -d $(go_non_slot_services)
 else
-  docker compose up -d --remove-orphans
+  docker compose up -d
 fi
 
 # 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
@@ -423,7 +446,7 @@ fi
 # place, so a deploy has a few seconds of downtime but never holds two copies in
 # memory. That is the setting for a 1 GB staging box; production keeps the
 # default 2 (no downtime at all).
-if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
+if docker compose --profile go config --services | grep -x 'ubyhost-go' >/dev/null \
   && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
@@ -461,6 +484,9 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
   docker compose --profile go stop "$(go_svc "${LIVE_SLOT}")" || true
   echo "ubyhost-go now runs on slot ${NEW_SLOT}."
   fi
+  echo "==> Removing retired compose services"
+  # shellcheck disable=SC2046
+  docker compose up -d --remove-orphans $(go_non_slot_services) || true
 fi
 
 # Reload Caddy unconditionally, every deploy.
@@ -538,8 +564,7 @@ fi
 
 echo "==> Backfilling legal acceptance evidence"
 if ! go_exec ubyhost-web backfill-legal-acceptance; then
-  echo "Legal acceptance backfill failed." >&2
-  exit 1
+  fail_after_switch "Legal acceptance backfill failed."
 fi
 
 # BE-11: encrypt any travel-document numbers still sitting in the plaintext
@@ -548,12 +573,10 @@ fi
 echo "==> Document-number backfill (counts only)"
 go_exec ubyhost-web migrate-encrypt-doc-fields --check || true
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields; then
-  echo "Document-number backfill failed." >&2
-  exit 1
+  fail_after_switch "Document-number backfill failed."
 fi
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields --check; then
-  echo "Plaintext document numbers remain after the backfill." >&2
-  exit 1
+  fail_after_switch "Plaintext document numbers remain after the backfill."
 fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
@@ -561,8 +584,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
   if [ "${PG_MODE}" != "1" ]; then
     LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
     if [ "${LIVE_OK}" != "ok" ]; then
-      echo "Live database integrity check failed: ${LIVE_OK}" >&2
-      exit 1
+      fail_after_switch "Live database integrity check failed: ${LIVE_OK}"
     fi
   fi
   for table in "${TABLES[@]}"; do
@@ -573,8 +595,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
         "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     fi
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
-      echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
-      exit 1
+      fail_after_switch "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}."
     fi
     echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
   done
@@ -589,13 +610,13 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
   echo ""
   echo "==> Public smoke (set SKIP_PUBLIC_SMOKE=1 to skip)"
   if ! ./scripts/smoke-remote.sh; then
-    echo "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now." >&2
-    exit 1
+    fail_after_switch "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now."
   fi
 fi
 
 # 0710: this commit is now the rollback target.
 git rev-parse HEAD > .deployed-sha
+rm -f .deploy-in-progress
 
 # 0962: success is final. Drop dangling images (the old ubyhost:local of each
 # deploy) and all build cache of this deploy. Never -a: it would delete

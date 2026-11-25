@@ -57,14 +57,8 @@ for extra in secret_key initial_admin_credentials; do
 done
 
 if ! data_sh "test -s '${DEST}/secret_key'" && [ -n "${UBYHOST_SECRET_KEY:-}" ]; then
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    printf '%s\n' "${UBYHOST_SECRET_KEY}" | docker compose --profile go exec -T ubyhost-go \
-      sh -c "cat > '${DEST}/secret_key' && chmod 600 '${DEST}/secret_key'"
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost \
-    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
-    printf '%s\n' "${UBYHOST_SECRET_KEY}" | docker compose exec -T ubyhost \
-      sh -c "cat > '${DEST}/secret_key' && chmod 600 '${DEST}/secret_key'"
-  fi
+  printf '%s\n' "${UBYHOST_SECRET_KEY}" | ubyhost_app_exec \
+    sh -c "cat > '${DEST}/secret_key' && chmod 600 '${DEST}/secret_key'" || true
 fi
 
 if ! data_sh "test -s '${DEST}/secret_key'"; then
@@ -82,16 +76,11 @@ if [ -n "${RECIPIENT}" ]; then
   }
   tar_cmd="cd '${DEST}' && set --; for n in ubyhost.db secret_key initial_admin_credentials; do
     [ -f \"\$n\" ] && set -- \"\$@\" \"\$n\"; done; [ \"\$#\" -gt 0 ] || exit 1; tar -cf - \"\$@\""
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    exec_tar=(docker compose --profile go exec -T ubyhost-go sh -c "${tar_cmd}")
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost \
-    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
-    exec_tar=(docker compose exec -T ubyhost sh -c "${tar_cmd}")
-  else
-    echo "Refusing backup: ubyhost-go must be running (Go-only stack has no ubyhost container)." >&2
+  if ! ubyhost_app_service >/dev/null; then
+    echo "Refusing backup: no app container is running (ubyhost-go or ubyhost-go-b on the Go-only stack, ubyhost on the Python stack)." >&2
     return 1 2>/dev/null || exit 1
   fi
-  if ! "${exec_tar[@]}" | age -r "${RECIPIENT}" | data_sh "cat > '${DEST}/ubyhost-backup.tar.age'"; then
+  if ! ubyhost_app_exec sh -c "${tar_cmd}" | age -r "${RECIPIENT}" | data_sh "cat > '${DEST}/ubyhost-backup.tar.age'"; then
     cleanup_on_error
     return 1 2>/dev/null || exit 1
   fi

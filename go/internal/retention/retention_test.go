@@ -23,6 +23,8 @@ func TestConfigFromEnvSwitches(t *testing.T) {
 	}{
 		{map[string]string{}, true},
 		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1"}, true},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "staging"}, true},
+		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_DEPLOYMENT": "production"}, false},
 		{map[string]string{"UBYHOST_GO_RETENTION_APPLY": "1"}, true},
 		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "1", "UBYHOST_GO_RETENTION_APPLY": "0"}, true},
 		{map[string]string{"UBYHOST_RETENTION_AUTOPURGE": "TRUE", "UBYHOST_GO_RETENTION_APPLY": "1"}, true},

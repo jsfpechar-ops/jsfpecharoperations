@@ -1,8 +1,7 @@
 package main
 
 // Job kind retention: App/app/scheduler.py _job_retention in Go
-// (go/internal/retention). A dry run unless UBYHOST_RETENTION_AUTOPURGE and
-// UBYHOST_GO_RETENTION_APPLY are both on. Brief 1210.
+// (go/internal/retention). Live purge follows retention.ConfigFromEnv. Brief 1210.
 
 import (
 	"context"
@@ -27,6 +26,9 @@ func retentionHandler(pool *pgxpool.Pool) jobs.Handler {
 	return func(ctx context.Context) (int, error) {
 		cfg, err := retention.ConfigFromEnv(os.LookupEnv)
 		if err == nil {
+			if cfg.WarnGoRetentionApplyUnset {
+				slog.Warn("retention live purge without UBYHOST_GO_RETENTION_APPLY; set it explicitly on production")
+			}
 			now := time.Now()
 			// Python's date.today() is the server's local date.
 			var sum retention.Summary

@@ -16,14 +16,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/maildetails"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/guest"
 )
 
 var version = "dev"
@@ -107,15 +111,35 @@ type health struct {
 	DatabaseOK      bool   `json:"database_ok"`
 }
 
-func healthz(pool *pgxpool.Pool) http.HandlerFunc {
+type healthQueryer interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func healthz(pool healthQueryer) http.HandlerFunc {
+	return healthzAt(pool, getenv("UBYHOST_DATA_DIR", "data"))
+}
+
+func dataDirectoryWritable(dataDir string) bool {
+	f, err := os.CreateTemp(dataDir, ".ubyhost-health-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	closeErr := f.Close()
+	removeErr := os.Remove(name)
+	return closeErr == nil && removeErr == nil
+}
+
+func healthzAt(pool healthQueryer, dataDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		var one int
 		dbOK := pool.QueryRow(ctx, "SELECT 1").Scan(&one) == nil
-		h := health{Status: "ok", Version: version, DataDirWritable: true, DatabaseOK: dbOK}
+		dataWritable := dataDirectoryWritable(dataDir)
+		h := health{Status: "ok", Version: version, DataDirWritable: dataWritable, DatabaseOK: dbOK}
 		code := http.StatusOK
-		if !dbOK {
+		if !dataWritable || !dbOK {
 			h.Status = "degraded"
 			code = http.StatusServiceUnavailable
 		}
@@ -127,19 +151,31 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 
 // notFound is the catch-all 404: the branded host page, as Python's error.html
 // (error_kind=not_found), not net/http's bare text. A guest link keeps the plain
-// 404 until the Go guest lane gets the guest lane's own error page.
+// 404 for non-HTML clients; HTML guest errors use the localized bad_link page.
 func notFound(mux *http.ServeMux) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		status := http.StatusNotFound
 		if allow := allowedMethods(mux, r); allow != "" {
 			w.Header().Set("Allow", allow)
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
+			status = http.StatusMethodNotAllowed
 		}
-		if hostweb.GuestPath(r) {
+		html := hostweb.WantsHTML(r)
+		switch {
+		case hostweb.GuestPath(r):
+			if html {
+				guest.WriteBadLinkPage(w, r, status)
+				return
+			}
+			if status == http.StatusMethodNotAllowed {
+				w.WriteHeader(status)
+				return
+			}
 			http.NotFound(w, r)
-			return
+		case html:
+			hostweb.NotFoundHTML(w, r, status)
+		default:
+			w.WriteHeader(status)
 		}
-		hostweb.NotFoundPage(w, r)
 	}
 }
 
@@ -185,6 +221,7 @@ func main() {
 
 // run returns the process exit code. The database URL is never logged.
 func run() int {
+	mail.SetDefaultDetails(maildetails.Renderer{})
 	dbURL := os.Getenv("UBYHOST_DATABASE_URL")
 	if dbURL == "" {
 		slog.Error("UBYHOST_DATABASE_URL is required")
@@ -195,6 +232,10 @@ func run() int {
 	}
 	goKinds, err := parseGoKinds(os.Getenv("UBYHOST_GO_JOB_KINDS"))
 	if err != nil {
+		slog.Error(err.Error())
+		return 1
+	}
+	if err := validateJobConfig(goKinds, os.Getenv, os.LookupEnv); err != nil {
 		slog.Error(err.Error())
 		return 1
 	}

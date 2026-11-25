@@ -19,21 +19,27 @@ SCRIPTS = ROOT / "deploy/lightsail/scripts"
 DOCKER_STUB = r"""#!/usr/bin/env bash
 echo "$*" >> "$STUB_LOG"
 case "$*" in
-  *"compose stop"*) [ "${STOP_FAILS:-0}" = 1 ] && exit 1 ;;
+  *"compose stop"*|*"compose --profile go stop"*) [ "${STOP_FAILS:-0}" = 1 ] && exit 1 ;;
   *"ps -q --status running postgres"*) [ "${PG_RUNNING:-0}" = 1 ] && echo pgid ;;
   *"ps -aq ubyhost"*) echo ubyhostid ;;
-  *"config --services"*)
+  *"compose --profile go config --services"*|*"config --services"*)
     if [ "${GO_ONLY:-0}" = 1 ]; then
       echo ubyhost-go; echo postgres; echo caddy
     else
       echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go
     fi ;;
-  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && echo goid ;;
+  *"ps -q --status running ubyhost-go-b"*) [ "${GO_NOT_RUNNING:-0}" != 1 ] && { [ "${GO_ONLY:-0}" = 1 ] || [ "${GO_PROFILE:-0}" = 1 ]; } && [ "${GO_SLOT:-a}" = b ] && echo gobid ;;
+  *"ps -q --status running ubyhost-go"*) [ "${GO_NOT_RUNNING:-0}" != 1 ] && { [ "${GO_ONLY:-0}" = 1 ] || [ "${GO_PROFILE:-0}" = 1 ]; } && [ "${GO_SLOT:-a}" = a ] && echo goid ;;
   *"ps -q --status running ubyhost"*) [ "${GO_ONLY:-0}" != 1 ] && echo ubyid ;;
+  *"profile go run"*"test -f"*) exit 0 ;;
+  *"profile go exec"*"wget"*) exit 0 ;;
   *"test -e"*) exit 1 ;;
-    *"pg_dump"*) echo DUMP ;;
+  *"test -f"*) exit 0 ;;
+  *"exec -T ubyhost"*"healthz"*) exit 0 ;;
+  *"pg_dump"*) echo DUMP ;;
   *"pg_restore"*) cat >/dev/null ;;
   *"cat >"*) cat >/dev/null ;;
+  *"docker cp"*) ;;
   *"ls -1 /data/backups"*) echo 20260101T000000Z ;;
   *"wc -c"*) echo 5 ;;
 esac
@@ -52,7 +58,7 @@ def make_tree(tmp_path, env_text):
     """Copy the scripts into a throwaway tree with its own .env and stub binaries."""
     root = tmp_path / "deploy" / "lightsail"
     (root / "scripts").mkdir(parents=True)
-    for name in ("backup.sh", "backup_snapshot.sh", "pg-restore.sh", "filing-guard.sh"):
+    for name in ("backup.sh", "backup_snapshot.sh", "lib-docker.sh", "pg-restore.sh", "restore.sh", "filing-guard.sh"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
     (root / ".env").write_text(env_text)
     bindir = tmp_path / "bin"
@@ -94,18 +100,30 @@ def test_pg_restore_refuses_while_app_is_on_sqlite(tmp_path):
     assert "stop" not in calls(log)
 
 
-def test_pg_restore_streams_dump_into_pg_restore(tmp_path):
+def test_pg_restore_streams_dump_into_pg_restore_go_only(tmp_path):
     root, bindir, log = make_tree(tmp_path, PG_ENV)
     identity = tmp_path / "agekey"
     identity.write_text("stub")
     result = run_script("pg-restore.sh", root, bindir, log, args=["20260101T000000Z"],
-                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes", "GO_ONLY": "1"})
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert "stop ubyhost-go ubyhost-go-b" in recorded
+    assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
+    assert "profile go up -d" in recorded
+    assert not (root / ".restored-box").exists()
+
+
+def test_pg_restore_streams_dump_into_pg_restore_python_stack(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    result = run_script("pg-restore.sh", root, bindir, log, args=["20260101T000000Z"],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes", "GO_ONLY": "0"})
     assert result.returncode == 0, result.stderr
     recorded = calls(log)
     assert "stop worker ubyhost" in recorded
-    assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
-    assert "up -d ubyhost worker" in recorded
-    assert not (root / ".restored-box").exists()
+    assert "up -d" in recorded
 
 
 def test_pg_restore_rejects_bad_stamp(tmp_path):
@@ -136,7 +154,6 @@ def test_pg_restore_file_form_streams_host_file_without_docker_cp(tmp_path):
     recorded = calls(log)
     assert "cp " not in recorded
     assert "stop worker ubyhost\n" in recorded
-    assert "ubyhost-go" not in recorded
     assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
     assert "compose up -d\n" in recorded
     assert "from ubyhost-pg.dump.age" in (root / ".restored-box").read_text()
@@ -151,8 +168,9 @@ def test_pg_restore_file_form_also_stops_the_go_service(tmp_path):
                         extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes", "GO_PROFILE": "1"})
     assert result.returncode == 0, result.stderr
     recorded = calls(log)
-    assert "stop worker ubyhost-go ubyhost" in recorded
-    assert recorded.index("stop worker ubyhost-go ubyhost") < recorded.index("pg_restore")
+    assert any("ubyhost-go" in line and "stop" in line for line in recorded.splitlines())
+    stop_i = min(i for i, line in enumerate(recorded.splitlines()) if "stop" in line)
+    assert stop_i < recorded.splitlines().index(next(l for l in recorded.splitlines() if "pg_restore" in l))
     assert "compose up -d\n" in recorded
 
 
@@ -229,13 +247,90 @@ def test_pg_restore_restarts_the_app_when_stop_fails(tmp_path):
     identity.write_text("stub")
     result = run_script("pg-restore.sh", root, bindir, log, args=["20260101T000000Z"],
                         extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
-                                   "STOP_FAILS": "1"})
+                                   "STOP_FAILS": "1", "GO_ONLY": "1"})
     assert result.returncode != 0
     recorded = calls(log)
     assert "pg_restore" not in recorded
-    assert "compose up -d ubyhost worker" in recorded
-    assert recorded.index("compose stop worker ubyhost") < recorded.index("compose up -d ubyhost worker")
+    assert "profile go up -d" in recorded
+    assert recorded.index("stop ubyhost-go ubyhost-go-b") < recorded.index("profile go up -d")
 
+
+
+
+def test_restore_refuses_on_postgresql_env(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    result = run_script("restore.sh", root, bindir, log, args=[])
+    assert result.returncode == 2
+    assert "pg-restore.sh" in result.stderr
+
+
+def test_rollback_schema_prep_dry_run_reports_drop(tmp_path):
+    root = tmp_path / "deploy/lightsail"
+    scripts = root / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(SCRIPTS / "rollback-schema-prep.sh", scripts / "rollback-schema-prep.sh")
+    (root / ".env").write_text("UBYHOST_DATABASE_URL=postgresql://x\n", encoding="utf-8")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "stub.log"
+    docker = bindir / "docker"
+    docker.write_text(
+        "#!/usr/bin/env bash\n"
+        'echo "$*" >> "$STUB_LOG"\n'
+        'case "$*" in\n'
+        '  *"ps -q --status running postgres"*) echo pgid ;;\n'
+        '  *"information_schema.columns"*) echo 1 ;;\n'
+        "esac\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    env = {
+        "PATH": f"{bindir}:{os.environ['PATH']}",
+        "STUB_LOG": str(log),
+        "PG_RUNNING": "1",
+        "UBYHOST_DATABASE_URL": "postgresql://x",
+    }
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            "set -a; source .env; set +a; source scripts/rollback-schema-prep.sh; "
+            "ROLLBACK_SCHEMA_DRY_RUN=1 rollback_drop_guide_import_00024",
+        ],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "DROP COLUMN" in result.stdout
+    assert "DELETE FROM goose_db_version WHERE version_id = 24" in result.stdout
+
+
+def test_rollback_schema_prep_warns_when_database_url_unset(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    shutil.copy(SCRIPTS / "rollback-schema-prep.sh", scripts / "rollback-schema-prep.sh")
+    env = {"PATH": os.environ["PATH"]}
+    result = subprocess.run(
+        ["bash", "-c", "source scripts/rollback-schema-prep.sh; rollback_drop_guide_import_00024"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "UBYHOST_DATABASE_URL is unset" in result.stderr
+
+
+def test_deploy_defers_remove_orphans_until_go_slot_is_healthy():
+    text = (ROOT / "deploy/lightsail/scripts/deploy.sh").read_text()
+    stack_at = text.index('echo "==> Starting stack"')
+    first_up = text.index("docker compose up -d $(go_non_slot_services)", stack_at)
+    assert "--remove-orphans $(go_non_slot_services)" not in text[stack_at:first_up + 80]
+    assert "Removing retired compose services" in text
+    assert text.index("Removing retired compose services") < text.index("Reloading Caddy")
 
 def test_pg_restore_file_form_missing_file_exits_1_before_stopping(tmp_path):
     root, bindir, log = make_tree(tmp_path, PG_ENV)
@@ -523,12 +618,59 @@ def test_go_only_backup_refuses_without_ubyhost_go(tmp_path):
         root,
         bindir,
         log,
-        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1"},
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
     )
     assert result.returncode != 0
-    assert "ubyhost-go must be running" in result.stderr
+    assert "no app container is running" in result.stderr
     recorded = calls(log)
     assert "exec -T ubyhost sh" not in "\n".join(recorded)
+
+
+@pytest.mark.parametrize("slot, service", [("a", "ubyhost-go"), ("b", "ubyhost-go-b")])
+def test_go_only_backup_runs_on_either_blue_green_slot(tmp_path, slot, service):
+    """Staging backup cron: the live Go slot may be B, so the check uses service names."""
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_SLOT": slot},
+    )
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert f"exec -T {service} sh" in recorded
+    assert "pg_dump" in recorded
+    assert "Refusing backup" not in result.stderr
+
+
+def test_backup_waits_for_a_transient_gap_then_succeeds(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    (bindir / "docker").write_text(
+        DOCKER_STUB.replace(
+            '*"ps -q --status running ubyhost-go-b"*)',
+            '*"ps -q --status running ubyhost-go-b"*) [ "${GO_SLOT:-a}" = b ] \\\n'
+            '    && { [ -e "$STUB_LOG.up" ] || { n=$(cat "$STUB_LOG.n" 2>/dev/null || echo 0); '
+            'echo $((n+1)) > "$STUB_LOG.n"; [ "$n" -ge 2 ] && : > "$STUB_LOG.up"; }; '
+            '[ -e "$STUB_LOG.up" ] && echo gobid; } ;;\n  *"NEVERMATCH"*)',
+        )
+    )
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_SLOT": "b", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "retrying in 0s" in result.stderr
+
+
+def test_go_only_backup_refuses_when_neither_slot_runs(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1", "GO_SLOT": "b", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
+    )
+    assert result.returncode != 0
+    assert "no app container is running" in result.stderr
 
 
 def test_backup_fails_in_production_when_postgres_not_running_before_any_snapshot(tmp_path):

@@ -19,11 +19,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ErrWorkspacesNotPorted is the fail-closed error of the workspaces step in
-// apply mode: the week-before reminder mail (mail_notify.workspace_deletion)
-// and the workspace delete are not ported, so Go deletes nothing there.
-var ErrWorkspacesNotPorted = errors.New("retention: workspace deletion and its reminder mail are not ported to Go; nothing deleted")
-
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
@@ -571,30 +566,4 @@ func stepLegalAcceptance(ctx context.Context, r *runner) (int, error) {
 	}
 	_, err = r.exec(ctx, `DELETE FROM legal_acceptance WHERE `+where, cutoff, r.owner)
 	return n, err
-}
-
-// stepWorkspaces is retention._workspace_deletion_step (global run only). The
-// dry run counts exactly as Python does. Outside a dry run it fails closed
-// whenever Python would queue a reminder mail or delete a workspace: neither
-// is ported, so Go changes nothing and returns ErrWorkspacesNotPorted.
-func stepWorkspaces(ctx context.Context, r *runner) (int, error) {
-	if r.owner != nil {
-		return 0, nil
-	}
-	now := pyISO(r.now)
-	due, err := r.scalar(ctx, `SELECT COUNT(*) FROM user_account
-		WHERE deletion_due_at IS NOT NULL AND deletion_due_at <= $1`, now)
-	if err != nil || r.dry {
-		return due, err
-	}
-	soon := pyISO(r.now.AddDate(0, 0, workspaceReminderDays))
-	reminders, err := r.scalar(ctx, `SELECT COUNT(*) FROM user_account
-		WHERE deletion_due_at IS NOT NULL AND deletion_due_at > $1 AND deletion_due_at <= $2`, now, soon)
-	if err != nil {
-		return 0, err
-	}
-	if due > 0 || reminders > 0 {
-		return 0, fmt.Errorf("%w (due %d, reminders %d)", ErrWorkspacesNotPorted, due, reminders)
-	}
-	return 0, nil
 }

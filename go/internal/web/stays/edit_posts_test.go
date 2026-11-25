@@ -80,7 +80,7 @@ func editCSRFPost(t *testing.T, h http.Handler, at time.Time, path, nonce string
 func TestRegisterEditPostsRoutes(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterEditPosts(mux, nil, createGetenv, func() time.Time { return fixedToday() },
-		func(_ string, h http.HandlerFunc) http.Handler { return h })
+		func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 	for _, p := range []string{
 		"/reservations/1/quick-edit",
 		"/reservations/1/remove-empty-slot",
@@ -111,7 +111,7 @@ func TestQuickEditUnknownStayJSON404(t *testing.T) {
 	seedLegalAcceptance(t, pool, ownerID, now)
 	mux := http.NewServeMux()
 	RegisterEditPosts(mux, pool, createGetenv, func() time.Time { return now },
-		func(_ string, h http.HandlerFunc) http.Handler { return h })
+		func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 	rec := editCSRFPost(t, mux, now, "/reservations/99999/quick-edit", "n1", ownerID, map[string]string{"summary": "x"}, nil)
 	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), `"ok":false`) {
 		t.Fatalf("got %d %q", rec.Code, rec.Body.String())
@@ -131,7 +131,7 @@ func TestEditPostsGoldenParity(t *testing.T) {
 	}
 	mux := http.NewServeMux()
 	RegisterEditPosts(mux, pool, createGetenv, func() time.Time { return at },
-		func(_ string, h http.HandlerFunc) http.Handler { return h })
+		func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 	for _, c := range g.Cases {
 		rec := editCSRFPost(t, mux, at, c.Path, "edit-golden", c.OwnerID, c.Fields, c.Headers)
 		if rec.Code != c.Status {

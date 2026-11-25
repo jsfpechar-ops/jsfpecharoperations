@@ -88,9 +88,9 @@ check "/privacy" 200
 # Only runs where the container is reachable (i.e. on the server).
 if command -v docker >/dev/null 2>&1; then
   svc=""
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go
-  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep . >/dev/null; then
     svc=ubyhost-go-b
   fi
   if [ -n "${svc}" ]; then

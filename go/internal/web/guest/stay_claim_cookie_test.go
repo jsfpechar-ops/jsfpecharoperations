@@ -86,8 +86,8 @@ func TestConfirmClaimAppliesDeclaredGuests(t *testing.T) {
 	resID := int64(172199)
 	mustExec(t, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, permalink_token, active, created_at)
 		VALUES ($1, 1, 'Flat', 'claimtok-declared', 1, $2) ON CONFLICT (id) DO NOTHING`, aptID, stamp)
-	mustExec(t, pool, `INSERT INTO reservation (id, apartment_id, status, source, date_from, date_to, created_at)
-		VALUES ($1, $2, 'active', 'ical', '2026-06-01', '2026-06-05', $3) ON CONFLICT (id) DO NOTHING`, resID, aptID, stamp)
+	mustExec(t, pool, `INSERT INTO reservation (id, uid, apartment_id, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, 'uid-' || $1::bigint::text, $2, 'active', 'ical', '2026-06-01', '2026-06-05', $3, $3) ON CONFLICT (id) DO NOTHING`, resID, aptID, stamp)
 	mustExec(t, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, declared_guests, created_at, updated_at)
 		VALUES ($1, $2, $3, 1, 3, $4, $4) ON CONFLICT (reservation_id) DO UPDATE SET
 			state = EXCLUDED.state, token_hash = EXCLUDED.token_hash, token_version = 1, declared_guests = 3`,
@@ -135,8 +135,8 @@ func TestStayOverviewMailOnHonorsClaimCookie(t *testing.T) {
 	tok := "claimtok-cookie"
 	mustExec(t, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, permalink_token, active, created_at)
 		VALUES ($1, 1, 'Flat', $2, 1, $3) ON CONFLICT (id) DO NOTHING`, aptID, tok, stamp)
-	mustExec(t, pool, `INSERT INTO reservation (id, apartment_id, status, source, date_from, date_to, created_at)
-		VALUES ($1, $2, 'active', 'ical', '2026-06-10', '2026-06-12', $3) ON CONFLICT (id) DO NOTHING`, resID, aptID, stamp)
+	mustExec(t, pool, `INSERT INTO reservation (id, uid, apartment_id, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, 'uid-' || $1::bigint::text, $2, 'active', 'ical', '2026-06-10', '2026-06-12', $3, $3) ON CONFLICT (id) DO NOTHING`, resID, aptID, stamp)
 	mustExec(t, pool, `INSERT INTO reservation_claim (reservation_id, state, token_version, created_at, updated_at)
 		VALUES ($1, $2, 1, $3, $3) ON CONFLICT (reservation_id) DO UPDATE SET state = EXCLUDED.state, token_version = 1`,
 		resID, claimStateClaimed, stamp)
@@ -147,7 +147,7 @@ func TestStayOverviewMailOnHonorsClaimCookie(t *testing.T) {
 	bare.SetPathValue("reservation_id", fmt.Sprintf("%d", resID))
 	assigned := httptest.NewRecorder()
 	d.stayOverview(assigned, bare)
-	if assigned.Code != http.StatusOK || !strings.Contains(assigned.Body.String(), "guest-assigned") {
+	if assigned.Code != http.StatusOK || !strings.Contains(assigned.Body.String(), "g-assigned-stay") {
 		t.Fatalf("without cookie: status %d body %q", assigned.Code, assigned.Body.String())
 	}
 

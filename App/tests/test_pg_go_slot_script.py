@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import stat
 import subprocess
 from pathlib import Path
@@ -64,6 +65,13 @@ def test_deploy_internal_health_never_execs_python_without_ubyhost_service():
     health = text.split('echo "Health (internal):"', 1)[1].split("echo \"==> Backfilling", 1)[0]
     assert "elif running_python_app;" in health
     assert health.index("elif running_python_app;") < health.index("docker compose exec -T ubyhost")
+
+
+def test_deploy_rollback_drops_guide_import_column_before_up():
+    text = DEPLOY.read_text(encoding="utf-8")
+    rollback = text.split("rollback() {", 1)[1].split("\n}\n", 1)[0]
+    assert "rollback_drop_guide_import_00024" in rollback
+    assert rollback.index("rollback_drop_guide_import_00024") < rollback.index("docker compose up -d")
 
 
 def test_deploy_seeds_slot_tags_before_schema_apply_and_up():
@@ -313,3 +321,73 @@ def test_rollback_slots_recreates_live_when_image_moved(tmp_path):
     assert "force-recreate ubyhost-go-b" in log
     assert "stop ubyhost-go" in log
     assert "stop ubyhost-go-b" not in log.replace("force-recreate ubyhost-go-b", "")
+
+
+def test_rollback_prep_deletes_goose_row_in_one_transaction():
+    prep = (SCRIPTS / "rollback-schema-prep.sh").read_text(encoding="utf-8")
+    assert "BEGIN; ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out; DELETE FROM goose_db_version WHERE version_id = 24; COMMIT;" in prep
+    assert "ON_ERROR_STOP=1" in prep
+    deploy = DEPLOY.read_text(encoding="utf-8")
+    rollback = deploy.split("rollback() {", 1)[1].split("\n}\n", 1)[0]
+    assert "ERROR: schema rollback prep failed; old release may not start" in rollback
+    assert "rollback_drop_guide_import_00024 || true" not in rollback
+
+
+def test_deploy_keeps_rollback_copies_after_unfinished_deploy():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "previous deploy did not finish; keeping existing rollback copies" in text
+    marker = text.index("git rev-parse HEAD > .deploy-in-progress")
+    assert marker > text.index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")
+    assert marker > text.index("docker tag ubyhost-go:local ubyhost-go:previous")
+    assert text.count('"${KEEP_ROLLBACK_COPIES}" != "1"') == 3
+    assert text.index("git rev-parse HEAD > .deployed-sha\nrm -f .deploy-in-progress") > marker
+    assert ".deploy-in-progress" in (ROOT / "deploy/lightsail/.gitignore").read_text(encoding="utf-8")
+
+
+def test_deploy_failures_after_switch_print_the_rollback_command():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" in text
+    assert "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow." in text
+    tail = text.split('echo "==> Removing retired compose services"', 1)[1]
+    assert tail.count("fail_after_switch ") == 6
+
+
+def _pipefail_script_files() -> list[Path]:
+    files = [
+        path
+        for path in sorted(SCRIPTS.glob("*.sh"))
+        if "pipefail" in path.read_text(encoding="utf-8")
+        or path.name in {"lib-docker.sh", "go-slot.sh", "rollback-schema-prep.sh"}
+    ]
+    files.append(ROOT / "scripts/rollback-prod.sh")
+    return files
+
+
+def _grep_hits(pattern: re.Pattern[str]) -> list[str]:
+    hits = []
+    for path in _pipefail_script_files():
+        for num, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if pattern.search(line):
+                hits.append(f"{path.relative_to(ROOT)}:{num}")
+    return hits
+
+
+def test_pipefail_scripts_never_grep_q_on_a_pipe():
+    # grep -q exits at the first match; the producer then dies of SIGPIPE (141) and under
+    # pipefail the pipeline reports failure although the line matched. Use grep >/dev/null.
+    hits = _grep_hits(re.compile(r"\|\s*grep\s+-[A-Za-z]*q"))
+    assert not hits, (
+        "grep -q exits at the first match, the producer then dies of SIGPIPE (141) and under "
+        "pipefail the pipeline reports failure although the line matched; use `grep ... >/dev/null`: "
+        + ", ".join(hits)
+    )
+
+
+def test_pipefail_scripts_grep_has_no_lone_dash_argument():
+    # A bare `grep - PATTERN FILE` reads `-` as the pattern and PATTERN as a file name,
+    # so the check never matches what it was meant to match. Drop the lone `-`.
+    hits = _grep_hits(re.compile(r"\bgrep\s+-(\s|$)"))
+    assert not hits, (
+        "lone `-` argument after grep: grep takes `-` as the PATTERN and the real pattern as a "
+        "file name; write `grep PATTERN >/dev/null` without the `-`: " + ", ".join(hits)
+    )

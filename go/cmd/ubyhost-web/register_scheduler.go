@@ -7,12 +7,9 @@ package main
 //
 // It runs as a background task (registerBackground, brief 1452): started once
 // after the schema check, stopped on SIGINT or SIGTERM and joined before the
-// pool closes. A set-up error does not stop the service, which serves live
-// pages: it is logged as "background task not started task=scheduler", and
-// Python refuses the same configuration, so the Python worker keeps
-// enqueuing. If Go stops enqueuing for any other reason while the switch is
-// on, the Python worker's watch enqueues the missing kinds and raises the
-// critical job_failed:job_queue alert (App/app/scheduler.py).
+// pool closes. Misconfigured job kind lists make run() exit before start
+// (job_config.go). The kill switch alone is logged as background task not
+// started task=scheduler.
 
 import (
 	"context"
@@ -39,7 +36,7 @@ func schedulerTask(pool *pgxpool.Pool) (func(context.Context), error) {
 	}
 	plan, loc, err := scheduler.Setup(os.LookupEnv)
 	if err != nil {
-		return nil, fmt.Errorf("UBYHOST_SCHEDULER=go is ignored, the Python worker keeps enqueuing: %w", err)
+		return nil, fmt.Errorf("UBYHOST_SCHEDULER=go refused setup: %w", err)
 	}
 	state := scheduler.NewState(plan, loc, time.Now())
 	enqueue := func(ctx context.Context, kind string) (bool, error) {

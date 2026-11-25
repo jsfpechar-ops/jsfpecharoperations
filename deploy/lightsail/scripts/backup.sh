@@ -15,20 +15,41 @@ set -a
 source .env
 set +a
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source "${ROOT}/scripts/lib-docker.sh"
+
+# The cron fires at a fixed minute; a slot swap or restart can leave no Go
+# container running for a few seconds. Wait, then fail loudly (cron mails or
+# logs a non-zero exit). Never back up without a running app container.
+UBYHOST_BACKUP_WAIT_TRIES="${UBYHOST_BACKUP_WAIT_TRIES:-3}"
+UBYHOST_BACKUP_WAIT_SECONDS="${UBYHOST_BACKUP_WAIT_SECONDS:-20}"
+wait_for_app_container() {
+  local attempt
+  for attempt in $(seq 1 "${UBYHOST_BACKUP_WAIT_TRIES}"); do
+    if ubyhost_app_service >/dev/null; then
+      return 0
+    fi
+    if [ "${attempt}" -lt "${UBYHOST_BACKUP_WAIT_TRIES}" ]; then
+      echo "No app container running (attempt ${attempt}/${UBYHOST_BACKUP_WAIT_TRIES}); retrying in ${UBYHOST_BACKUP_WAIT_SECONDS}s." >&2
+      sleep "${UBYHOST_BACKUP_WAIT_SECONDS}"
+    fi
+  done
+  echo "Refusing backup: no app container is running after ${UBYHOST_BACKUP_WAIT_TRIES} attempts (ubyhost-go or ubyhost-go-b on the Go-only stack, ubyhost on the Python stack). No backup was taken." >&2
+  return 1
+}
+
 data_sh() {
-  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    docker compose --profile go exec -T ubyhost-go sh -c "$1"
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost \
-    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
-    docker compose exec -T ubyhost sh -c "$1"
-  else
-    echo "Refusing backup: ubyhost-go must be running (Go-only stack has no ubyhost container)." >&2
+  if ! ubyhost_app_exec sh -c "$1"; then
+    if ! ubyhost_app_service >/dev/null; then
+      echo "Refusing backup: no app container is running (ubyhost-go or ubyhost-go-b on the Go-only stack, ubyhost on the Python stack)." >&2
+    fi
     return 1
   fi
 }
 
 run_backup_snapshot() {
-  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  if docker compose config --services 2>/dev/null | grep -x ubyhost >/dev/null; then
     docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
     return
   fi
@@ -36,6 +57,8 @@ run_backup_snapshot() {
   # shellcheck disable=SC1091
   source "${ROOT}/scripts/backup_snapshot.sh"
 }
+
+wait_for_app_container || exit 1
 
 # Brief 1020: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -n "${UBYHOST_DATABASE_URL:-}" ] \

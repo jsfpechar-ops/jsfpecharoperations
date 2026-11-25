@@ -15,6 +15,6 @@ import (
 
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
-		guest.RegisterStayClaim(mux, pool, os.Getenv, time.Now, m.wrap)
+		guest.RegisterStayClaim(mux, pool, os.Getenv, time.Now, m.wrap, stayDoorCodes(pool))
 	})
 }

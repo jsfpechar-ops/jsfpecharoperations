@@ -1,7 +1,9 @@
 // Package retention is App/app/retention.py run() in Go: everything the
-// retention schedule says may no longer be held. It is a dry run unless both
-// UBYHOST_RETENTION_AUTOPURGE (the Python switch) and
-// UBYHOST_GO_RETENTION_APPLY are on. In a dry run it counts exactly the rows
+// retention schedule says may no longer be held. Outside a dry run it deletes
+// or nulls what it counted; a dry run only counts. Live purge needs
+// UBYHOST_RETENTION_AUTOPURGE and, on non-production deployments,
+// UBYHOST_GO_RETENTION_APPLY as well. Production with autopurge on matches
+// Python without GO_RETENTION_APPLY. In a dry run it counts exactly the rows
 // it would delete or null, audits the counts and changes nothing else.
 //
 // Never logs personal data: counts and ids only.
@@ -37,17 +39,21 @@ const (
 
 // Config holds the switches and windows the Python job reads from config.py.
 type Config struct {
-	DryRun         bool
-	AuditDays      int // UBYHOST_AUDIT_RETENTION_DAYS, default 1095
-	AlertDays      int // UBYHOST_ALERT_RETENTION_DAYS, default 365
-	RateLimitHours int // UBYHOST_RATE_LIMIT_RETENTION_HOURS, default 24
-	NoticeDays     int // UBYHOST_RETENTION_NOTICE_DAYS, default 30
-	DataDir        string
+	DryRun bool
+	// WarnGoRetentionApplyUnset is set when production runs a live purge with
+	// UBYHOST_RETENTION_AUTOPURGE but without UBYHOST_GO_RETENTION_APPLY.
+	WarnGoRetentionApplyUnset bool
+	AuditDays                 int // UBYHOST_AUDIT_RETENTION_DAYS, default 1095
+	AlertDays                 int // UBYHOST_ALERT_RETENTION_DAYS, default 365
+	RateLimitHours            int // UBYHOST_RATE_LIMIT_RETENTION_HOURS, default 24
+	NoticeDays                int // UBYHOST_RETENTION_NOTICE_DAYS, default 30
+	DataDir                   string
+	Getenv                    func(string) string // env for mail queue; nil uses os.Getenv
 }
 
-// ConfigFromEnv reads the same variables as config.py. DryRun is false only
-// when UBYHOST_RETENTION_AUTOPURGE and UBYHOST_GO_RETENTION_APPLY are both
-// "1", "true" or "yes".
+// ConfigFromEnv reads the same variables as config.py. DryRun is false when
+// UBYHOST_RETENTION_AUTOPURGE is on and either UBYHOST_GO_RETENTION_APPLY is
+// on or UBYHOST_DEPLOYMENT is production (Python parity on prod).
 func ConfigFromEnv(lookup func(string) (string, bool)) (Config, error) {
 	on := func(name string) bool {
 		v, _ := lookup(name)
@@ -64,8 +70,17 @@ func ConfigFromEnv(lookup func(string) (string, bool)) (Config, error) {
 		}
 		return n, nil
 	}
-	cfg := Config{DryRun: !(on("UBYHOST_RETENTION_AUTOPURGE") && on("UBYHOST_GO_RETENTION_APPLY"))}
+	autopurge := on("UBYHOST_RETENTION_AUTOPURGE")
+	goApply := on("UBYHOST_GO_RETENTION_APPLY")
+	deploy, _ := lookup("UBYHOST_DEPLOYMENT")
+	production := strings.ToLower(strings.TrimSpace(deploy)) == "production"
+	live := autopurge && (goApply || production)
+	cfg := Config{
+		DryRun:                    !live,
+		WarnGoRetentionApplyUnset: live && production && !goApply,
+	}
 	cfg.DataDir, _ = lookup("UBYHOST_DATA_DIR")
+	cfg.Getenv = func(name string) string { v, _ := lookup(name); return v }
 	var err error
 	if cfg.AuditDays, err = num("UBYHOST_AUDIT_RETENTION_DAYS", 1095); err != nil {
 		return cfg, err

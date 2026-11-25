@@ -97,7 +97,38 @@ func TestAccessReplaceClearRenumber(t *testing.T) {
 	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"garage"}, "code": {"B2"}})
 	accessPost(t, w, url.Values{"action": {"save"}, "position": {"1"}, "code_type": {"gate"}, "code": {"A9"}})
 	accessPost(t, w, url.Values{"action": {"clear"}, "position": {"1"}})
-	rows, err := w.pool.Query(context.Background(), `SELECT position, code_type FROM apartment_entry_code WHERE apartment_id=$1 ORDER BY position`, w.apt)
+	got := accessPositions(t, w)
+	if len(got) != 1 || got[0] != 1 {
+		t.Fatalf("renumber got %v", got)
+	}
+}
+
+func TestAccessClearThreeCodesRenumber(t *testing.T) {
+	w := newGuideCardWorld(t)
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"gate"}, "code": {"A1"}})
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"building_entrance"}, "code": {"B2"}})
+	accessPost(t, w, url.Values{"action": {"save"}, "code_type": {"garage"}, "code": {"C3"}})
+	rec := accessPost(t, w, url.Values{"action": {"clear"}, "position": {"1"}})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("clear first of three: %d", rec.Code)
+	}
+	got := accessPositions(t, w)
+	if len(got) != 2 || got[0] != 1 || got[1] != 2 {
+		t.Fatalf("after clearing position 1 got %v, want [1 2]", got)
+	}
+	rec = accessPost(t, w, url.Values{"action": {"clear"}, "position": {"1"}})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("clear first of two: %d", rec.Code)
+	}
+	got = accessPositions(t, w)
+	if len(got) != 1 || got[0] != 1 {
+		t.Fatalf("after second clear got %v, want [1]", got)
+	}
+}
+
+func accessPositions(t *testing.T, w *guideCardWorld) []int {
+	t.Helper()
+	rows, err := w.pool.Query(context.Background(), `SELECT position FROM apartment_entry_code WHERE apartment_id=$1 ORDER BY position`, w.apt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,13 +136,15 @@ func TestAccessReplaceClearRenumber(t *testing.T) {
 	var pos []int
 	for rows.Next() {
 		var p int
-		var typ string
-		_ = rows.Scan(&p, &typ)
+		if err := rows.Scan(&p); err != nil {
+			t.Fatal(err)
+		}
 		pos = append(pos, p)
 	}
-	if len(pos) != 1 || pos[0] != 1 {
-		t.Fatalf("renumber got %v", pos)
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
 	}
+	return pos
 }
 
 func TestAccessLockPreview(t *testing.T) {

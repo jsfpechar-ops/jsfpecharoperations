@@ -5,6 +5,7 @@ package guest
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,7 +16,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/turnstile"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
 )
 
 const maxGuests = 60
@@ -43,11 +47,21 @@ type partyDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	hooks  CompletionHooks
+}
+
+// afterLeadChange mirrors headcount.change_by_lead_in after a real lowered or restored change:
+// submit the stay if complete, then the completion pair. It never fails the request.
+func (d partyDeps) afterLeadChange(ctx context.Context, apartmentID, resID int64) {
+	if err := guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, apartmentID, resID); err != nil {
+		log.Printf("party submit stay %d: %v", resID, err)
+	}
+	runCompletion(ctx, d.hooks, apartmentID, resID)
 }
 
 // RegisterParty wires the three guest POST routes (dormant until UBYHOST_GO_PATHS).
-func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := partyDeps{pool: pool, getenv: getenv, now: now}
+func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, hooks CompletionHooks) {
+	d := partyDeps{pool: pool, getenv: getenv, now: now, hooks: hooks}
 	mux.Handle("POST /l/{token}/{reservation_id}/party", wrap("POST /l/{token}/{reservation_id}/party", WithPOSTCSRF(getenv, now, partySizeHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/count", wrap("POST /l/{token}/{reservation_id}/count", WithPOSTCSRF(getenv, now, leadCountHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/another", wrap("POST /l/{token}/{reservation_id}/another", WithPOSTCSRF(getenv, now, addAnotherHandler(d))))
@@ -73,7 +87,32 @@ func partyMailEnabled(getenv func(string) string) bool {
 	if v == "0" || v == "false" || v == "no" || v == "off" {
 		return false
 	}
-	return getenv("UBYHOST_SMTP_HOST") != "" || getenv("AWS_SES_REGION") != ""
+	return mailEnabled(getenv)
+}
+
+func partyRequireClaim(w http.ResponseWriter, r *http.Request, d partyDeps, apartment *Apartment, stay *partyStay, token, lang string, resID int64) bool {
+	if !partyMailEnabled(d.getenv) {
+		return false
+	}
+	acc := guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
+	if acc.hostOwns(r.Context(), r, apartment.OwnerUserID) {
+		return false
+	}
+	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+	if err != nil {
+		log.Printf("party claim session: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return true
+	}
+	if !GuestAccessOpen(stay.status, row.guestAccessLock) {
+		acc.unavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, resID, nil)
+		return true
+	}
+	if !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
+		redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang), lang)
+		return true
+	}
+	return false
 }
 
 // redirectGuest is guest.py _with_lang(RedirectResponse(...)): the language
@@ -140,6 +179,20 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 		return "", err
 	}
 	defer tx.Rollback(ctx)
+	code, err := d.applyDeclaredTx(ctx, tx, resID, count)
+	if err != nil || code != codeSaved {
+		return code, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return "", err
+	}
+	return codeSaved, nil
+}
+
+// applyDeclaredTx is applyDeclared's locked read, rules and declared-count write
+// run inside the caller's transaction. It commits nothing.
+func (d partyDeps) applyDeclaredTx(ctx context.Context, tx pgx.Tx, resID int64, count int) (string, error) {
+	var err error
 	var s partyStay
 	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
@@ -201,9 +254,6 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 			count, stamp, resID)
 	}
 	if err != nil {
-		return "", err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return "", err
 	}
 	return codeSaved, nil
@@ -394,6 +444,10 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
+		if guestPostLimited(r.Context(), d.pool, d.getenv, r, token, "guest_party", d.now()) {
+			guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}.unavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, token, resID, nil)
+			return
+		}
 		count, err := strconv.Atoi(strings.TrimSpace(r.FormValue("party_size")))
 		if err != nil {
 			count = 0
@@ -417,8 +471,75 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 			redirectGuest(w, r, loc, lang)
 			return
 		}
-		// Claim path stays on stay_claim.go (brief 1721); without mail we only set declared.
-		redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang), lang)
+		email := strings.TrimSpace(r.FormValue("guest_email"))
+		claimRow, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+		if err != nil {
+			log.Printf("party ensure claim: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+			return
+		}
+		resend := r.FormValue("resend") != ""
+		if email != "" || claimRow.state != claimStateClaimed {
+			if turnstile.Required(d.getenv) {
+				tsToken := r.PostFormValue("cf-turnstile-response")
+				ok, verr := turnstile.Verifier{Pool: d.pool, Getenv: d.getenv, Now: d.now}.Verify(r.Context(), r, tsToken, "guest_claim")
+				if verr != nil || !ok {
+					redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "claim_error=bot"), lang)
+					return
+				}
+			}
+			claimKey := clientip.Key(r, d.getenv, "claim:"+apartment.PermalinkToken)
+			at := d.now()
+			if blocked, berr := rateBlocked(r.Context(), d.pool, "claim_start", claimKey, 10, pinWindowSec, at); berr != nil {
+				log.Printf("party claim rate: %v", berr)
+				http.Error(w, "server error", http.StatusInternalServerError)
+				return
+			} else if blocked {
+				redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "claim_error=rate"), lang)
+				return
+			}
+			_ = rateRecord(r.Context(), d.pool, "claim_start", claimKey, at)
+			seed := stays.ClaimSeedDeps{Pool: d.pool, Getenv: d.getenv, Now: d.now}
+			res := stays.SeedReservation{ID: stay.id, ApartmentID: stay.apartmentID, Status: stay.status}
+			aptSeed := stays.SeedApartment{
+				ID: apartment.ID, OwnerUserID: apartment.OwnerUserID,
+				Name: Facility(apartment), PermalinkToken: apartment.PermalinkToken,
+			}
+			ok, code, _, serr := stays.StartClaim(r.Context(), seed, res, aptSeed, email, count, langFromRequest(r), resend || claimRow.state == claimStateClaimed)
+			if serr != nil {
+				log.Printf("party start claim: %v", serr)
+				http.Error(w, "server error", http.StatusInternalServerError)
+				return
+			}
+			extra := "claim_sent=1"
+			if !ok && code != "already_sent" {
+				if code == "" {
+					code = "bad_email"
+				}
+				extra = "claim_error=" + code
+			}
+			redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, extra), lang)
+			return
+		}
+		if partyRequireClaim(w, r, d, apartment, stay, token, lang, resID) {
+			return
+		}
+		if count < 1 || count > maxGuests {
+			redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "party_error=1"), lang)
+			return
+		}
+		code, err := d.applyDeclared(r.Context(), resID, count)
+		if err != nil {
+			http.Error(w, "server error", http.StatusInternalServerError)
+			return
+		}
+		loc := guestLink(token, resID, lang)
+		if !acceptedDeclared[code] {
+			loc += langQueryAmp(lang, "party_error=1")
+		} else {
+			loc += langQuery(lang)
+		}
+		redirectGuest(w, r, loc, lang)
 	}
 }
 
@@ -456,6 +577,9 @@ func leadCountHandler(d partyDeps) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
+		}
+		if code == codeLowered || code == codeRestored {
+			d.afterLeadChange(r.Context(), stay.apartmentID, resID)
 		}
 		redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "count="+url.QueryEscape(code)), lang)
 	}

@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 	"time"
 	_ "time/tzdata" // the Prague zone must exist even on a bare container
@@ -24,6 +25,7 @@ import (
 
 const (
 	collectGuestSent        = "sent"
+	collectGuestError       = "error"
 	collectGuestBlocked     = "blocked"
 	collectGuestNotRequired = "not_required"
 	collectMaxAutoAttempts  = 1 // SUBMISSION_MAX_AUTO_ATTEMPTS
@@ -211,7 +213,7 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 		if c.submitState == collectGuestBlocked && !o.AllowResend {
 			continue
 		}
-		if c.submitState == collectGuestBlocked && blockedAsDuplicate(c.lastErrors) {
+		if c.submitState == collectGuestBlocked && BlockedAsDuplicate(c.lastErrors) {
 			continue
 		}
 		if !o.IgnoreAutomation && c.attempts >= collectMaxAutoAttempts {
@@ -280,14 +282,39 @@ func decryptOrPlain(dec FieldDecrypter, token, plain string) (string, error) {
 	return v, nil
 }
 
-// blockedAsDuplicate is reporting.blocked_as_duplicate.
-func blockedAsDuplicate(lastErrors string) bool {
+// BlockedAsDuplicate is reporting.blocked_as_duplicate.
+func BlockedAsDuplicate(lastErrors string) bool {
 	for _, part := range strings.Split(lastErrors, " | ") {
 		if IsDuplicate(part) {
 			return true
 		}
 	}
 	return false
+}
+
+// FiledRecordChanged is reporting.filed_record_changed: compares the canonical
+// UbyPort payload (GuestFields) so empty stay dates falling back to the booking
+// window or display-only differences do not count as a correction.
+func FiledRecordChanged(stored, proposed Guest, res Reservation) bool {
+	return !reflect.DeepEqual(GuestFields(stored, res), GuestFields(proposed, res))
+}
+
+// EditKeepsDuplicateBlock is reporting.edit_keeps_duplicate_block (brief 1121):
+// true when the stored row is blocked as a duplicate and saving proposed changes
+// none of the fields UbyPort receives.
+func EditKeepsDuplicateBlock(submitState, lastErrors string, stored, proposed Guest, res Reservation) bool {
+	return submitState == collectGuestBlocked &&
+		BlockedAsDuplicate(lastErrors) &&
+		!FiledRecordChanged(stored, proposed, res)
+}
+
+// GuestCorrectionResetsAttempts is reporting.guest_correction_resets_attempts:
+// a guest edit restarts submit_attempts only for rows in error, blocked, or
+// not_required (never for pending or newly inserted rows).
+func GuestCorrectionResetsAttempts(submitState string) bool {
+	return submitState == collectGuestError ||
+		submitState == collectGuestBlocked ||
+		submitState == collectGuestNotRequired
 }
 
 // signatureDatesStale is reporting.signature_dates_stale: a guest window must

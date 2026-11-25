@@ -135,7 +135,7 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 		if _, ok := visible[claimedID]; ok {
 			continue
 		}
-		extra, err := reservationForGuestExtra(r.Context(), d.pool, papt, claimedID, now)
+		extra, err := reservationForGuestExtra(r.Context(), d.pool, d.getenv, d.now, papt, claimedID, now)
 		if err != nil || extra == nil {
 			continue
 		}
@@ -165,8 +165,10 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 			LaneIndex:     i,
 		})
 	}
+	host := hostContact(r.Context(), d.pool, apt)
 	view := PickView{
 		Page: Page{
+			Host: HostContact{Name: host.Name, Email: host.Email, Phone: host.Phone},
 			Lang: GuestLanguage(lang), Token: link, LangURLs: LangURLs(r, ""),
 			PrivacyURL: GuestLink(link, 0, "/privacy") + LangQuery(GuestLanguage(lang), ""),
 			Facility:   Facility(apt), FacilityTone: int(apt.ID % 10),

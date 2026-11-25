@@ -14,6 +14,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source "${ROOT}/scripts/lib-docker.sh"
+
 PG_URL='postgresql://ubyhost@/ubyhost?host=/var/run/postgresql'
 REHEARSAL_URL='postgresql://ubyhost@/ubyhost_rehearsal?host=/var/run/postgresql'
 RESTORETEST_URL='postgresql://ubyhost@/ubyhost_restoretest?host=/var/run/postgresql'
@@ -23,6 +27,13 @@ ENV_SWITCHED=0
 ENV_COPY=""
 
 die() { echo "ERROR: $*" >&2; exit 1; }
+
+require_sqlite_cutover_stack() {
+  compose_has_python_app \
+    || die "pg-cutover needs the Python ubyhost service (SQLite to PostgreSQL migration). On the Go-only stack use pg-restore.sh."
+  grep -Eq '^UBYHOST_DB=' .env \
+    || die "pg-cutover needs UBYHOST_DB in .env (SQLite mode)"
+}
 
 # wait_until <tries> <command...>: retries every 2 s
 wait_until() {
@@ -35,13 +46,19 @@ wait_until() {
 }
 
 healthz_ok() {
-  docker compose exec -T ubyhost python -c \
-    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"
+  ubyhost_app_healthz_ok
 }
 
 login_ok() {
-  docker compose exec -T ubyhost python -c \
-    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/login', timeout=3)"
+  if compose_has_python_app; then
+    docker compose exec -T ubyhost python -c \
+      "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/login', timeout=3)"
+  else
+    local svc
+    svc="$(ubyhost_app_service)" || return 1
+    docker compose --profile go exec -T "${svc}" \
+      wget -qO- --timeout=3 http://127.0.0.1:8081/login >/dev/null 2>&1
+  fi
 }
 
 # pg_sql <database> <sql>: one statement in the postgres container
@@ -168,6 +185,7 @@ fail_cutover() {  # <reason>: undo what was done, start the app on SQLite, exit 
 }
 
 rehearse() {
+  require_sqlite_cutover_stack
   preflight
   ./scripts/backup.sh
   local report="/data/pg-cutover/rehearsal-${STAMP}.json"
@@ -185,6 +203,7 @@ rehearse() {
 }
 
 cutover() {
+  require_sqlite_cutover_stack
   preflight
   [ "$(count_tables ubyhost)" = 0 ] || die "the ubyhost database already has tables; refusing to cut over"
   fresh_rehearsal || die "no ok rehearsal report younger than 24 h; run ./scripts/pg-cutover.sh rehearse first"
@@ -214,6 +233,7 @@ cutover() {
 }
 
 rollback() {
+  require_sqlite_cutover_stack
   local copy answer
   copy="$(ls -1 .env.sqlite-* 2>/dev/null | sort | tail -1 || true)"
   [ -n "${copy}" ] || die "no .env.sqlite-<stamp> copy found; nothing to roll back to"

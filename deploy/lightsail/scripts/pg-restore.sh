@@ -16,6 +16,10 @@ START_DIR="$PWD"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source "${ROOT}/scripts/lib-docker.sh"
+
 die() { echo "ERROR: $*" >&2; exit "${2:-1}"; }
 
 [ -f .env ] || die "missing .env in ${ROOT}"
@@ -41,7 +45,7 @@ fi
 
 if [ "${MODE}" = "stamp" ]; then
   [ -n "${STAMP}" ] || die "${USAGE}"
-  printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' || die "stamp '${STAMP}' is not a backup name like 20260915T030000Z"
+  printf '%s' "${STAMP}" | grep -E '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' >/dev/null || die "stamp '${STAMP}' is not a backup name like 20260915T030000Z"
   SOURCE="${STAMP}"
   WHAT="snapshot ${STAMP}"
 else
@@ -69,8 +73,7 @@ if [ "${MODE}" = "file" ]; then
 fi
 
 if [ "${MODE}" = "stamp" ]; then
-  docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
-    -c "test -f /data/backups/${STAMP}/ubyhost-pg.dump.age" >/dev/null 2>&1 \
+  ubyhost_app_run_sh "test -f /data/backups/${STAMP}/ubyhost-pg.dump.age" >/dev/null 2>&1 \
     || die "no ubyhost-pg.dump.age in snapshot ${STAMP}"
 fi
 
@@ -80,33 +83,43 @@ if [ "${RESTORE_CONFIRM:-}" != "yes" ]; then
   [ "${CONFIRM}" = "yes" ] || die "aborted"
 fi
 
-CONTAINER="$(docker compose ps -aq ubyhost)"
-[ -n "${CONTAINER}" ] || die "could not find the ubyhost container; run ./scripts/deploy.sh first"
+CONTAINER="$(ubyhost_container_ref "${ROOT}" || true)"
+[ -n "${CONTAINER}" ] || die "could not find a running app container (ubyhost-go or ubyhost); start the stack first"
 
-STOP_SERVICES="worker ubyhost"
-UP_SERVICES="ubyhost worker"
+STACK_GO_ONLY=0
+if compose_has_go_app && ! compose_has_python_app; then
+  STACK_GO_ONLY=1
+fi
+
+STOP_SERVICES="$(ubyhost_restore_stop_services)"
+
 if [ "${MODE}" = "file" ]; then
   printf 'restored %s from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "${DUMP_FILE}")" > .restored-box
-  # Brief 1169-cont-1: the Go service could claim a submit job from the restored
-  # database with its old env. Stop it too (only when the go profile defines or
-  # runs it), and start every service again so each one reads the current .env.
-  KNOWN_SERVICES="$( { docker compose config --services; docker compose ps --services; } 2>/dev/null || true)"
-  if printf '%s\n' "${KNOWN_SERVICES}" | grep -qx 'ubyhost-go'; then
-    STOP_SERVICES="worker ubyhost-go ubyhost"
-  fi
-  UP_SERVICES=""
 fi
+
+restore_apps_up() {
+  if [ "${MODE}" = "file" ] || [ "${STACK_GO_ONLY}" != "1" ]; then
+    docker compose up -d >/dev/null 2>&1 || true
+  else
+    docker compose --profile go up -d >/dev/null 2>&1 || true
+  fi
+}
 
 TMP="$(mktemp -d)"
 chmod 700 "${TMP}"
 # From here on, any failure brings the app back up, a partly failed stop included
 # (brief 1169-cont-2; a no-op after the explicit start below).
-# shellcheck disable=SC2086
-trap 'rm -rf "${TMP}"; docker compose up -d ${UP_SERVICES} >/dev/null 2>&1 || true' EXIT
+trap 'rm -rf "${TMP}"; restore_apps_up' EXIT
 
 echo "==> Stopping ${STOP_SERVICES}"
 # shellcheck disable=SC2086
-docker compose stop ${STOP_SERVICES}
+if [ -n "${STOP_SERVICES}" ]; then
+  if [ "${STACK_GO_ONLY}" = "1" ]; then
+    docker compose --profile go stop ${STOP_SERVICES}
+  else
+    docker compose stop ${STOP_SERVICES}
+  fi
+fi
 
 if [ "${MODE}" = "stamp" ]; then
   echo "==> Pulling ${STAMP} and restoring it into PostgreSQL"
@@ -120,20 +133,21 @@ else
     | docker compose exec -T postgres pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction
 fi
 
-echo "==> Starting ${UP_SERVICES:-every service}"
-# shellcheck disable=SC2086
-docker compose up -d ${UP_SERVICES}
+echo "==> Starting every service"
+if [ "${MODE}" = "file" ] || [ "${STACK_GO_ONLY}" != "1" ]; then
+  docker compose up -d
+else
+  docker compose --profile go up -d
+fi
 
 echo "==> Waiting for health"
 for _ in $(seq 1 30); do
-  if docker compose exec -T ubyhost python -c \
-    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
-    >/dev/null 2>&1; then
+  if ubyhost_app_healthz_ok; then
     echo "PostgreSQL restore complete from ${SOURCE}. Sign in and open one stay to confirm data."
     exit 0
   fi
   sleep 2
 done
 
-echo "ubyhost did not become healthy: run ./scripts/logs.sh ubyhost" >&2
+echo "The app did not become healthy: run ./scripts/logs.sh" >&2
 exit 1

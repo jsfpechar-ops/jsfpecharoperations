@@ -347,15 +347,28 @@ ON CONFLICT (apartment_id, position) DO UPDATE SET code_type = $3, custom_label 
 }
 
 func (s *guideServer) accessClear(ctx context.Context, q *guideReq, apt int64, pos int) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
 	var typ string
-	err := s.pool.QueryRow(ctx, `DELETE FROM apartment_entry_code WHERE apartment_id = $1 AND position = $2 RETURNING code_type`, apt, pos).Scan(&typ)
+	err = tx.QueryRow(ctx, `DELETE FROM apartment_entry_code WHERE apartment_id = $1 AND position = $2 RETURNING code_type`, apt, pos).Scan(&typ)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return err
 	}
 	if err != nil {
 		return err
 	}
-	if _, err := s.pool.Exec(ctx, `UPDATE apartment_entry_code SET position = position - 1 WHERE apartment_id = $1 AND position > $2`, apt, pos); err != nil {
+	// UNIQUE (apartment_id, position) is immediate. A single
+	// SET position = position - 1 on two remaining rows can collide
+	// (3->2 while 2 still exists). Shift lowest-first into the hole.
+	for next := pos + 1; next <= 3; next++ {
+		if _, err := tx.Exec(ctx, `UPDATE apartment_entry_code SET position = $3 WHERE apartment_id = $1 AND position = $2`, apt, next, next-1); err != nil {
+			return err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	detail := fmt.Sprintf("apartment=%d position=%d type=%s", apt, pos, typ)

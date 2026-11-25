@@ -35,6 +35,7 @@ var dashFuncs = template.FuncMap{
 	"dash_guests":         dashGuests,
 	"dash_first":          dashFirst,
 	"dash_range":          fmtDateRange,
+	"stay_range":          stayRange,
 	"dash_not_registered": dashNotRegistered,
 	"dash_is_demo":        dashIsDemo,
 }

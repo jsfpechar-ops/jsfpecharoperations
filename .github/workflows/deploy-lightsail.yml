@@ -40,10 +40,12 @@ on:
         type: string
         default: ""
 
+# No personal access token: the run uses its own short-lived GITHUB_TOKEN.
+# checks: read is for the CI-green check below; packages: write pushes the image to GHCR.
 permissions:
   contents: read
   checks: read
-  packages: write # 0422: push the deploy image to GHCR
+  packages: write
 
 jobs:
   lightsail:
@@ -61,9 +63,14 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
           LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
-          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          # The token goes to git as a request header, never into a URL or a
+          # .git/config. The runner is discarded after the run.
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 -w0)"
+          echo "::add-mask::${AUTH_B64}"
+          ghgit() { git -c "http.extraHeader=Authorization: Basic ${AUTH_B64}" "$@"; }
           case "${TARGET}" in
             production|staging) ;;
             *) echo "Unknown deploy target '${TARGET}'." >&2; exit 1 ;;
@@ -93,8 +100,8 @@ jobs:
           if printf '%s' "${DEPLOY_REF}" | grep -Eq '^[0-9a-f]{40}$'; then
             DEPLOY_SHA="${DEPLOY_REF}"
           else
-            DEPLOY_SHA="$(git ls-remote \
-              "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" \
+            DEPLOY_SHA="$(ghgit ls-remote \
+              "https://github.com/${REPO_SLUG}.git" \
               "refs/heads/${DEPLOY_REF}" | cut -f1)"
             if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
               echo "Branch '${DEPLOY_REF}' was not found (got '${DEPLOY_SHA}')." >&2
@@ -103,7 +110,7 @@ jobs:
           fi
           echo "Deploying ${DEPLOY_REF} at ${DEPLOY_SHA} to ${TARGET}${UBYPORT_TARGET:+ (UbyPort ${UBYPORT_TARGET})}"
           if [ "${REQUIRE_CI}" = "true" ]; then
-            FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
+            FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${REPO_SLUG}/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
               | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","browser","shellcheck","docker","secrets","caddy","test-postgres-full"]; ch=runs.get("changes",{}).get("conclusion"); ok=lambda n: n in runs and (runs[n]["conclusion"]=="success" or (runs[n]["conclusion"]=="skipped" and ch=="success")); print(" ".join(n for n in need if not ok(n)))')"
@@ -126,9 +133,9 @@ jobs:
           GO_IMAGE="${IMAGE_REPO}-go:${DEPLOY_SHA}"
           SRC="$(mktemp -d)"
           git -C "${SRC}" init -q
-          git -C "${SRC}" fetch -q --depth 1 "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" "${DEPLOY_SHA}"
+          ghgit -C "${SRC}" fetch -q --depth 1 "https://github.com/${REPO_SLUG}.git" "${DEPLOY_SHA}"
           git -C "${SRC}" checkout -q FETCH_HEAD
-          printf '%s' "${GH_DEPLOY_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          printf '%s' "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
           docker build --pull -f "${SRC}/go/Dockerfile" \
             --build-arg "GIT_SHA=${DEPLOY_SHA}" \
             -t "${GO_IMAGE}" "${SRC}"
@@ -147,8 +154,10 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
           LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
-          # The unquoted heredoc is deliberate: DEPLOY_SHA, TARGET and the token expand here,
-          # everything escaped with \$ expands on the server.
+          # The unquoted heredoc is deliberate: DEPLOY_SHA, TARGET and the image name
+          # expand here, everything escaped with \$ expands on the server. No token
+          # goes to the server: the repo and the GHCR packages are public, so the
+          # server fetches and pulls anonymously and stores no credential.
           # shellcheck disable=SC2087
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
           DEPLOY_SHA="${DEPLOY_SHA}"
@@ -198,7 +207,7 @@ jobs:
               echo "==> staging: UBYHOST_STAGING_NO_LOGIN=1 (agent smoke default)"
             fi
           fi
-          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git"
+          REPO="https://github.com/${REPO_SLUG}.git"
           if [ ! -d "\${INSTALL}/.git" ]; then
             echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
             cd "\${INSTALL}"
@@ -210,6 +219,8 @@ jobs:
           cd "\${INSTALL}"
           git remote set-url origin "\${REPO}"
           git fetch origin "\${DEPLOY_SHA}"
+          echo "==> local drift in \${INSTALL} before reset (informational; reset --hard discards tracked changes):"
+          git status --short || true
           git reset --hard "\${DEPLOY_SHA}"
           cd deploy/lightsail
           chmod +x scripts/*.sh

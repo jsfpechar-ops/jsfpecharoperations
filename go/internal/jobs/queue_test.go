@@ -33,6 +33,77 @@ func openAlerts(t *testing.T, pool *pgxpool.Pool) int {
 	return n
 }
 
+func TestUnclaimedJobAlert(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	now := time.Date(2025, 1, 2, 12, 0, 0, 0, time.UTC)
+	insert := func(kind string, runAt time.Time, lockedAt *time.Time, terminal bool) {
+		t.Helper()
+		var lock any
+		var lockedBy any
+		if lockedAt != nil {
+			lock = timestamp(*lockedAt)
+			lockedBy = "worker"
+		}
+		var done any
+		if terminal {
+			done = timestamp(now.Add(-24 * time.Hour))
+		}
+		if _, err := pool.Exec(ctx, `INSERT INTO job
+			(kind, run_at, payload, created_at, locked_at, locked_by, done_at)
+			VALUES ($1, $2, '{}', $2, $3, $4, $5)`,
+			kind, timestamp(runAt), lock, lockedBy, done); err != nil {
+			t.Fatal(err)
+		}
+	}
+	old := now.Add(-121 * time.Minute)
+	activeLock := now.Add(-time.Minute)
+	expiredLock := now.Add(-LeaseMinutes*time.Minute - time.Minute)
+	exact := now.Add(-120 * time.Minute)
+	future := now.Add(time.Minute)
+	insert("billing_snapshot", old, nil, false)
+	insert("meta_capi", old, &activeLock, false)
+	insert("submit", old, &expiredLock, false)
+	insert("ical", exact, nil, false)
+	insert("posthog", future, nil, false)
+	insert("deadlines", old, nil, true)
+	insert("unconfigured", old, nil, false)
+
+	kinds := []string{"billing_snapshot", "meta_capi", "submit", "ical", "posthog", "deadlines"}
+	intervals := map[string]int{
+		"billing_snapshot": 60, "meta_capi": 60, "submit": 60,
+		"ical": 60, "posthog": 60, "deadlines": 60,
+	}
+	got, err := unclaimedKinds(ctx, pool, kinds, intervals, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"billing_snapshot", "submit"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unclaimed kinds = %v, want %v", got, want)
+	}
+	if err := RaiseFailed(ctx, pool, "billing_snapshot"); err != nil {
+		t.Fatal(err)
+	}
+	if err := RaiseFailed(ctx, pool, "billing_snapshot"); err != nil {
+		t.Fatal(err)
+	}
+	if got := openAlerts(t, pool); got != 1 {
+		t.Fatalf("open alert count = %d, want 1", got)
+	}
+	claimed, err := Claim(ctx, pool, []string{"billing_snapshot"})
+	if err != nil || claimed == nil {
+		t.Fatalf("claim successful recovery job: %+v %v", claimed, err)
+	}
+	if err := Finish(ctx, pool, claimed.ID); err != nil {
+		t.Fatal(err)
+	}
+	recordOK(ctx, pool, "billing_snapshot")
+	if got := openAlerts(t, pool); got != 0 {
+		t.Fatalf("open alert count after success = %d, want 0", got)
+	}
+}
+
 func TestClaimHonoursKinds(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()

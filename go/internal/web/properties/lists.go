@@ -26,6 +26,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
 // RegisterLists adds GET /entities and GET /apartments. It only builds
@@ -43,11 +44,11 @@ func RegisterLists(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv fun
 	}
 }
 
-// notPorted answers a branch Go does not render yet with a plain 501; Caddy has
-// no Python fallback, so every call is user-visible (brief 2029).
-func notPorted(w http.ResponseWriter, what string) {
-	w.Header().Set("X-Ubyhost-Not-Ported", "1")
-	http.Error(w, "not served by Go yet: "+what, http.StatusNotImplemented)
+// notPorted answers a branch Go does not render yet with a host page in the
+// light-mode layout (501). Caddy has no Python fallback, so every call is
+// user-visible (brief 2029).
+func notPorted(w http.ResponseWriter, r *http.Request, env layout.Env, host *session.Host, what string) {
+	layout.NotPortedPage(w, r, env, host, "settings", what)
 }
 
 // queryLast is Starlette's query_params.get: the last value of a key.
