@@ -135,6 +135,13 @@ def _stay_sources(page_text: str):
             r'class="source-badge">(?:<img[^>]*>)?([^<]+)', page_text
         )
     ]
+    if not badges:
+        badges = [
+            value.strip()
+            for value in re.findall(
+                r'class="stay-source-icon" title="([^"]+)"', page_text
+            )
+        ]
     if badges:
         return badges
     return [

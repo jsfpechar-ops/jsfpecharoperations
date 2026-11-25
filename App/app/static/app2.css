@@ -3679,7 +3679,7 @@ body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:non
   body.v2 .stays-workspace{display:block}
   body.v2 .stays-workspace-main{min-width:0}
   body.v2 .stays-workspace .stays-desk th{padding:6px 12px 8px;line-height:1.2}
-  body.v2 .stays-workspace .stays-desk td{padding:6px 12px;line-height:1.2}
+  body.v2 .stays-workspace .stays-desk td{padding:10px 12px;line-height:1.2}
   body.v2 .stays-workspace .stays-desk td small{margin-top:1px;font-size:12px;line-height:1.2}
   body.v2 .stays-workspace .stays-desk td .pill{padding:2px 8px;font-size:12px;line-height:1.25}
   body.v2 .stays-workspace .stays-desk .stay-identity-link{display:inline-flex;align-items:center;min-height:24px;line-height:1.2}
