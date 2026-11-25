@@ -10,9 +10,11 @@
   </nav>
   <section class="pp-bk-card">
     {{if eq .Data true}}
+      <h1>{{if eq .Lang "en"}}Booking terms{{else}}Podmínky rezervace{{end}}</h1>
       <p role="note">{{if eq .Lang "en"}}Booking is currently unavailable.{{else}}Rezervace momentálně nejsou dostupné.{{end}}</p>
+    {{else}}
+      {{if eq .Lang "en"}}{{fragment "terms_en.html"}}{{else}}{{fragment "terms_cs.html"}}{{end}}
     {{end}}
-    {{if eq .Lang "en"}}{{fragment "terms_en.html"}}{{else}}{{fragment "terms_cs.html"}}{{end}}
   </section>
 </main>
 {{end}}
