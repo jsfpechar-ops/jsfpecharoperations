@@ -64,23 +64,20 @@
 <tr class="clickable-row" data-href="{{$href}}" data-stay-id="{{$res.ID}}" data-stay-search-item tabindex="0" role="link"
     aria-label="{{$stayLabel}} · {{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}">
   <td data-card="primary" data-label="{{t "stays.table.guest"}}">
-    <div class="stay-guest-line">{{ $mark := source_mark $res.Source }}{{ $srcLabel := source_label $root.Lang $res.Source }}<span class="stay-source-icon" title="{{$srcLabel}}">{{if $mark}}{{$mark}}{{else}}{{icon "calendar-days" 15}}{{end}}<span class="sr-only">{{$srcLabel}}</span></span>{{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>{{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>{{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}</div>
+    <div class="stay-guest-line">{{ $mark := source_mark $res.Source }}{{ $srcLabel := source_label $root.Lang $res.Source }}<span class="stay-source-icon" title="{{$srcLabel}}">{{if $mark}}{{$mark}}{{else}}{{icon "calendar-days" 15}}{{end}}<span class="sr-only">{{$srcLabel}}</span></span>{{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>{{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>{{end}}{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}</div>
   </td>
   <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
-  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}">
-    <span class="stay-dates-span">{{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}</span>
-    <small>{{tp "stays.table.nights" (nights $res.DateFrom $res.DateTo)}}
-      {{if in_house $prog.Anchor $prog.HasAnchor $res.DateTo $root.Today}} &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "stays.table.in_house"}}</span>{{end}}
-    </small>
-  </td>
+  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}"><span class="stay-dates-span">{{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}</span></td>
   <td class="nowrap stays-col-guests" data-card="guests" data-label="{{t "stays.table.guests"}}">
     {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
   </td>
   <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
     {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
-      {{if and (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}<small>{{deadline_badge $prog.Cell}}</small>{{end}}
     {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}
+  </td>
+  <td class="nowrap stays-col-deadline" data-card="deadline" data-label="{{t "stays.table.deadline"}}">
+    {{if and (eq $res.Status "active") $prog.HasCell (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}{{deadline_badge $prog.Cell}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
   </td>
 </tr>{{end}}
 {{define "stays_list"}}
@@ -177,7 +174,7 @@
 </div>
 <div class="card stays-desk"><table>
   <thead><tr>
-    <th>{{t "stays.table.guest"}}</th><th class="stays-col-prop">{{t "stays.table.property"}}</th><th>{{t "stays.table.dates"}}</th><th class="stays-col-guests">{{t "stays.table.guests"}}</th><th>{{t "stays.table.reporting"}}</th>
+    <th>{{t "stays.table.guest"}}</th><th class="stays-col-prop">{{t "stays.table.property"}}</th><th>{{t "stays.table.dates"}}</th><th class="stays-col-guests">{{t "stays.table.guests"}}</th><th>{{t "stays.table.reporting"}}</th><th class="stays-col-deadline">{{t "stays.table.deadline"}}</th>
   </tr></thead>
   <tbody class="stays-list">{{range .View.Rows}}{{template "stays_desk_row" (kv "Root" $root "Row" .)}}{{end}}</tbody>
 </table></div>

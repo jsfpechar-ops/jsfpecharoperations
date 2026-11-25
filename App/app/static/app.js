@@ -936,6 +936,16 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
           n.remove();
         });
         clonedMenu.querySelectorAll(".ph-hide").forEach(function (n) { n.classList.remove("ph-hide"); });
+        var menuPanel = clonedMenu.querySelector(".row-menu-panel");
+        var addGuestSrc = doc.querySelector('#guests a[href$="/guests/new"]');
+        if (menuPanel && addGuestSrc && !menuPanel.querySelector('a[href$="/guests/new"]')) {
+          var addMenuItem = document.createElement("a");
+          addMenuItem.className = "row-menu-item";
+          addMenuItem.setAttribute("role", "menuitem");
+          addMenuItem.href = addGuestSrc.getAttribute("href");
+          addMenuItem.textContent = drawer.getAttribute("data-label-add-guest") || "Add a guest";
+          menuPanel.insertBefore(addMenuItem, menuPanel.firstChild);
+        }
         actions.appendChild(clonedMenu);
       }
       if (actions.childNodes.length) drawer.appendChild(actions);
@@ -954,10 +964,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       kv.className = "stays-drawer-kv";
       var propName = textOf(doc.querySelector("#now .stay-sep a")) || textOf(fallbackRow.querySelector(".stays-col-prop"));
       var datesText = textOf(fallbackRow.querySelector(".stay-dates-span"));
-      var datesSub = textOf(fallbackRow.querySelector("td[data-card='secondary'] small"));
+      var datesSub = textOf(doc.querySelector(".stay-dates .tot"));
       var guestsNode = doc.querySelector("#guests .stay-guests-h h2 .sub");
       var guestsText = textOf(guestsNode) || "–";
-      var deadlineSub = textOf(fallbackRow.querySelector("td[data-card='badge'] small"));
+      var rawDeadline = textOf(fallbackRow.querySelector("td[data-card='deadline']"));
+      var deadlineSub = rawDeadline && rawDeadline !== "–" ? rawDeadline : "";
       if (propName) kv.appendChild(kvRow(drawer.getAttribute("data-label-property") || "Property", propName));
       if (datesText) kv.appendChild(kvRow(drawer.getAttribute("data-label-dates") || "Dates", datesText, datesSub));
       if (guestsText) kv.appendChild(kvRow(drawer.getAttribute("data-label-guests") || "Guests", guestsText));

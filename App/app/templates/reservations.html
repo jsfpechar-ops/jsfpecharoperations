@@ -204,6 +204,7 @@
         <th>{{ t('stays.table.dates') }}</th>
         <th class="stays-col-guests">{{ t('stays.table.guests') }}</th>
         <th>{{ t('stays.table.reporting') }}</th>
+        <th class="stays-col-deadline">{{ t('stays.table.deadline') }}</th>
       </tr>
     </thead>
     <tbody class="stays-list">
@@ -223,26 +224,20 @@
           {% set shown_name = lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else '') %}
           {% set src_mark = source_mark(reservation.source) | trim %}
           {% set src_label = source_label(reservation) %}
-          <div class="stay-guest-line"><span class="stay-source-icon" title="{{ src_label }}">{% if src_mark %}{{ src_mark | safe }}{% else %}{{ icon('calendar-days', 15) }}{% endif %}<span class="sr-only">{{ src_label }}</span></span>{% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>{% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>{% if reservation.status == 'active' %}<a class="stay-noname-action" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stays.row.add_guest') }}</a>{% endif %}{% endif %}{% if progress.expected is none and not progress.guests %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}</div>
+          <div class="stay-guest-line"><span class="stay-source-icon" title="{{ src_label }}">{% if src_mark %}{{ src_mark | safe }}{% else %}{{ icon('calendar-days', 15) }}{% endif %}<span class="sr-only">{{ src_label }}</span></span>{% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>{% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>{% endif %}{% if progress.expected is none and not progress.guests %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}</div>
         </td>
         <td class="stays-col-prop" data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
-        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}">
-          <span class="stay-dates-span">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span>
-          <small>
-            {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
-            {%- if check_in and check_out and check_in <= today() <= check_out %}
-              &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.table.in_house') }}</span>
-            {%- endif %}
-          </small>
-        </td>
+        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}"><span class="stay-dates-span">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></td>
         <td class="nowrap stays-col-guests" data-card="guests" data-label="{{ t('stays.table.guests') }}">
           {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted" aria-hidden="true">–</span>{% endif %}
         </td>
         <td data-card="badge" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% elif cell %}{{ v2_status_pill(cell, progress, reservation) }}
-            {% if cell.level != 'overdue' and cell.state not in ('filed_on_time', 'filed_late') %}<small>{{ deadline_badge(cell) }}</small>{% endif %}
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %}
+        </td>
+        <td class="nowrap stays-col-deadline" data-card="deadline" data-label="{{ t('stays.table.deadline') }}">
+          {% if reservation.status == 'active' and cell and cell.level != 'overdue' and cell.state not in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}{% else %}<span class="muted" aria-hidden="true">–</span>{% endif %}
         </td>
       </tr>
     {% endfor %}

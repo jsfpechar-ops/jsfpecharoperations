@@ -544,7 +544,8 @@
     "stays-list",
     "stays-drawer-backdrop",
     "stay-guest-line",
-    "stay-source-icon"
+    "stay-source-icon",
+    "stays-col-deadline"
   ],
   "hooks": [
     "sr-only",
@@ -1419,6 +1420,7 @@
     "stays-list": "Stays desktop table tbody.",
     "stays-drawer-backdrop": "Translucent backdrop behind the floating Stays detail drawer (desktop >=1024px).",
     "stay-guest-line": "Stays desktop table single-line guest row with inline channel logo icon.",
-    "stay-source-icon": "Stays desktop table inline 16px channel logo icon next to guest name."
+    "stay-source-icon": "Stays desktop table inline 16px channel logo icon next to guest name.",
+    "stays-col-deadline": "Stays desktop table aligned Deadline column."
   }
 }
