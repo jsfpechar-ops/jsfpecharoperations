@@ -180,6 +180,7 @@ def capture_png(
     cookie_name: str | None = None,
     cookie_value: str | None = None,
     settle: bool = True,
+    extra_cookies: list[tuple[str, str]] | None = None,
 ) -> None:
     from tests.browser_support import chromium_launch_kwargs, settle_motion
 
@@ -190,6 +191,8 @@ def capture_png(
         cookies = []
         if cookie_name and cookie_value:
             cookies.append({"name": cookie_name, "value": cookie_value, "url": base + "/"})
+        for n, v in (extra_cookies or []):
+            cookies.append({"name": n, "value": v, "url": base + "/"})
         if cookies:
             context.add_cookies(cookies)
 
@@ -242,6 +245,7 @@ def run_case(
     py_cookie_value: str | None = None,
     go_cookie_value: str | None = None,
     pre_sql: Iterable[str] = (),
+    extra_cookies: list[tuple[str, str]] | None = None,
 ) -> list[WidthResult]:
     import playwright.sync_api as sync_api
 
@@ -258,11 +262,13 @@ def run_case(
             capture_png(
                 playwright, py_base, path, width, py_png,
                 cookie_name=cookie_name, cookie_value=py_cookie_value or cookie_value,
+                extra_cookies=extra_cookies,
             )
             _run_pre_sql(pre_sql)
             capture_png(
                 playwright, go_base, path, width, go_png,
                 cookie_name=cookie_name, cookie_value=go_cookie_value or cookie_value,
+                extra_cookies=extra_cookies,
             )
             write_side_by_side(py_png, go_png, side_png)
             write_diff_image(py_png, go_png, diff_png)

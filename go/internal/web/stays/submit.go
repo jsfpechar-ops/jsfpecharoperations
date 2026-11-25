@@ -33,7 +33,7 @@ var submitTransportKeys = map[string]string{
 
 // RegisterSubmit wires filing POST routes (dormant until UBYHOST_GO_PATHS).
 func RegisterSubmit(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := postDeps{pool, getenv, now}
+	d := postDeps{pool: pool, getenv: getenv, now: now}
 	mux.Handle("POST /reservations/submit-ready", wrap("/reservations/submit-ready", SubmitReadyHandler(d)))
 	mux.Handle("POST /reservations/{reservation_id}/submit", wrap("/reservations/{reservation_id}/submit", ReservationSubmitHandler(d)))
 }

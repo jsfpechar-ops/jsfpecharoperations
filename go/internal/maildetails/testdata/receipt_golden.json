@@ -1,0 +1,256 @@
+{
+  "cases": [
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Ada Tester – Document number: •••• 45CD</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Bo</p></td></tr>",
+      "expect_text": "What you sent\nAda Tester – Document number: •••• 45CD\nBo",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "entered_by": "guest",
+          "first_name": "Ada",
+          "id": 1010,
+          "is_lead": 1,
+          "reservation_id": 101,
+          "surname": "Tester"
+        },
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "ZZ999999",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD5FpDevNUJ_tiVwFcqJN10rHcmdSG2pCJu5CeV-jIDwbZ0Xa40Rn5aEz9zznEiV3jw==",
+          "entered_by": "host",
+          "first_name": "Bo",
+          "id": 1011,
+          "is_lead": 0,
+          "reservation_id": 101,
+          "surname": ""
+        }
+      ],
+      "lang": "en",
+      "name": "lead_typed_here_9_chars",
+      "reservation_id": 101,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Cy Dee – Document number: ••••</p></td></tr>",
+      "expect_text": "What you sent\nCy Dee – Document number: ••••",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "X1Y",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD12R_zFbxBC1qZ-v3skd2earZkyNuqOdL5BRpyuro813vFLMUXfaQLp8ULwFQwpDJw==",
+          "entered_by": "guest",
+          "first_name": "Cy",
+          "id": 1020,
+          "is_lead": 1,
+          "reservation_id": 102,
+          "surname": "Dee"
+        }
+      ],
+      "lang": "en",
+      "name": "typed_here_3_chars",
+      "reservation_id": 102,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Eve Host</p></td></tr>",
+      "expect_text": "What you sent\nEve Host",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "123456789",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0ODxxGuIhRHEdETJI2-GuZ1byRbU-Y-yvvTQ1pUF2siq8mppxv2Vkp4G2mxmaa3EK7uA==",
+          "entered_by": "host",
+          "first_name": "Eve",
+          "id": 1030,
+          "is_lead": 1,
+          "reservation_id": 103,
+          "surname": "Host"
+        }
+      ],
+      "lang": "en",
+      "name": "host_entered_name_only",
+      "reservation_id": 103,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Fay Early</p></td></tr>",
+      "expect_text": "What you sent\nFay Early",
+      "guests": [
+        {
+          "created_at": "2026-11-12T08:00:00Z",
+          "doc_number": "FAY00001",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD0wwc-la9gONzYWzrZqx3AT_uelnIvQKA9oCdbv-SQ2mwvM6rcxYaIFCIos92byo3Q==",
+          "entered_by": "guest",
+          "first_name": "Fay",
+          "id": 1040,
+          "is_lead": 1,
+          "reservation_id": 104,
+          "surname": "Early"
+        }
+      ],
+      "lang": "en",
+      "name": "typed_before_claim_name_only",
+      "reservation_id": 104,
+      "seeded": true
+    },
+    {
+      "claimed_at": null,
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Gus Noclaim</p></td></tr>",
+      "expect_text": "What you sent\nGus Noclaim",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "NOCLAIM1",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD9zj0YPfcAvUhEoVlIC4P3iaVGxAeZB1TnbRScKj4LvbEUzH53hqJtZ4XQ20nHAAPA==",
+          "entered_by": "guest",
+          "first_name": "Gus",
+          "id": 1050,
+          "is_lead": 1,
+          "reservation_id": 105,
+          "surname": "Noclaim"
+        }
+      ],
+      "lang": "en",
+      "name": "no_claim_row_name_only",
+      "reservation_id": 105,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Guest</p></td></tr>",
+      "expect_text": "What you sent\nGuest",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8raZQk73-3iT23122CuThjcgmHhInuut6Q4ZGX8lamjJetHqQJg1eLcTiy-KqoPXQ==",
+          "entered_by": "host",
+          "first_name": "",
+          "id": 1060,
+          "is_lead": 1,
+          "reservation_id": 106,
+          "surname": ""
+        }
+      ],
+      "lang": "en",
+      "name": "unnamed_guest",
+      "reservation_id": 106,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "",
+      "expect_text": "",
+      "guests": [],
+      "lang": "en",
+      "name": "claim_no_guests",
+      "reservation_id": 107,
+      "seeded": true
+    },
+    {
+      "claimed_at": null,
+      "expect_html": "",
+      "expect_text": "",
+      "guests": [],
+      "lang": "en",
+      "name": "stay_does_not_exist",
+      "reservation_id": 108,
+      "seeded": false
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">Co jste odeslali</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Ada Tester – Číslo dokladu: •••• 45CD</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Bo</p></td></tr>",
+      "expect_text": "Co jste odeslali\nAda Tester – Číslo dokladu: •••• 45CD\nBo",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "entered_by": "guest",
+          "first_name": "Ada",
+          "id": 1090,
+          "is_lead": 1,
+          "reservation_id": 109,
+          "surname": "Tester"
+        },
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "ZZ999999",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD5FpDevNUJ_tiVwFcqJN10rHcmdSG2pCJu5CeV-jIDwbZ0Xa40Rn5aEz9zznEiV3jw==",
+          "entered_by": "host",
+          "first_name": "Bo",
+          "id": 1091,
+          "is_lead": 0,
+          "reservation_id": 109,
+          "surname": ""
+        }
+      ],
+      "lang": "cs",
+      "name": "lead_typed_here_cs",
+      "reservation_id": 109,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Ada Tester – Document number: •••• 45CD</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Bo</p></td></tr>",
+      "expect_text": "What you sent\nAda Tester – Document number: •••• 45CD\nBo",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "entered_by": "guest",
+          "first_name": "Ada",
+          "id": 1100,
+          "is_lead": 1,
+          "reservation_id": 110,
+          "surname": "Tester"
+        },
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "ZZ999999",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD5FpDevNUJ_tiVwFcqJN10rHcmdSG2pCJu5CeV-jIDwbZ0Xa40Rn5aEz9zznEiV3jw==",
+          "entered_by": "host",
+          "first_name": "Bo",
+          "id": 1101,
+          "is_lead": 0,
+          "reservation_id": 110,
+          "surname": ""
+        }
+      ],
+      "lang": "de",
+      "name": "lead_typed_here_de",
+      "reservation_id": 110,
+      "seeded": true
+    },
+    {
+      "claimed_at": "2026-11-13T09:00:00Z",
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 8px 0;\">What you sent</div><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Gi&lt;b&gt; A&amp;B – Document number: •••• 4321</p></td></tr>",
+      "expect_text": "What you sent\nGi<b> A&B – Document number: •••• 4321",
+      "guests": [
+        {
+          "created_at": "2026-11-13T10:00:00Z",
+          "doc_number": "Q7654321",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0ODyOpCKUlAe78ut4OgqLVO-4kNbNXYNQDT8GHKs9fhIAbVqPhGhHfF47l5TVIKLFB_g==",
+          "entered_by": "guest",
+          "first_name": "Gi<b>",
+          "id": 1110,
+          "is_lead": 1,
+          "reservation_id": 111,
+          "surname": "A&B"
+        }
+      ],
+      "lang": "en",
+      "name": "html_escaping",
+      "reservation_id": 111,
+      "seeded": true
+    }
+  ],
+  "fernet_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+}

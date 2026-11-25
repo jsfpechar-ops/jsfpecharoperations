@@ -6,6 +6,7 @@ caddy/Caddyfile.active
 .env.sqlite-*
 caddy/Caddyfile.previous
 .deployed-sha
+.deploy-in-progress
 .restored-box
 # Local, per-box compose overrides (e.g. a temporary healthcheck patch).
 docker-compose.override.yml

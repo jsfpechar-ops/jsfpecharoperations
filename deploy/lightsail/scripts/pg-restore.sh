@@ -45,7 +45,7 @@ fi
 
 if [ "${MODE}" = "stamp" ]; then
   [ -n "${STAMP}" ] || die "${USAGE}"
-  printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' || die "stamp '${STAMP}' is not a backup name like 20260915T030000Z"
+  printf '%s' "${STAMP}" | grep -E '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' >/dev/null || die "stamp '${STAMP}' is not a backup name like 20260915T030000Z"
   SOURCE="${STAMP}"
   WHAT="snapshot ${STAMP}"
 else

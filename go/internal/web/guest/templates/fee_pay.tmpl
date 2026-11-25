@@ -1,0 +1,72 @@
+{{define "fee_pay"}}{{$f := .FeePanel}}{{$fee_total := $.T "fee_amount" "amount" $f.Total}}
+<section class="g-fee-box" id="fee-pay" aria-labelledby="fee-pay-h">
+  <h3 id="fee-pay-h">{{$.T "fee_box_group"}}</h3>
+  <p class="g-fee-amt">{{$fee_total}}</p>
+  <p class="g-fee-calc">
+    {{if $f.Group}}
+      {{$.T "fee_calc_group" "guests" $f.Guests "days" $f.Days "rate" $f.Rate}}
+    {{else}}
+      {{$.T "fee_rate_line" "rate" $f.Rate}}
+    {{end}}
+  </p>
+
+  <div class="g-fee-panel g-fee-panel--pay">
+    <span class="g-fee-dot" aria-hidden="true"></span>
+    <span><b>{{$.T "fee_now_title"}}</b> {{$.T "fee_now_body"}}</span>
+  </div>
+
+  {{if $f.Rails}}
+    {{range $f.Rails}}
+      <div class="g-fee-opt">
+        {{if eq .Key "iban"}}
+          <h4 class="g-fee-opt-h">{{$.T "fee_rail_iban"}}</h4>
+          <div class="g-summary-body g-fee-rail">
+            {{if .HasQR}}
+            <div class="g-fee-qr">
+              <img class="g-fee-qr-img" src="{{.QR}}" width="176" height="176" alt="{{$.T "fee_qr_alt"}}">
+            </div>
+            {{end}}
+            <dl class="g-summary-list">
+              {{if $f.Payee}}<dt>{{$.T "fee_payee"}}</dt><dd>{{$f.Payee}}</dd>{{end}}
+              <dt>{{$.T "fee_iban"}}</dt>
+              <dd class="g-fee-iban">{{range .IBANGroups}}<span>{{.}}</span> {{end}}</dd>
+              <dt>{{$.T "fee_amount_label"}}</dt><dd>{{$fee_total}}</dd>
+              <dt>{{$.T "fee_vs_label"}}</dt><dd>{{$f.VS}}</dd>
+            </dl>
+          </div>
+        {{else if eq .Key "revolut"}}
+          <h4 class="g-fee-opt-h">{{$.T "fee_rail_revolut"}}</h4>
+          <div class="g-summary-body g-fee-rail">
+            <a class="g-btn secondary" href="{{.Link}}" rel="noopener">{{$.T "fee_revolut_button" "amount" $fee_total}}</a>
+          </div>
+        {{else}}
+          <h4 class="g-fee-opt-h">{{$.T "fee_rail_cash"}}</h4>
+          <div class="g-summary-body g-fee-rail">
+            <p class="g-intro">{{.Note}}</p>
+          </div>
+        {{end}}
+      </div>
+    {{end}}
+  {{else}}
+    <p class="g-intro g-fee-no-rails">{{$.T "fee_no_rails"}}</p>
+  {{end}}
+
+  <details class="g-fee-fold">
+    <summary>{{$.T "fee_per_person"}}</summary>
+    <div>
+      <dl class="g-summary-list">
+        {{range $f.Persons}}
+          <dt>{{$.T "fee_guest_n" "n" .N}}</dt>
+          <dd>{{$.T "fee_person_line" "days" .Days "rate" $f.Rate "amount" .Amount}}</dd>
+        {{end}}
+      </dl>
+    </div>
+  </details>
+
+  <details class="g-fee-fold">
+    <summary>{{$.T "fee_why"}}</summary>
+    <p>{{$.T "fee_why_body"}}</p>
+    <p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{$.T "fee_law_link"}}</a></p>
+  </details>
+</section>
+{{end}}

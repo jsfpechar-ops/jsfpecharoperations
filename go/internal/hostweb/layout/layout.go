@@ -85,14 +85,15 @@ type Env struct {
 // Page is the page's part of the Jinja context: the values a page template
 // sets at the top (nav, body_kind, v2, show_nav, how_key) and its title.
 type Page struct {
-	Title    string // the <title> text; also the h1 unless "<name>.title" is defined
-	Nav      string
-	BodyKind string // list | detail | form | settings; "" is list
-	V2       bool
-	HideNav  bool // show_nav = false
-	HowKey   string
-	BackURL  string
-	Status   int // 0 is 200
+	Title      string // the <title> text; also the h1 unless "<name>.title" is defined
+	Nav        string
+	BodyKind   string // list | detail | form | settings; "" is list
+	V2         bool
+	HideNav    bool // show_nav = false
+	HowKey     string
+	BackURL    string
+	BackIconPx int // 0 = 16; admin_customer passes 20 like Python's ph_back override
+	Status     int // 0 is 200
 
 	// Added in 1380 beyond the promised API.
 	AdminWorkspace  bool   // render() sets admin_workspace for admin_* templates
@@ -533,6 +534,7 @@ type view struct {
 	V2, ShowNav, AdminWorkspace          bool
 	Nav, BodyKind, WrapClass, TurboCache string
 	HowKey, BackURL                      string
+	BackIconPx                           int
 	Canonical, MetaDescription           string
 	Alternates                           []alternate
 	SignedIn, IsAdmin                    bool
@@ -585,7 +587,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	v := view{
 		Lang: c.lang, CSRF: c.csrf, Title: p.Title, Path: r.URL.Path,
 		V2: p.V2, ShowNav: !p.HideNav, AdminWorkspace: p.AdminWorkspace,
-		Nav: p.Nav, BodyKind: bodyKind, HowKey: p.HowKey, BackURL: strings.TrimSpace(p.BackURL),
+		Nav: p.Nav, BodyKind: bodyKind, HowKey: p.HowKey, BackURL: strings.TrimSpace(p.BackURL), BackIconPx: backIconPx(p.BackIconPx),
 		MetaDescription: p.MetaDescription, NavBadge: p.NavBadge,
 		SignedIn: sh.SignedIn, IsAdmin: sh.IsAdmin, Impersonating: sh.Impersonating,
 		WorkspaceName: sh.WorkspaceName, WorkspaceUser: sh.WorkspaceUsername,
@@ -756,4 +758,11 @@ func bodyAlertStack(r *http.Request, env Env, sh shell, c *reqCtx, p Page) alert
 	}
 	cards := presentMany(rows, sh.Progress, alertText{lang: c.lang, now: env.Now})
 	return buildAlertStack(cards, more, r.URL.Path, lastQuery(r, "apartment"), p.AlertsExpanded, p.PhHidePin, c.t)
+}
+
+func backIconPx(n int) int {
+	if n <= 0 {
+		return 16
+	}
+	return n
 }

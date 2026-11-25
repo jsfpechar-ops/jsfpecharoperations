@@ -23,10 +23,12 @@ func pageSet(names ...string) *template.Template {
 }
 
 var (
-	claimSet   = pageSet("templates/claim.tmpl")
-	confirmSet = pageSet("templates/confirm.tmpl")
-	unavailSet = pageSet("templates/unavailable.tmpl")
-	guideSet   = pageSet("templates/guide.tmpl")
+	claimSet    = pageSet("templates/claim.tmpl")
+	confirmSet  = pageSet("templates/confirm.tmpl")
+	unavailSet  = pageSet("templates/unavailable.tmpl")
+	guideSet    = pageSet("templates/guide.tmpl")
+	staySet     = pageSet("templates/stay.tmpl", "templates/fee_pay.tmpl")
+	assignedSet = pageSet("templates/assigned.tmpl")
 )
 
 // unavailableTitles is guest.py _unavailable's titles table.
@@ -95,6 +97,14 @@ func (g guestAccess) unavailableNote(w http.ResponseWriter, r *http.Request, lan
 	view.OfferMessageHost = reason == "already_filed" || reason == "form_locked" || reason == "not_yours"
 	view.HostMessageURL = hostMessageURL(apt, hostContact(r.Context(), g.pool, apt))
 	g.render(w, r, unavailSet, view, status, extra, false)
+}
+
+// WriteBadLinkPage renders the localized bad_link view for a guest-path 404 or
+// 405 from the Go catch-all. It takes no token and no pool, so it makes no
+// database or provider call and builds no stay or restart link. The language
+// comes from the request, as Python's guest error page does.
+func WriteBadLinkPage(w http.ResponseWriter, r *http.Request, status int) {
+	guestAccess{}.unavailableNote(w, r, Language(r), "bad_link", status, "", 0, "", nil)
 }
 
 // renderPage writes one guest page with the guest language cookie.
@@ -172,17 +182,6 @@ func (v confirmView) T(key string, kv ...any) string { return v.Page.T(key, kv..
 
 // GetLang lets render set the guest language cookie.
 func (v confirmView) GetLang() string { return v.Lang }
-
-// assignedView is guest/assigned.html: the stay was claimed on another device.
-type assignedView struct {
-	Page
-	StayFrom, StayTo string
-}
-
-func (v assignedView) T(key string, kv ...any) string { return v.Page.T(key, kv...) }
-
-// GetLang lets render set the guest language cookie.
-func (v assignedView) GetLang() string { return v.Lang }
 
 // canPickOtherStays is guest.py _can_pick_other_stays.
 func canPickOtherStays(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, now func() time.Time) bool {
