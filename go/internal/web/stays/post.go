@@ -110,7 +110,7 @@ func (c *postCall) apartment(ctx context.Context, id int64) (*createApt, error) 
 	var a createApt
 	var archived *string
 	var active int
-	err := c.pool.QueryRow(ctx, `SELECT id, COALESCE(name, ''), COALESCE(permalink_token, ''), active, archived_at FROM apartment
+	err := c.pool.QueryRow(ctx, `SELECT id, COALESCE(internal_name, ''), COALESCE(permalink_token, ''), active, archived_at FROM apartment
 		WHERE id = $1 AND owner_user_id IS NOT DISTINCT FROM $2`, id, c.owner).Scan(&a.id, &a.name, &a.permalink, &active, &archived)
 	if errorsIsNoRows(err) {
 		return nil, nil
