@@ -676,8 +676,6 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert geometry["viewport"]["scrollWidth"] <= width, (geometry["viewport"], offenders)
                 rows = page.locator(".stays-desk tbody tr")
                 assert rows.count() >= 4
-                visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                more_controls = [item for item in visible_actions if item["isMenu"]]
                 assert page.locator(".stays-desk td.row-actions").count() == 0
                 assert page.locator("button.stays-head-menu-btn").is_visible()
                 assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
