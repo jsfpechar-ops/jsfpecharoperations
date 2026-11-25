@@ -73,6 +73,9 @@ func TestTransportChainResetsAndAuthIsNotBackedOff(t *testing.T) {
 	if got, _ := TransportBackoffFromRows([]TransportRow{tr(5), {State: "transport_error", Cause: "auth", FinishedAt: backoffNow.Add(-10 * time.Minute).Format(time.RFC3339)}}, backoffNow); !got.Equal(backoffNow.Add(5 * time.Minute)) {
 		t.Errorf("auth ends the chain: got %v", got)
 	}
+	if got, owed := TransportBackoffFromRows([]TransportRow{{State: "transport_error", FinishedAt: ""}}, backoffNow); !owed || !got.Equal(backoffNow.Add(10*time.Minute)) {
+		t.Errorf("malformed finished_at must fail closed: got %v owed=%v", got, owed)
+	}
 }
 
 func TestFaultCodeFor(t *testing.T) {

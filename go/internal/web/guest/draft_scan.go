@@ -9,7 +9,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -20,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
@@ -118,22 +117,6 @@ type draftReservation struct {
 	apartment int64
 	dateTo    string
 	status    string
-}
-
-func (d draftScanDeps) loadReservation(ctx context.Context, token string, reservationID int64) (*draftReservation, error) {
-	var res draftReservation
-	err := d.pool.QueryRow(ctx,
-		`SELECT r.id, r.apartment_id, r.date_to::text, r.status
-		 FROM reservation r
-		 JOIN apartment a ON a.id = r.apartment_id
-		 WHERE r.id = $1 AND a.permalink_token = $2`, reservationID, token).Scan(&res.id, &res.apartment, &res.dateTo, &res.status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
 }
 
 func (d draftScanDeps) rateBlocked(ctx context.Context, scope, key string, limit int) (bool, error) {
@@ -260,21 +243,54 @@ func pragueTodayISO(now time.Time) string {
 	return now.In(loc).Format("2006-01-02")
 }
 
+func (d draftScanDeps) save() saveDeps {
+	return saveDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
+func (d draftScanDeps) form() formPageDeps {
+	return formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
+func (d draftScanDeps) draftClaimBlocked(ctx context.Context, r *http.Request, apt *Apartment, resID int64, status string) (blocked bool, hostOwned bool, err error) {
+	hostOwned = d.form().access().hostOwns(ctx, r, apt.OwnerUserID)
+	if !billingjob.MailEnabled() || hostOwned {
+		return false, hostOwned, nil
+	}
+	row, err := EnsureClaimRow(ctx, d.pool, resID, isoNow(d.now()))
+	if err != nil {
+		return false, false, err
+	}
+	if !GuestAccessOpen(status, row.guestAccessLock) || !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
+		return true, false, nil
+	}
+	return false, false, nil
+}
+
 func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		lang := langFromRequest(r)
 		token := r.PathValue("token")
 		rid, _ := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
-		res, err := d.loadReservation(ctx, token, rid)
+		apt, token, early := OpenLink(r, d.pool, token, lang)
+		if early != nil {
+			early.ServeHTTP(w, r)
+			return
+		}
+		if requirePin(w, r, d.save().shell(), token, lang, apt) {
+			return
+		}
+		_, resMeta, status, ok, err := guestSaveReservation(ctx, d.save(), r, apt, rid, token)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		if res == nil {
+		if !ok {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		rlKey := clientip.Key(r, d.getenv, "guest_draft:"+token)
+		res := &draftReservation{id: rid, apartment: resMeta.apartmentID, dateTo: resMeta.dateTo, status: status}
+		rlKey := clientip.Key(r, d.getenv, "guest_draft:"+apt.PermalinkToken)
 		blocked, err := d.rateBlocked(ctx, "guest_draft", rlKey, guestDraftMaxWrites)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
@@ -285,6 +301,19 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 			return
 		}
 		_ = d.rateRecord(ctx, "guest_draft", rlKey)
+		claimBlocked, hostOwned, err := d.draftClaimBlocked(ctx, r, apt, rid, status)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		if claimBlocked {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if hostOwned {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		if cl := r.Header.Get("Content-Length"); cl != "" {
 			n, _ := strconv.Atoi(cl)
 			if n > draftMaxBodyBytes {
@@ -292,7 +321,8 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 				return
 			}
 		}
-		if strings.TrimSpace(res.dateTo)[:10] < pragueTodayISO(d.now()) {
+		dateTo := strings.TrimSpace(res.dateTo)
+		if len(dateTo) >= 10 && dateTo[:10] < pragueTodayISO(d.now()) {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -384,18 +414,33 @@ func readUploadLimited(f multipart.File) ([]byte, error) {
 func scanPostHandler(d draftScanDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		lang := langFromRequest(r)
 		token := r.PathValue("token")
 		rid, _ := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
-		res, err := d.loadReservation(ctx, token, rid)
+		apt, token, early := OpenLink(r, d.pool, token, lang)
+		if early != nil {
+			early.ServeHTTP(w, r)
+			return
+		}
+		if requirePin(w, r, d.save().shell(), token, lang, apt) {
+			return
+		}
+		cfg, resMeta, status, ok, err := guestSaveReservation(ctx, d.save(), r, apt, rid, token)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		if res == nil {
+		if !ok {
 			scanJSON(w, http.StatusNotFound, map[string]any{"kind": "error", "message": "This stay is no longer available."})
 			return
 		}
-		if !d.ocrAvailable(ctx, res.apartment) {
+		if throttleGuestPost(w, r, d.save(), token, "guest_scan", lang) {
+			return
+		}
+		if d.form().formPagesRequireClaim(w, r, apt, formResRow{id: rid, apartmentID: resMeta.apartmentID, ownerUserID: cfg.ownerUserID, status: status, dateFrom: resMeta.dateFrom, dateTo: resMeta.dateTo, declaredGuests: resMeta.declaredGuests, overrideGuests: resMeta.overrideGuests, reducedGuests: resMeta.reducedGuests}, token, lang) {
+			return
+		}
+		if !d.ocrAvailable(ctx, resMeta.apartmentID) {
 			scanJSON(w, http.StatusServiceUnavailable, map[string]any{"kind": "unavailable"})
 			return
 		}

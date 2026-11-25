@@ -97,12 +97,22 @@ if [ "${MODE}" = "file" ]; then
   printf 'restored %s from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "${DUMP_FILE}")" > .restored-box
 fi
 
-restore_apps_up() {
-  if [ "${MODE}" = "file" ] || [ "${STACK_GO_ONLY}" != "1" ]; then
-    docker compose up -d >/dev/null 2>&1 || true
-  else
-    docker compose --profile go up -d >/dev/null 2>&1 || true
+start_stack_services() {
+  if [ "${STACK_GO_ONLY}" != "1" ]; then
+    docker compose up -d
+    return
   fi
+  local live non_slot
+  live="$(ubyhost_live_go_service)"
+  non_slot="$(docker compose config --services 2>/dev/null | grep -vxE 'ubyhost-go|ubyhost-go-b' || true)"
+  # Start non-slot services plus only the live Go slot so an idle slot A with an
+  # older image never comes up and steals Caddy traffic (lb_policy first).
+  # shellcheck disable=SC2086
+  docker compose --profile go up -d ${non_slot} "${live}"
+}
+
+restore_apps_up() {
+  start_stack_services >/dev/null 2>&1 || true
 }
 
 TMP="$(mktemp -d)"
@@ -134,11 +144,7 @@ else
 fi
 
 echo "==> Starting every service"
-if [ "${MODE}" = "file" ] || [ "${STACK_GO_ONLY}" != "1" ]; then
-  docker compose up -d
-else
-  docker compose --profile go up -d
-fi
+start_stack_services
 
 echo "==> Waiting for health"
 for _ in $(seq 1 30); do
