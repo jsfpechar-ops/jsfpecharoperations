@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -98,17 +99,19 @@ func isoStamp(t time.Time) string {
 }
 
 type createApt struct {
-	id       int64
-	active   bool
-	archived bool
+	id        int64
+	name      string
+	permalink string
+	active    bool
+	archived  bool
 }
 
 func (c *postCall) apartment(ctx context.Context, id int64) (*createApt, error) {
 	var a createApt
 	var archived *string
 	var active int
-	err := c.pool.QueryRow(ctx, `SELECT id, active, archived_at FROM apartment
-		WHERE id = $1 AND owner_user_id IS NOT DISTINCT FROM $2`, id, c.owner).Scan(&a.id, &active, &archived)
+	err := c.pool.QueryRow(ctx, `SELECT id, COALESCE(name, ''), COALESCE(permalink_token, ''), active, archived_at FROM apartment
+		WHERE id = $1 AND owner_user_id IS NOT DISTINCT FROM $2`, id, c.owner).Scan(&a.id, &a.name, &a.permalink, &active, &archived)
 	if errorsIsNoRows(err) {
 		return nil, nil
 	}
@@ -271,13 +274,25 @@ func CreateHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 			return
 		}
 
-		// Claim mail on create is still Python-only (claim.start_claim); stay
-		// creation must succeed even when mail is unavailable.
+		// Stay creation must succeed even when mail is unavailable or claim seeding fails.
 		guestAddr := ubyport.NormaliseEmail(formStr(r, "guest_email"))
 		party := formInt(r, "expected_guests")
-		if !calJSON && guestAddr != "" && party != nil && *party >= 1 {
-			// no-op until claim.start_claim is ported to Go
-			_ = guestAddr
+		if !calJSON && guestAddr != "" && party != nil && *party >= 1 && billingjob.MailEnabled() {
+			ok, _, _, cerr := StartClaim(
+				ctx,
+				ClaimSeedDeps{Pool: pool, Getenv: d.getenv, Now: d.now},
+				SeedReservation{ID: id, ApartmentID: *apartmentID, Status: "active"},
+				SeedApartment{ID: apt.id, OwnerUserID: c.owner, Name: apt.name, PermalinkToken: apt.permalink},
+				guestAddr,
+				int(*party),
+				"en",
+				false,
+			)
+			if cerr != nil {
+				log.Printf("stays create: claim mail failed, reservation=%d: %v", id, cerr)
+			} else if ok {
+				_ = c.editAudit(ctx, "guest_link_sent_on_create", fmt.Sprintf("reservation=%d", id))
+			}
 		}
 
 		if calJSON {
