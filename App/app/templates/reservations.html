@@ -224,7 +224,7 @@
           {% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>
           {% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>
           {% if reservation.status == 'active' %}<a class="stay-noname-action" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stays.row.add_guest') }}</a>{% endif %}{% endif %}
-          <small>{{ source_badge(reservation.source, source_label(reservation)) }}</small>
+          <small>{% if progress.expected is none and not progress.guests %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}{{ source_badge(reservation.source, source_label(reservation)) }}</small>
         </td>
         <td class="stays-col-prop" data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
         <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.dates') }}">
@@ -237,7 +237,7 @@
           </small>
         </td>
         <td class="nowrap stays-col-guests" data-card="guests" data-label="{{ t('stays.table.guests') }}">
-          {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted" aria-label="{{ t('common.guests_unknown') }}">–</span>{% endif %}
+          {% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }}{% else %}<span class="muted" aria-hidden="true">–</span>{% endif %}
         </td>
         <td data-card="badge" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>

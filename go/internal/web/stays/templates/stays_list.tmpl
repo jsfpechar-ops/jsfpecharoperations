@@ -67,7 +67,7 @@
     {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
     {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
     {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
-    <small>{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
+    <small>{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
   </td>
   <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
   <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}">
@@ -77,7 +77,7 @@
     </small>
   </td>
   <td class="nowrap stays-col-guests" data-card="guests" data-label="{{t "stays.table.guests"}}">
-    {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-label="{{t "common.guests_unknown"}}">–</span>{{end}}
+    {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
   </td>
   <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
