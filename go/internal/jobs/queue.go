@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -15,11 +16,13 @@ import (
 )
 
 const (
-	LeaseMinutes = 60
-	MaxAttempts  = 5
-	drainLimit   = 50
-	pollEvery    = 15 * time.Second
-	defaultCap   = 60
+	LeaseMinutes    = 60
+	MaxAttempts     = 5
+	drainLimit      = 50
+	pollEvery       = 15 * time.Second
+	defaultCap      = 60
+	stuckCheckEvery = 5 * time.Minute
+	stuckMaxAge     = 120 * time.Minute
 )
 
 var backoffMinutes = []int{1, 5, 15, 60}
@@ -165,6 +168,72 @@ func RaiseFailed(ctx context.Context, pool *pgxpool.Pool, kind string) error {
 	return err
 }
 
+// unclaimedKinds returns configured kinds whose oldest due row has remained
+// unleased beyond twice its interval, capped at two hours.
+func unclaimedKinds(ctx context.Context, pool *pgxpool.Pool, kinds []string, intervals map[string]int, now time.Time) ([]string, error) {
+	rows, err := pool.Query(ctx, `
+		SELECT kind, MIN(run_at) FROM job
+		WHERE done_at IS NULL AND dead_at IS NULL
+		  AND (locked_at IS NULL OR locked_at < $1)
+		GROUP BY kind`, timestamp(now.UTC().Add(-LeaseMinutes*time.Minute)))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	allowed := make(map[string]struct{}, len(kinds))
+	for _, kind := range kinds {
+		allowed[kind] = struct{}{}
+	}
+	stuck := make([]string, 0)
+	for rows.Next() {
+		var kind string
+		var runAtText string
+		if err := rows.Scan(&kind, &runAtText); err != nil {
+			return nil, err
+		}
+		runAt, err := time.Parse(time.RFC3339, runAtText)
+		if err != nil {
+			return nil, err
+		}
+		interval, configured := intervals[kind]
+		_, included := allowed[kind]
+		if !configured || !included || interval <= 0 {
+			continue
+		}
+		slack := 0
+		if interval < 15 {
+			slack = 15
+		}
+		age := time.Duration(min(2*interval+slack, int(stuckMaxAge/time.Minute))) * time.Minute
+		if runAt.Before(now.Add(-age)) {
+			stuck = append(stuck, kind)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	sort.Strings(stuck)
+	return stuck, nil
+}
+
+func timestamp(value time.Time) string {
+	return value.UTC().Truncate(time.Second).Format("2006-01-02T15:04:05-07:00")
+}
+
+func watchUnclaimed(ctx context.Context, pool *pgxpool.Pool, kinds []string, intervals map[string]int, now time.Time) {
+	stuck, err := unclaimedKinds(ctx, pool, kinds, intervals, now)
+	if err != nil {
+		slog.Error("unclaimed job check failed", "error", fmt.Sprintf("%T", err))
+		return
+	}
+	for _, kind := range stuck {
+		slog.Warn("queued job unclaimed past its interval", "job", kind)
+		if err := RaiseFailed(ctx, pool, kind); err != nil {
+			slog.Error("unclaimed job alert not raised", "job", kind)
+		}
+	}
+}
+
 // recordOK resolves the job_failed alert and stores job_last_ok:<kind>.
 func recordOK(ctx context.Context, pool *pgxpool.Pool, kind string) {
 	if _, err := pool.Exec(ctx,
@@ -183,7 +252,12 @@ func recordOK(ctx context.Context, pool *pgxpool.Pool, kind string) {
 func Run(ctx context.Context, pool *pgxpool.Pool, kinds []string, handlers map[string]Handler, intervals map[string]int) {
 	ticker := time.NewTicker(pollEvery)
 	defer ticker.Stop()
+	lastStuckCheck := time.Time{}
 	for {
+		if time.Since(lastStuckCheck) >= stuckCheckEvery {
+			watchUnclaimed(ctx, pool, kinds, intervals, time.Now().UTC())
+			lastStuckCheck = time.Now()
+		}
 		drain(ctx, pool, kinds, handlers, intervals)
 		select {
 		case <-ctx.Done():

@@ -15,9 +15,9 @@
 <table class="ui-table" aria-label="{{lqT .Lang "guest_questions.title"}}">
 <thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead>
 <tbody>{{range .Questions}}
-<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link">
-  <td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td>
-  <td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td>
+<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link" aria-label="{{.Question}}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{$.Base}}/{{.ID}}">{{.Question}}</a><span class="ui-sub"> {{.Day}} · {{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}}</span></td>
+  <td data-card="badge">{{if and (eq .Status "open") (gt .Urgent 0)}}{{ui_badge "attention" (lqT $.Lang "guest_questions.badge.urgent")}} {{end}}{{if and (eq .Status "open") (eq .Triaged 0)}}{{ui_badge "neutral" (lqT $.Lang "guest_questions.badge.unread")}} {{end}}{{if eq .Status "open"}}{{ui_badge "action" (lqT $.Lang "guest_questions.state.open")}}{{else if eq .Status "answered"}}{{ui_badge "done" (lqT $.Lang "guest_questions.state.answered")}}{{else}}{{ui_badge "neutral" (lqT $.Lang "guest_questions.state.dismissed")}}{{end}}</td>
 </tr>
 {{end}}</tbody>
 </table>
@@ -31,26 +31,50 @@
   <a class="airbnb-back" href="{{.Base}}" aria-label="{{lqT .Lang "common.back"}}">{{icon "arrow-left" 20}}</a>
   <h1 class="airbnb-title">{{lqT .Lang "guest_question.title"}}</h1>
 </div>
+<div class="ui-sub">{{.CreatedDay}} · {{if eq .Door "qr"}}{{lqT .Lang "guest_questions.door.qr"}}{{else}}{{lqT .Lang "guest_questions.door.stay"}}{{end}}</div>
 {{if .Error}}{{ui_banner "attention" (lqT .Lang .Error)}}{{end}}
-<p class="ui-sub">{{lqT .Lang "guest_question.asked"}}</p>
-<blockquote class="guest-q">{{.QuestionText}}</blockquote>
-{{if .Summary}}<p><strong>{{lqT .Lang "guest_question.summary"}}</strong> {{.Summary}}</p>{{end}}
-<form method="post" action="{{.Base}}/{{.QuestionID}}">
-<input type="hidden" name="_csrf" value="{{csrf}}">
-<label class="ui-field" for="answer"><span>{{lqT .Lang "guest_question.your_answer"}}</span>
-<textarea class="ui-input" id="answer" name="answer" rows="6" maxlength="{{.MaxChars}}" placeholder="{{lqT .Lang "guest_question.answer_placeholder"}}">{{.AnswerDraft}}</textarea></label>
-<div class="ui-form-actions">
-<button class="ui-btn ui-btn-primary" type="submit">{{lqT .Lang "guest_question.send"}}</button>
-<button class="ui-btn ui-btn-secondary" formaction="{{.Base}}/{{.QuestionID}}/dismiss" formmethod="post">{{lqT .Lang "guest_question.dismiss"}}</button>
-</div>
-</form>
-{{if .Answered}}
+{{if .Urgent}}{{ui_banner "attention" (lqT .Lang "guest_question.urgent_banner")}}{{end}}
+<section class="ui-section" id="question"><div class="ui-section-h"><h2>{{lqT .Lang "guest_question.asked"}}</h2></div>
+{{if .Urgent}}{{ui_badge "attention" (lqT .Lang "guest_questions.badge.urgent")}} {{end}}{{if not .Triaged}}{{ui_badge "neutral" (lqT .Lang "guest_questions.badge.unread")}}{{end}}
+{{range .QuestionLines}}<p>{{.}}</p>{{end}}
+{{if .SummaryDiffers}}<p class="ui-sub">{{lqT .Lang "guest_question.summary"}}</p>{{range .SummaryLines}}<p>{{.}}</p>{{end}}{{end}}
+</section>
+{{if eq .Status "answered"}}
+<section class="ui-section" id="answer"><div class="ui-section-h"><h2>{{lqT .Lang "guest_question.your_answer"}}</h2></div>
+{{range .AnswerLines}}<p>{{.}}</p>{{end}}
+<p class="ui-sub">{{lqT .Lang "guest_question.shown_to_guest"}}</p>
+</section>
+<section class="ui-section" id="card"><div class="ui-section-h"><h2>{{lqT .Lang "guest_question.card.title"}}</h2></div>
+{{if .CardID}}
+<p class="ui-sub">{{lqT .Lang "guest_question.card.done"}}</p>
+<div class="ui-form-actions">{{ui_button (lqT .Lang "guest_question.card.open") "secondary" (kv "href" (printf "/apartments/%d/guide/%d" .ApartmentID .CardID))}}</div>
+{{else}}
+<p class="ui-sub">{{lqT .Lang "guest_question.card.help"}}</p>
 <form method="post" action="{{.Base}}/{{.QuestionID}}/card">
 <input type="hidden" name="_csrf" value="{{csrf}}">
-<label class="ui-field" for="topic"><span>{{lqT .Lang "guest_question.topic"}}</span>
-<select class="ui-input" id="topic" name="topic">{{range .Topics}}<option value="{{.}}">{{.}}</option>{{end}}</select></label>
-<div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{lqT .Lang "guest_question.add_to_guide"}}</button></div>
+{{ui_select "question-topic" (lqT .Lang "guest_guide.add.topic") .TopicOptions (kv "selected" "rules" "name" "topic")}}
+<div class="ui-form-actions">{{ui_button (lqT .Lang "guest_question.card.button") "primary" (kv "type" "submit" "icon_name" "plus")}}</div>
 </form>
+{{end}}
+</section>
+{{else}}
+<section class="ui-section" id="answer"><div class="ui-section-h"><h2>{{lqT .Lang "guest_question.your_answer"}}</h2></div>
+{{if eq .Status "dismissed"}}{{ui_banner "neutral" (lqT .Lang "guest_question.dismissed_banner")}}{{end}}
+<form method="post" action="{{.Base}}/{{.QuestionID}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_textarea "question-answer" (lqT .Lang "guest_question.field.answer") (kv "value" .AnswerDraft "name" "answer" "help" (lqT .Lang "guest_question.field.answer_help" "max" .MaxChars) "rows" 5 "attrs" (safe (printf "maxlength=\"%d\" required" .MaxChars)))}}
+<div class="ui-form-actions">{{ui_button (lqT .Lang "guest_question.send") "primary" (kv "type" "submit" "icon_name" "send")}}</div>
+</form>
+</section>
+{{if eq .Status "open"}}
+<section class="ui-section" id="more"><div class="ui-section-h"><h2>{{lqT .Lang "guest_guide.more.title"}}</h2></div>
+<form method="post" action="{{.Base}}/{{.QuestionID}}/dismiss">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<p class="ui-sub">{{lqT .Lang "guest_question.dismiss_help"}}</p>
+<div class="ui-form-actions">{{ui_button (lqT .Lang "guest_question.dismiss") "quiet" (kv "type" "submit")}}</div>
+</form>
+</section>
+{{end}}
 {{end}}
 </div>
 {{end}}

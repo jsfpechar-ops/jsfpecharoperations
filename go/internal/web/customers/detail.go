@@ -325,7 +325,7 @@ func DetailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 			return
 		}
 		p := layout.Page{Title: view.Name, Nav: "users", BodyKind: "detail", V2: true, AdminWorkspace: true,
-			BackURL: page}
+			BackURL: page, BackIconPx: 20}
 		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, p, pages, "admin_customer", view); err != nil {
 			serverError(w, err)
 		}

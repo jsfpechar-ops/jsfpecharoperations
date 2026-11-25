@@ -310,10 +310,10 @@
         {{if gt (len $.ChildSigners) 1}}
         <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text" {{if $.FieldIsInvalid "signed_by"}}aria-invalid="true" aria-describedby="signed_by-error" {{end}}>
           <p class="g-intro" id="sign-for-who-text">{{$.T "sign_for_who"}}</p>
-          {{range $.ChildSigners}}
+          {{range $i, $s := $.ChildSigners}}
           <label class="checkline">
-            <input type="radio" name="signed_by" value="{{.ID}}"{{if eq $.SelectedSigner .ID}} checked{{end}}>
-            <span>{{.Name}}</span>
+            <input type="radio" name="signed_by" value="{{$s.ID}}"{{if eq $i 0}} id="signed_by"{{end}}{{if eq $.SelectedSigner $s.ID}} checked{{end}}>
+            <span>{{$s.Name}}</span>
           </label>
           {{end}}
           {{$.ErrHTML "signed_by"}}

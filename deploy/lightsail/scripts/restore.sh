@@ -53,7 +53,7 @@ if [ -z "${STAMP}" ]; then
   exit 1
 fi
 
-if ! printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$'; then
+if ! printf '%s' "${STAMP}" | grep -E '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' >/dev/null; then
   echo "Stamp '${STAMP}' is not a backup name like 20260915T030000Z." >&2
   exit 1
 fi

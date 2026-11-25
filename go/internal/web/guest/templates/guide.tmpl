@@ -52,5 +52,49 @@
       </div>
     {{end}}
   {{end}}
+  {{if .LeonURL}}{{template "leon" .}}{{end}}
 {{end}}
 {{end}}
+{{define "leon"}}<section class="g-card g-leon" id="leon" aria-labelledby="leon-title" data-leon
+  data-leon-url="{{.LeonURL}}"
+  data-label-leon="{{.T "leon_name"}}"
+  data-label-you="{{.T "leon_you"}}"
+  data-label-host="{{if .LeonHost}}{{.T "leon_host_answered" "host" .LeonHost}}{{else}}{{.T "leon_host_answered_plain"}}{{end}}"
+  data-text-send="{{.T "leon_send"}}"
+  data-text-sending="{{.T "leon_sending"}}"
+  data-text-other="{{.T "leon_sit_other"}}"
+  data-text-other-prompt="{{.T "leon_other_prompt"}}"
+  data-text-error="{{.T "leon_error"}}"
+  data-text-reload="{{.T "leon_error_reload"}}"
+  data-text-queued="{{.T "leon_queued"}}"
+  data-text-see-card="{{.T "leon_see_card"}}"
+  data-text-welcome="{{.T "leon_welcome"}}">
+  <div class="g-leon-head">
+    <span class="g-leon-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span>
+    <div class="g-leon-head-text"><h2 id="leon-title">{{.T "leon_name"}} <span class="g-leon-tag">{{.T "leon_tag"}}</span></h2><p class="g-leon-role">{{.T "leon_role"}}</p></div>
+  </div>
+  <p class="g-intro">{{.T "leon_intro"}}</p>
+  <noscript><p class="g-leon-nojs" data-leon-nojs>{{.T "leon_needs_js"}}</p></noscript>
+  <ul hidden data-leon-situations>
+    <li data-key="cant_get_in" data-kinds="keys checkin">{{.T "leon_sit_cant_get_in"}}</li>
+    <li data-key="cold" data-kinds="heating hot_water air_conditioning">{{.T "leon_sit_cold"}}</li>
+    <li data-key="broken" data-kinds="something_wrong">{{.T "leon_sit_broken"}}</li>
+    <li data-key="parking" data-kinds="parking garage">{{.T "leon_sit_parking"}}</li>
+    <li data-key="trash" data-kinds="trash">{{.T "leon_sit_trash"}}</li>
+    <li data-key="checkout" data-kinds="checkout">{{.T "leon_sit_checkout"}}</li>
+    <li data-key="emergency" data-kinds="emergency" data-help="{{.T "leon_sit_emergency_help"}}">{{.T "leon_sit_emergency"}}</li>
+  </ul>
+  <div class="g-leon-log" role="log" aria-live="polite" aria-labelledby="leon-title" data-leon-log hidden></div>
+  <p class="g-leon-waiting" role="status" data-leon-waiting hidden>{{.T "leon_waiting"}}</p>
+  <form class="g-leon-form" method="post" action="{{.LeonURL}}" data-leon-form hidden>
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <label class="g-leon-label g-sr-only" for="leon-message">{{.T "leon_label"}}</label>
+    <div class="g-leon-pill">
+      <textarea id="leon-message" name="message" rows="1" maxlength="500"
+        placeholder="{{.T "leon_placeholder"}}" data-leon-input></textarea>
+      <button type="submit" class="g-leon-send" data-leon-send aria-label="{{.T "leon_send"}}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+    </div>
+    <span class="g-leon-count" aria-hidden="true" data-leon-count hidden>0 / 500</span>
+    <p class="g-leon-error" role="alert" data-leon-error hidden></p>
+  </form>
+</section>{{end}}

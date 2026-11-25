@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -28,7 +27,6 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mailjob"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -781,33 +779,7 @@ func startClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *c
 }
 
 func enqueueClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, party int, stamp string) error {
-	if !billingjob.MailEnabled() {
-		return nil
-	}
 	base := strings.TrimRight(hostweb.PublicBase(d.getenv), "/")
 	link := fmt.Sprintf("%s/l/%s/%d/claim#c=%s", base, apt.permalink, st.id, claimSecretMarker)
-	subject := hostweb.HostStrings.T(lang, "mail_claim_resend_subject", map[string]any{"property": apt.name})
-	if subject == "mail_claim_resend_subject" {
-		subject = "New link: confirm your stay"
-	}
-	keys, err := secure.LoadDataKeys(d.getenv)
-	if err != nil {
-		return err
-	}
-	enc, err := keys.EncryptString(secret)
-	if err != nil {
-		return err
-	}
-	payload, _ := json.Marshal(map[string]string{
-		"text": link, "html": link, "lang": lang, "claim_secret_enc": enc,
-	})
-	owner := apt.ownerID
-	res := st.id
-	aptID := apt.id
-	_, err = ubyport.EnqueueMail(ctx, d.pool, ubyport.OutboxMail{
-		Kind: "claim_resend", Key: fmt.Sprintf("claim_resend:%d:v%d", st.id, version),
-		ReservationID: &res, ApartmentID: &aptID, OwnerUserID: &owner,
-		To: addr, Subject: subject, Payload: string(payload),
-	})
-	return err
+	return enqueueClaimMail(ctx, d, st, apt, addr, lang, secret, version, true, link, stamp)
 }

@@ -17,7 +17,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -30,8 +30,8 @@ const (
 )
 
 // RegisterFormSave wires POST /l/{token}/{reservation_id}/save (dormant until UBYHOST_GO_PATHS).
-func RegisterFormSave(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	d := saveDeps{pool: pool, getenv: getenv, now: now}
+func RegisterFormSave(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, hooks CompletionHooks) {
+	d := saveDeps{pool: pool, getenv: getenv, now: now, hooks: hooks}
 	mux.Handle("POST /l/{token}/{reservation_id}/save", wrap("POST /l/{token}/{reservation_id}/save", WithPOSTCSRF(getenv, now, guestFormSaveHandler(d))))
 }
 
@@ -39,6 +39,7 @@ type saveDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	hooks  CompletionHooks
 }
 
 func (d saveDeps) shell() shellDeps {
@@ -51,8 +52,41 @@ type guestSaveRow struct {
 	restrictedAt string
 	signaturePNG string
 	lastErrors   string
+	surname      string
+	firstName    string
+	birthDate    string
+	nationality  string
+	docNumber    string
+	visaNumber   string
+	resStreet    string
+	resCity      string
+	resCountry   string
+	purpose      string
+	note         string
 	stayFrom     string
 	stayTo       string
+	enteredBy    string
+	// identityVerifiedAt and passportPhotoAt are stored timestamps ("" when unset).
+	identityVerifiedAt string
+	passportPhotoAt    string
+}
+
+func (g *guestSaveRow) ubyGuest() ubyport.Guest {
+	return ubyport.Guest{
+		StayFrom:    g.stayFrom,
+		StayTo:      g.stayTo,
+		Surname:     g.surname,
+		FirstName:   g.firstName,
+		BirthDate:   g.birthDate,
+		Nationality: g.nationality,
+		DocNumber:   g.docNumber,
+		VisaNumber:  g.visaNumber,
+		ResStreet:   g.resStreet,
+		ResCity:     g.resCity,
+		ResCountry:  g.resCountry,
+		Purpose:     g.purpose,
+		Note:        g.note,
+	}
 }
 
 // guestResMeta is loaded by brief 1721 stay helpers.
@@ -79,11 +113,27 @@ func guestFormSaveHandler(d saveDeps) http.HandlerFunc {
 	}
 }
 
+// guestMaxMultipart mirrors hostweb csrfMaxMultipart (a 10 MiB photo plus the
+// form fields). Keep the two values equal.
+const guestMaxMultipart = 11 << 20
+
 func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter, r *http.Request) error {
 	if d.pool == nil {
 		return errors.New("guest form save: nil pool")
 	}
-	if err := r.ParseForm(); err != nil {
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		if r.MultipartForm == nil {
+			r.Body = http.MaxBytesReader(w, r.Body, guestMaxMultipart)
+			if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
+				return err
+			}
+		}
+		defer func() {
+			if r.MultipartForm != nil {
+				_ = r.MultipartForm.RemoveAll()
+			}
+		}()
+	} else if err := r.ParseForm(); err != nil {
 		return err
 	}
 	token := r.PathValue("token")
@@ -101,12 +151,18 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if requirePin(w, r, d.shell(), token, lang, apt) {
 		return nil
 	}
-	cfg, res, ok := reservationForGuest(ctx, d.pool, apt, resID, d.getenv)
+	cfg, res, status, ok, accessErr := guestSaveReservation(ctx, d, r, apt, resID, token)
+	if accessErr != nil {
+		return accessErr
+	}
 	if !ok {
 		guestUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, resID)
 		return nil
 	}
 	if throttleGuestPost(w, r, d, token, "guest_save", lang) {
+		return nil
+	}
+	if (formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}).formPagesRequireClaim(w, r, apt, formResRow{id: resID, apartmentID: res.apartmentID, ownerUserID: cfg.ownerUserID, status: status, dateFrom: res.dateFrom, dateTo: res.dateTo, declaredGuests: res.declaredGuests, overrideGuests: res.overrideGuests, reducedGuests: res.reducedGuests}, token, lang) {
 		return nil
 	}
 	form := postForm(r)
@@ -139,17 +195,64 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if child {
 		sig = ""
 	}
-	issues := guestSaveValidateIssues(form, cfg, res, values, raw, stayFrom, stayTo, sig, child, existing, legalToday(d.now))
+	issues := guestSaveValidateIssues(form, res, values, raw, stayFrom, stayTo, sig, child, existing, legalToday(d.now), lang)
+	var existingID int64
+	if existing != nil {
+		existingID = existing.id
+	}
+	// guest.py:2473 — if a child ticked a role with multiple eligible adults and
+	// chose none, ask instead of silently dropping the link.
+	if child && isSignForRole(strings.TrimSpace(form["child_sign_role"])) && strings.TrimSpace(form["signed_by"]) == "" {
+		signers, _ := formU15Lists(ctx, d.pool, resID, existingID, formPagesOwnedIDs(r, d.getenv), d.getenv, d.now, res.dateFrom)
+		if len(signers) > 1 {
+			issues = append(issues, validation.Issue{Field: "signed_by", Message: signForWhoMissingText(lang), Severity: "error"})
+		}
+	}
+	// guest.py:2483 — a required-photo property needs a passport photo from a foreign guest.
+	// The file is read and validated before anything is written; a valid upload is stored after the row.
+	var photoBody []byte
+	var photoExt string
+	storedNat, storedBy, storedVerified := values.Nationality, "guest", ""
+	if existing != nil {
+		storedNat, storedBy, storedVerified = existing.nationality, existing.enteredBy, existing.identityVerifiedAt
+	}
+	if passportRequired(apt.PassportPhotoPolicy, storedNat, storedBy, storedVerified) {
+		hasExisting := existing != nil && existing.passportPhotoAt != "" && passportphotos.Has(guestDataDir(d.getenv), existing.id)
+		file, hdr, ferr := r.FormFile("passport_photo")
+		present := ferr == nil && hdr != nil && !(hdr.Size == 0 && hdr.Filename == "")
+		if present {
+			raw, rerr := readUploadLimited(file)
+			_ = file.Close()
+			if rerr != nil {
+				return rerr
+			}
+			body, ext, perr := passportphotos.Prepare(raw, hdr.Header.Get("Content-Type"))
+			if perr != nil {
+				issues = append(issues, validation.Issue{Field: "passport_photo", Message: passportUploadText(lang, perr.Error()), Severity: "error"})
+			} else {
+				photoBody, photoExt = body, ext
+			}
+		} else if !hasExisting {
+			issues = append(issues, validation.Issue{Field: "passport_photo", Message: stringsCatalog.T(lang, "passport_photo_missing", nil), Severity: "error"})
+		}
+	}
 	// guest.py:2518 — name the field that holds another alphabet, then word every
 	// sentence for the guest. Both passes run before the refusal is tested, so a
 	// translated sentence is what the page shows and what the log counts.
 	issues = localizeIssues(nameLatinIssues(issues, lang), lang)
 	if len(validation.ErrorsOnly(issues)) > 0 {
-		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, raw, values, stayFrom, stayTo, issues)
+		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, form, raw, values, stayFrom, stayTo, sig, issues)
 		return nil
 	}
 	nowS := utcStamp(d.now)
-	payload := buildSavePayload(values, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing)
+	var signFor map[string]any
+	if child {
+		signFor, err = resolveChildSignerFields(ctx, d, r, resID, res.dateFrom, existingID, form["signed_by"], form["child_sign_role"], nowS)
+		if err != nil {
+			return err
+		}
+	}
+	payload := buildSavePayload(values, res, stayFrom, stayTo, sig, child, lang, cfg.noticeVersion, nowS, existing, signFor)
 	var savedID int64
 	if existing != nil {
 		ok, err := updateGuestSaveRow(ctx, d, existing, payload)
@@ -162,64 +265,165 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		savedID = existing.id
 	} else {
-		partySize, _ := strconv.Atoi(strings.TrimSpace(form["party_size"]))
-		savedID, err = insertGuestSaveRow(ctx, d, payload, resID, res, partySize)
-		if err != nil {
-			return err
+		partySize, _ := strconv.Atoi(validation.Strip(form["party_size"]))
+		ins, insErr := insertGuestSaveRow(ctx, d, payload, resID, res, partySize)
+		if insErr != nil {
+			return insErr
 		}
+		if ins.countCode != "" {
+			if err := auditHeadcountCount(ctx, d.pool, d.now, resID, ins.countCode, ins.countOld, partySize, cfg.ownerUserID); err != nil {
+				return err
+			}
+		}
+		savedID = ins.id
 		if savedID == 0 {
-			_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+			if ins.countSaved {
+				_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+			}
 			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
+		}
+	}
+	// guest.py:2709 — store the prepared photo and stamp it only after the file is durable.
+	if photoBody != nil {
+		keys, kerr := secure.LoadDataKeys(d.getenv)
+		if kerr != nil {
+			return kerr
+		}
+		if err := passportphotos.SavePrepared(guestDataDir(d.getenv), keys, savedID, photoBody, photoExt); err != nil {
+			return err
+		}
+		if _, err := d.pool.Exec(ctx, `UPDATE guest SET passport_photo_at = $1, updated_at = $1 WHERE id = $2 AND reservation_id = $3`, nowS, savedID, resID); err != nil {
+			return err
+		}
+	}
+	if !child && validation.CertainlyAtLeastAge(values.BirthDate, parseDatePtr(stayFrom), adultSignerAge) {
+		if err := linkSignedChildren(ctx, d, r, resID, res.dateFrom, savedID, r.PostForm["sign_for_ids"], form["sign_for_role"], nowS); err != nil {
+			return err
 		}
 	}
 	if err := auditGuestFormSaved(ctx, d.pool, savedID, resID, cfg.ownerUserID, lang, d.now); err != nil {
 		return err
 	}
 	_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+	runCompletion(ctx, d.hooks, res.apartmentID, resID)
 	rememberOwnedGuestIDs(w, d.getenv, append(ownedGuestIDs(r, d.getenv), savedID))
-	loc := GuestLink(token, resID, LangQuery(lang, ""))
-	if existing == nil {
-		loc = GuestLink(token, resID, "/new"+LangQuery(lang, ""))
+	// Python: continue to the next guest while some are missing, else the stay
+	// link; with nothing missing and fee rails, jump to #fee-pay.
+	var missing *int
+	if fresh, okFresh := formPagesReservation(ctx, d.pool, apt, resID, r); okFresh {
+		missing = formPagesProgress(ctx, d.pool, fresh).remaining
 	}
+	tail, frag := "", ""
+	if existing == nil && missing != nil && *missing > 0 {
+		tail = "/new"
+	} else if missing != nil && *missing == 0 {
+		fee := stayClaimDeps{pool: d.pool, getenv: d.getenv, now: d.now}.loadFeePanel(ctx, resID, res.apartmentID, "")
+		if fee != nil && len(fee.Rails) > 0 {
+			frag = "#fee-pay"
+		}
+	}
+	loc := GuestLink(token, resID, tail+LangQuery(lang, "&saved=1")+frag)
 	WithLang(w, d.getenv, lang)
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
 }
 
-func guestSaveFormContract(form map[string]string) guestcontract.GuestForm {
-	return guestcontract.GuestForm{
-		Surname: form["surname"], FirstName: form["first_name"], BirthDate: form["birth_date"],
-		Nationality: form["nationality"], DocNumber: form["doc_number"], VisaNumber: form["visa_number"],
-		ResStreet: form["res_street"], ResCity: form["res_city"], ResCountry: form["res_country"],
-		Purpose: form["purpose"], Note: form["note"], ParentDocNumber: form["parent_doc_number"],
-		Signature: form["signature"], PartySize: form["party_size"], LegalAck: form["legal_ack"] != "",
-		ChildSignRole: form["child_sign_role"], SignedBy: form["signed_by"],
+// guestSaveReservation follows the picker fast path before its reachback fallback.
+func guestSaveReservation(ctx context.Context, d saveDeps, r *http.Request, apt *Apartment, resID int64, token string) (guestFormCfg, guestResMeta, string, bool, error) {
+	if d.pool == nil || apt == nil || resID <= 0 {
+		return guestFormCfg{}, guestResMeta{}, "", false, nil
 	}
+	pa, found := loadPickApartment(ctx, d.pool, apt.ID)
+	if !found || pa.PermalinkToken != apt.PermalinkToken {
+		return guestFormCfg{}, guestResMeta{}, "", false, nil
+	}
+	today := pragueTodayPick(d.now())
+	visible, err := visibleReservations(ctx, d.pool, pa, today)
+	if err != nil {
+		return guestFormCfg{}, guestResMeta{}, "", false, err
+	}
+	eligible := false
+	for _, row := range visible {
+		if row.ID == resID {
+			eligible = true
+			break
+		}
+	}
+	var cfg guestFormCfg
+	var res guestResMeta
+	var status, source string
+	var locked *string
+	err = d.pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
+		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, r.status, COALESCE(r.source,''), c.guest_access_locked_at, COALESCE(a.default_purpose,'')
+		FROM reservation r JOIN apartment a ON a.id = r.apartment_id LEFT JOIN reservation_claim c ON c.reservation_id = r.id
+		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 AND a.archived_at IS NULL AND a.permalink_token = $3`,
+		resID, apt.ID, apt.PermalinkToken).Scan(&res.apartmentID, &cfg.ownerUserID, &res.dateFrom, &res.dateTo,
+		&res.declaredGuests, &res.overrideGuests, &res.reducedGuests, &status, &source, &locked, &cfg.defaultPurpose)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+		return guestFormCfg{}, guestResMeta{}, "", false, err
+	}
+	owner := (formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}).access().hostOwns(ctx, r, cfg.ownerUserID)
+	if source == "demo" {
+		if !owner || !GuestAccessOpen(status, locked != nil && *locked != "") {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+	} else if !eligible {
+		rd := pa.ReachbackDays
+		reach := validation.NormaliseReachbackDays(&rd)
+		cutoff := today.AddDate(0, 0, -int(reach)).Format("2006-01-02")
+		if (locked != nil && *locked != "") || res.dateTo < cutoff {
+			return guestFormCfg{}, guestResMeta{}, "", false, nil
+		}
+		if registrationComplete(ctx, d.pool, d.getenv, d.now, pickReservation{ID: resID, DateFrom: res.dateFrom, DateTo: res.dateTo}, today) {
+			ownedIDs := ownedGuestIDs(r, d.getenv)
+			var ownedStay bool
+			if len(ownedIDs) > 0 {
+				if err := d.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM guest WHERE reservation_id = $1 AND id = ANY($2))`, resID, ownedIDs).Scan(&ownedStay); err != nil {
+					return guestFormCfg{}, guestResMeta{}, "", false, err
+				}
+			}
+			if !owner && !ownedStay && !DeviceHoldsClaim(r, d.getenv, resID, guestSaveClaimVersion(ctx, d.pool, resID)) {
+				return guestFormCfg{}, guestResMeta{}, "", false, nil
+			}
+		}
+	}
+	if d.getenv != nil {
+		cfg.noticeVersion = noticeVersion(d.getenv)
+	}
+	return cfg, res, status, true, nil
 }
 
-func guestSaveExpectedGuests(res guestResMeta) *int {
-	exp := headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
-	if exp == nil {
-		return nil
+func guestSaveClaimVersion(ctx context.Context, pool *pgxpool.Pool, resID int64) int64 {
+	claim, err := EnsureClaimRow(ctx, pool, resID, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		return -1
 	}
-	n := int(*exp)
-	return &n
+	return claim.tokenVersion
 }
 
-func guestSaveValidateIssues(form map[string]string, cfg guestFormCfg, res guestResMeta, values validation.GuestRow, raw map[string]string, stayFrom, stayTo, sig string, child bool, existing *guestSaveRow, today time.Time) []validation.Issue {
-	if existing == nil {
-		return guestcontract.CheckNewGuest(guestSaveFormContract(form), guestcontract.FormConfig{DefaultPurpose: cfg.defaultPurpose},
-			guestcontract.Stay{DateFrom: res.dateFrom, DateTo: res.dateTo, ExpectedGuests: guestSaveExpectedGuests(res)}, today)
-	}
+// guestSaveValidateIssues is the save route's database-free checks, in the
+// order of guest.py: the form, the signature, then the legal acknowledgement.
+// The two sentences owned by this function are worded in the guest's language.
+func guestSaveValidateIssues(form map[string]string, res guestResMeta, values validation.GuestRow, raw map[string]string, stayFrom, stayTo, sig string, child bool, existing *guestSaveRow, today time.Time, lang string) []validation.Issue {
 	from, to := parseDate(stayFrom), parseDate(stayTo)
 	issues := validation.ValidateGuestForm(values, &from, &to, today, raw)
+	// guest.py:2462 — a new guest with no expected total gives a party size of 1–60.
+	if existing == nil && headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests) == nil {
+		if n, err := strconv.Atoi(validation.Strip(form["party_size"])); err != nil || n < 1 || n > 60 {
+			issues = append(issues, validation.Issue{Field: "party_size", Message: stringsCatalog.T(lang, "error_party_size", nil), Severity: "error"})
+		}
+	}
 	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
 		issues = append(issues, *si)
 	}
+	// guest.py:2480 — the guest must confirm the legal notice.
 	if form["legal_ack"] == "" {
-		issues = append(issues, validation.Issue{Field: "legal_ack", Message: "Please confirm that you have read the legal information.", Severity: "error"})
+		issues = append(issues, validation.Issue{Field: "legal_ack", Message: stringsCatalog.T(lang, "legal_ack_missing", nil), Severity: "error"})
 	}
 	return issues
 }
@@ -241,7 +445,7 @@ func existingSig(g *guestSaveRow) string {
 	return g.signaturePNG
 }
 
-func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow) map[string]any {
+func buildSavePayload(v validation.GuestRow, res guestResMeta, stayFrom, stayTo, sig string, child bool, lang, noticeVer, now string, existing *guestSaveRow, signFor map[string]any) map[string]any {
 	p := map[string]any{
 		"surname": v.Surname, "first_name": v.FirstName, "birth_date": v.BirthDate,
 		"nationality": v.Nationality, "doc_number": v.DocNumber, "visa_number": v.VisaNumber,
@@ -262,31 +466,98 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 	}
 	p["submit_state"] = st
 	p["last_errors"] = nil
-	if existing != nil && existing.submitState == "blocked" && strings.Contains(existing.lastErrors, "duplicate") {
-		delete(p, "submit_state")
-		delete(p, "last_errors")
+	if child {
+		// guest.py:2587 — empty signFor adds nothing, so edits keep an earlier link.
+		for k, val := range signFor {
+			p[k] = val
+		}
+	} else {
+		// guest.py:2596 — a guest 15+ (or corrected to 15+) loses any child signer link.
+		p["signed_for_guest_id"] = nil
+		p["signed_for_role"] = nil
+		p["signed_for_at"] = nil
+		p["signed_for_wording"] = nil
+	}
+	if existing != nil {
+		proposed := ubyport.Guest{
+			StayFrom:    stayFrom,
+			StayTo:      stayTo,
+			Surname:     v.Surname,
+			FirstName:   v.FirstName,
+			BirthDate:   v.BirthDate,
+			Nationality: v.Nationality,
+			DocNumber:   v.DocNumber,
+			VisaNumber:  v.VisaNumber,
+			ResStreet:   v.ResStreet,
+			ResCity:     v.ResCity,
+			ResCountry:  v.ResCountry,
+			Purpose:     v.Purpose,
+			Note:        v.Note,
+		}
+		ubyRes := ubyport.Reservation{DateFrom: res.dateFrom, DateTo: res.dateTo}
+		if ubyport.EditKeepsDuplicateBlock(existing.submitState, existing.lastErrors, existing.ubyGuest(), proposed, ubyRes) {
+			delete(p, "submit_state")
+			delete(p, "last_errors")
+		} else if ubyport.GuestCorrectionResetsAttempts(existing.submitState) {
+			p["submit_attempts"] = 0
+		}
 	}
 	return p
 }
 
 func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, id, resID int64) (*guestSaveRow, error) {
 	var g guestSaveRow
-	var sigEnc string
-	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''), COALESCE(signature_png,''),
-		COALESCE(signature_png_enc,''), COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,'')
+	var birthEnc, docEnc, visaEnc, streetEnc, cityEnc, sigEnc string
+	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''),
+		COALESCE(surname,''), COALESCE(first_name,''),
+		COALESCE(birth_date,''), COALESCE(birth_date_enc,''),
+		COALESCE(nationality,''),
+		COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+		COALESCE(visa_number,''), COALESCE(visa_number_enc,''),
+		COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_country,''), COALESCE(purpose,''), COALESCE(note,''),
+		COALESCE(stay_from,''), COALESCE(stay_to,''),
+		COALESCE(signature_png,''), COALESCE(signature_png_enc,''),
+		COALESCE(last_errors,''), COALESCE(entered_by,''),
+		COALESCE(identity_verified_at::text,''), COALESCE(passport_photo_at::text,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2`, id, resID).
-		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &sigEnc, &g.lastErrors, &g.stayFrom, &g.stayTo)
+		Scan(&g.id, &g.submitState, &g.restrictedAt,
+			&g.surname, &g.firstName,
+			&g.birthDate, &birthEnc,
+			&g.nationality,
+			&g.docNumber, &docEnc,
+			&g.visaNumber, &visaEnc,
+			&g.resStreet, &streetEnc,
+			&g.resCity, &cityEnc,
+			&g.resCountry, &g.purpose, &g.note,
+			&g.stayFrom, &g.stayTo,
+			&g.signaturePNG, &sigEnc,
+			&g.lastErrors, &g.enteredBy,
+			&g.identityVerifiedAt, &g.passportPhotoAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plain, err := decryptGuestField(getenv, now, sigEnc, g.signaturePNG)
-	if err != nil {
-		return nil, err
+	for _, f := range []struct {
+		dst *string
+		enc string
+	}{
+		{&g.birthDate, birthEnc},
+		{&g.docNumber, docEnc},
+		{&g.visaNumber, visaEnc},
+		{&g.resStreet, streetEnc},
+		{&g.resCity, cityEnc},
+		{&g.signaturePNG, sigEnc},
+	} {
+		plain, derr := decryptGuestField(getenv, now, f.enc, *f.dst)
+		if derr != nil {
+			return nil, derr
+		}
+		*f.dst = plain
 	}
-	g.signaturePNG = plain
 	return &g, nil
 }
 
@@ -306,7 +577,7 @@ func decryptGuestField(getenv func(string) string, now func() time.Time, token, 
 }
 
 func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow, payload map[string]any) (bool, error) {
-	cutoff := float64(d.now().Unix()) - float64(ubyport.SubmissionClaimTTL)
+	cutoff := float64(d.now().Unix()) - ubyport.SubmissionClaimTTL.Seconds()
 	enc, err := encryptSaveFields(d.getenv, payload)
 	if err != nil {
 		return false, err
@@ -323,48 +594,97 @@ func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow,
 		AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $1 AND claimed_at >= $3) RETURNING id`
 	var id int64
 	if err := d.pool.QueryRow(ctx, q, args...).Scan(&id); err != nil {
-		return false, nil
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
 	}
 	return id == existing.id, nil
 }
 
-func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta, partySize int) (int64, error) {
+// guestInsert is what insertGuestSaveRow reports once its transaction has ended.
+type guestInsert struct {
+	id         int64  // the new guest, or 0 when none was written
+	countCode  string // the first form's count result, "" when no count was attempted
+	countOld   *int64 // the declared count before that attempt
+	countSaved bool   // the count was saved in the committed transaction
+}
+
+// auditHeadcountCount is headcount.record for a first-form count. Call after commit.
+func auditHeadcountCount(ctx context.Context, pool *pgxpool.Pool, now func() time.Time, resID int64, code string, old *int64, count int, owner int64) error {
+	var action string
+	switch code {
+	case codeSaved:
+		action = "reservation_declared_guests_set"
+	case codeBelowFloor:
+		action = "reservation_declared_guests_refused"
+	default:
+		return nil
+	}
+	from := "None"
+	if old != nil {
+		from = strconv.FormatInt(*old, 10)
+	}
+	_, err := pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1, $2, $3, $4, $5)`,
+		now().UTC(), "guest", action, fmt.Sprintf("id=%d from=%s to=%d source=first_form", resID, from, count), owner)
+	return err
+}
+
+// insertGuestSaveRow is guest.py's first-form block (brief 1092): the lock, the
+// fresh reservation, the first count and the guest INSERT share one transaction.
+func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any, resID int64, res guestResMeta, partySize int) (guestInsert, error) {
+	var out guestInsert
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('reservation'), $1::int)`, resID); err != nil {
-		return 0, err
+		return out, err
 	}
-	var declared *int64
-	if err := tx.QueryRow(ctx, `SELECT declared_guests, expected_guests_override, lead_reduced_guests FROM reservation WHERE id = $1`,
-		resID).Scan(&declared, &res.overrideGuests, &res.reducedGuests); err != nil {
-		return 0, err
+	// Read the reservation fresh under the lock, as Python does.
+	var aptID int64
+	var status, archived string
+	var override, declared, reduced *int64
+	err = tx.QueryRow(ctx, `SELECT apartment_id, COALESCE(status,''), COALESCE(archived_at::text,''),
+		expected_guests_override, declared_guests, lead_reduced_guests
+		FROM reservation WHERE id = $1 FOR UPDATE`, resID).Scan(&aptID, &status, &archived, &override, &declared, &reduced)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return out, nil
 	}
-	res.declaredGuests = declared
-	exp := headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
-	if exp == nil && partySize > 0 {
-		code, _, err := headcount.ApplyDeclaredInTx(ctx, tx, resID, partySize, d.now())
+	if err != nil {
+		return out, err
+	}
+	if aptID != res.apartmentID || (partyStay{status: status, archivedAt: archived}).gone() {
+		return out, nil
+	}
+	if headcount.Expected(override, declared, reduced) == nil {
+		out.countOld = declared
+		out.countCode, err = partyDeps{pool: d.pool, getenv: d.getenv, now: d.now}.applyDeclaredTx(ctx, tx, resID, partySize)
 		if err != nil {
-			return 0, err
+			return out, err
 		}
-		if code != "saved" {
-			return 0, tx.Commit(ctx)
+		out.countSaved = out.countCode == codeSaved
+		if !out.countSaved {
+			return out, tx.Commit(ctx)
 		}
-		res.declaredGuests = ptrInt64(int64(partySize))
-		exp = headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests)
+		if err = tx.QueryRow(ctx, `SELECT expected_guests_override, declared_guests, lead_reduced_guests
+			FROM reservation WHERE id = $1`, resID).Scan(&override, &declared, &reduced); err != nil {
+			return out, err
+		}
 	}
-	var live int
-	if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, resID).Scan(&live); err != nil {
-		return 0, err
+	exp := headcount.Expected(override, declared, reduced)
+	live, err := liveGuestRows(ctx, tx, resID)
+	if err != nil {
+		return out, err
 	}
 	if exp != nil && live >= int(*exp) {
-		return 0, tx.Commit(ctx)
+		// The count, if saved, still commits; no guest is added to a full group.
+		return out, tx.Commit(ctx)
 	}
 	var isFirst bool
 	if err := tx.QueryRow(ctx, `SELECT NOT EXISTS (SELECT 1 FROM guest WHERE reservation_id = $1)`, resID).Scan(&isFirst); err != nil {
-		return 0, err
+		return out, err
 	}
 	lead := 0
 	if isFirst {
@@ -375,16 +695,17 @@ func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any,
 	payload["created_at"] = payload["filled_at"]
 	enc, err := encryptSaveFields(d.getenv, payload)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
 	var id int64
 	err = tx.QueryRow(ctx, `INSERT INTO guest (`+strings.Join(guestSaveInsertCols, ", ")+`)
 		VALUES (`+guestSaveInsertPlaceholders()+`) RETURNING id`,
 		guestSaveInsertArgs(enc)...).Scan(&id)
 	if err != nil {
-		return 0, err
+		return out, err
 	}
-	return id, tx.Commit(ctx)
+	out.id = id
+	return out, tx.Commit(ctx)
 }
 
 func encryptSaveFields(getenv func(string) string, payload map[string]any) (map[string]any, error) {
@@ -392,24 +713,7 @@ func encryptSaveFields(getenv func(string) string, payload map[string]any) (map[
 	if err != nil {
 		return nil, err
 	}
-	out := map[string]any{}
-	for k, v := range payload {
-		switch k {
-		case "birth_date", "doc_number", "visa_number", "res_street", "res_city", "signature_png":
-			if s, ok := v.(string); ok && s != "" {
-				tok, err := keys.EncryptString(s)
-				if err != nil {
-					return nil, err
-				}
-				out[k+"_enc"] = tok
-				continue
-			}
-			out[k+"_enc"] = nil
-			continue
-		}
-		out[k] = v
-	}
-	return out, nil
+	return secure.GuestWriteValues(keys, payload)
 }
 
 func auditGuestFormSaved(ctx context.Context, pool *pgxpool.Pool, guestID, resID, owner int64, lang string, now func() time.Time) error {
@@ -442,31 +746,6 @@ func throttleGuestPost(w http.ResponseWriter, r *http.Request, d saveDeps, token
 		return true
 	}
 	return false
-}
-
-func reservationForGuest(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, resID int64, getenv func(string) string) (guestFormCfg, guestResMeta, bool) {
-	if pool == nil || apt == nil || resID <= 0 {
-		return guestFormCfg{}, guestResMeta{}, false
-	}
-	var cfg guestFormCfg
-	var res guestResMeta
-	var purpose string
-	err := pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
-		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, COALESCE(a.default_purpose,'')
-		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
-		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
-		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
-		resID, apt.ID, apt.PermalinkToken).Scan(
-		&res.apartmentID, &cfg.ownerUserID, &res.dateFrom, &res.dateTo,
-		&res.declaredGuests, &res.overrideGuests, &res.reducedGuests, &purpose)
-	if err != nil {
-		return guestFormCfg{}, guestResMeta{}, false
-	}
-	cfg.defaultPurpose = purpose
-	if getenv != nil {
-		cfg.noticeVersion = noticeVersion(getenv)
-	}
-	return cfg, res, true
 }
 
 func guestLink(token string, resID int64, lang string) string {
@@ -506,6 +785,7 @@ var guestSaveInsertCols = []string{
 	"birth_date_enc", "doc_number_enc", "visa_number_enc",
 	"res_street_enc", "res_city_enc", "signature_png_enc",
 	"signed_at", "last_errors",
+	"signed_for_guest_id", "signed_for_role", "signed_for_at", "signed_for_wording",
 }
 
 func guestSaveInsertPlaceholders() string {
@@ -543,7 +823,7 @@ func guestFormLocked(row *guestSaveRow) bool { return false }
 // renderGuestForm422 redraws the form the guest just submitted, with what they
 // typed and the sentences saying what to fix — Python's 422 (guest.py:2530
 // renders the form context again with values and issues), not a bare status.
-func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt *Apartment, token, lang string, resID int64, existing *guestSaveRow, raw map[string]string, values validation.GuestRow, stayFrom, stayTo string, issues []validation.Issue) {
+func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt *Apartment, token, lang string, resID int64, existing *guestSaveRow, form, raw map[string]string, values validation.GuestRow, stayFrom, stayTo, sig string, issues []validation.Issue) {
 	fd := formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}
 	ctx := r.Context()
 	res, ok := formPagesReservation(ctx, fd.pool, apt, resID, r)
@@ -567,6 +847,28 @@ func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt 
 		return
 	}
 	view.Values = guestTypedValues(values, raw, stayFrom, stayTo)
+	if form["legal_ack"] != "" {
+		view.Values["legal_ack"] = form["legal_ack"]
+	}
+	if values.BirthDate != "" {
+		arrival := parseDatePtr(stayFrom)
+		view.Under15 = validation.CertainlyUnderAge(values.BirthDate, arrival, guestcontract.UnderSignAge)
+		view.AdultSigner = validation.CertainlyAtLeastAge(values.BirthDate, arrival, adultSignerAge)
+	}
+	if validation.IsValidSignature(sig) {
+		view.SignatureValue = sig
+	} else {
+		view.SignatureValue = ""
+	}
+	if id, ok := parsePositiveASCIIDigits(form["signed_by"]); ok {
+		view.SelectedSigner = id
+	}
+	if isSignForRole(form["child_sign_role"]) {
+		view.SelectedChildRole = form["child_sign_role"]
+	}
+	if isSignForRole(form["sign_for_role"]) {
+		view.SelectedSignForRole = form["sign_for_role"]
+	}
 	view.Issues = issues
 	view.LoadSignatureJS = true
 	view.WrapClass = "g-checkin-page"
@@ -618,28 +920,6 @@ func parseDatePtr(s string) *time.Time {
 }
 
 func guestFormSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apartmentID, reservationID int64) error {
-	var mode string
-	if err := pool.QueryRow(ctx, `SELECT COALESCE(automation_mode,'') FROM apartment WHERE id = $1`, apartmentID).Scan(&mode); err != nil {
-		return err
-	}
-	dec := func(token string) (string, error) {
-		if token == "" {
-			return "", nil
-		}
-		k, err := secure.LoadDataKeys(getenv)
-		if err != nil {
-			return "", err
-		}
-		b, err := k.Decrypt(token, 0, now())
-		return string(b), err
-	}
-	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, pool, reservationID, dec, now)
-	if err != nil || completed == nil || mode != "immediate" {
-		return err
-	}
-	_, err = scheduler.Enqueue(ctx, pool, "submit")
+	_, err := ubyport.SubmitCompletedStay(ctx, pool, getenv, now, apartmentID, reservationID, nil)
 	return err
-}
-func ptrInt64(n int64) *int64 {
-	return &n
 }

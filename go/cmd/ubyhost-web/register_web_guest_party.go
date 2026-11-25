@@ -14,6 +14,6 @@ import (
 
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
-		guest.RegisterParty(mux, pool, os.Getenv, time.Now, m.wrap)
+		guest.RegisterParty(mux, pool, os.Getenv, time.Now, m.wrap, completionHooks(pool))
 	})
 }

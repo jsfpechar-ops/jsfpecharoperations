@@ -53,12 +53,12 @@ func formPagesFillU15(ctx context.Context, d formPageDeps, view *formView, res f
 		view.PendingChildrenNames = strings.Join(names, ", ")
 	}
 	view.ChildSigners = signers
-	view.AdultSigner = len(signers) > 0
-	if guest != nil {
-		from, ok := validation.ParseISODate(res.dateFrom)
-		if ok {
-			view.Under15 = validation.CertainlyUnderAge(guest.birthDate, &from, guestcontract.UnderSignAge)
-		}
+	if guest != nil && guest.birthDate != "" {
+		arrival := rowArrivalDate(guest.stayFrom, res.dateFrom)
+		view.Under15 = validation.CertainlyUnderAge(guest.birthDate, arrival, guestcontract.UnderSignAge)
+		view.AdultSigner = validation.CertainlyAtLeastAge(guest.birthDate, arrival, adultSignerAge)
+	} else {
+		view.AdultSigner = true
 	}
 }
 
@@ -67,17 +67,17 @@ func formU15Lists(ctx context.Context, pool *pgxpool.Pool, resID, guestID int64,
 		return nil, nil
 	}
 	rows, err := pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date_enc,''), COALESCE(birth_date,''),
-		COALESCE(signature_png,''), COALESCE(signature_png_enc,''), COALESCE(signed_for_guest_id,0)
-		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, resID)
+		COALESCE(signature_png,''), COALESCE(signature_png_enc,''), COALESCE(signed_for_guest_id,0), COALESCE(stay_from,'')
+		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY id`, resID)
 	if err != nil {
 		return nil, nil
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int64
-		var first, surname, birthEnc, birthPlain, sigPlain, sigEnc string
+		var first, surname, birthEnc, birthPlain, sigPlain, sigEnc, rowStayFrom string
 		var signedFor int64
-		if err := rows.Scan(&id, &first, &surname, &birthEnc, &birthPlain, &sigPlain, &sigEnc, &signedFor); err != nil {
+		if err := rows.Scan(&id, &first, &surname, &birthEnc, &birthPlain, &sigPlain, &sigEnc, &signedFor, &rowStayFrom); err != nil {
 			return nil, nil
 		}
 		if !owned[id] || id == guestID {
@@ -96,12 +96,13 @@ func formU15Lists(ctx context.Context, pool *pgxpool.Pool, resID, guestID int64,
 				sig = plain
 			}
 		}
+		arrival := rowArrivalDate(rowStayFrom, stayFrom)
 		entry := formChildEntry{ID: id, Name: name}
-		if strings.HasPrefix(sig, "data:image/") || sig == "imported" {
+		if validation.IsValidSignature(sig) && validation.CertainlyAtLeastAge(birth, arrival, adultSignerAge) {
 			adults = append(adults, entry)
 			continue
 		}
-		if signedFor == 0 && formGuestUnder15OnStay(birth, stayFrom) {
+		if signedFor == 0 && validation.CertainlyUnderAge(birth, arrival, guestcontract.UnderSignAge) {
 			pending = append(pending, entry)
 		}
 	}

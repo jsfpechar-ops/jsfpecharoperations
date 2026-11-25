@@ -64,7 +64,7 @@ fi
 docker image inspect ubyhost:previous >/dev/null 2>&1 && docker tag ubyhost:previous ubyhost:local || true
 docker image inspect ubyhost-go:previous >/dev/null 2>&1 && docker tag ubyhost-go:previous ubyhost-go:local || true
 go_rollback_slots || true
-if docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go; then
+if docker compose --profile go config --services 2>/dev/null | grep -x ubyhost-go >/dev/null; then
   # shellcheck disable=SC2046
   docker compose up -d --no-build --remove-orphans $(go_non_slot_services)
 else
