@@ -242,6 +242,9 @@ func (s *server) apartmentWizardSave(w http.ResponseWriter, r *http.Request, q *
 				return
 			}
 		}
+		if expected := validation.WSUserUnderscoreMark(pay.text["uby_ws_user"]); expected != "" && pyStrip(pay.text["uby_mark"]) == "" {
+			cols = setColumn(cols, "uby_mark", expected)
+		}
 		policeErrors, err := s.apartmentPoliceErrors(q, p, a, cols)
 		if err != nil {
 			fail(w, err)

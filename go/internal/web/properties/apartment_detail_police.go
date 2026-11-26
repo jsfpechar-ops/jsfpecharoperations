@@ -11,8 +11,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/text/unicode/norm"
-
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 // detailFinding is one {"code", "field", "text"} of police_check.findings_for.
@@ -55,13 +53,10 @@ func (s *Pages) detailPoliceFindings(ctx context.Context, lang string, a *detail
 	add := func(code, field string, in ...any) {
 		out = append(out, detailFinding{Code: code, Field: field, Text: detailT(lang, "police_check."+code, in...)})
 	}
-	login, mark, name := form["uby_ws_user"], form["uby_mark"], form["uby_name"]
+	login, name := form["uby_ws_user"], form["uby_name"]
 	upper := strings.ToUpper(login)
 	if login != "" && !strings.HasPrefix(upper, "UBY-WS") && !strings.HasPrefix(upper, "UBY-TWS") {
 		add("login_prefix", "uby_ws_user")
-	}
-	if suffix := validation.MarkFromWSUser(login); pending && suffix != "" && strings.ToUpper(mark) == suffix {
-		add("mark_is_login_suffix", "uby_mark", "mark", suffix)
 	}
 	street, house := form["addr_street"], form["addr_house_no"]
 	if name != "" && (street != "" || house != "") {

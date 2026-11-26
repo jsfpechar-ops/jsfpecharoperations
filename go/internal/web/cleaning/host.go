@@ -193,6 +193,7 @@ type indexPage struct {
 	Lang, Today, Date, Source, From, To, Notice string
 	Props                                       []propOut
 	ListHTML, LabelsScript, CalScripts          template.HTML
+	cleaningPickerView
 }
 
 func init() { hostAdd("GET /cleaning", (*hostServer).index) }
@@ -225,10 +226,15 @@ func (s *hostServer) index() http.HandlerFunc {
 		}
 		lang := hostweb.Lang(r)
 		notice, _ := lastOf(q, "notice")
+		rawProp, _ := lastOf(q, "cal_property")
+		if rawProp == "" {
+			rawProp, _ = lastOf(q, "property")
+		}
 		data := indexPage{
 			Lang: lang, Today: iso(today(at)), Date: iso(first), Source: "/cleaning/schedule",
 			From: iso(first), To: iso(last), Notice: notice, Props: p.Properties,
 			ListHTML: template.HTML(p.ListHTML), LabelsScript: labelsScript(lang), CalScripts: calScripts(lang, p.Properties),
+			cleaningPickerView: buildCleaningPicker(p, rawProp, today(at)),
 		}
 		s.page(w, r, h, at, 0, ct(lang, "title")+suffix, "cleaning", "list", data)
 	}

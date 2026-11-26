@@ -14,7 +14,7 @@
   <div class="banner ok section-notice" role="status" tabindex="-1" data-section-notice><span class="grow">{{.root.FlashMsg}}</span></div>
   {{end}}{{end}}{{end}}
 
-{{define "apartmentdetail.state"}}<small class="sec-state">{{.text}}{{if not (index .root.SectionDone .key)}} · {{t "setup.sec.minutes" "n" (index .root.SectionMinutes .key)}}{{end}}</small>{{end}}
+{{define "apartmentdetail.state"}}<small class="sec-state">{{.text}}</small>{{end}}
 
 {{define "apartmentdetail.missing"}}{{if .items}}<div class="prop-sec-missing" data-missing="{{.key}}" role="note"><ul class="readiness-list">{{range .items}}<li class="readiness-item"><a href="#{{.Anchor}}" data-fix-label="{{t (print "apartment.form.readiness.item." .Key)}}">{{t "apartment.form.readiness.missing"}} {{t (print "apartment.form.readiness.item." .Key)}}</a>{{if .Message}}<span class="readiness-why">{{.Message}}</span>{{end}}</li>{{end}}</ul></div>{{end}}{{end}}
 
@@ -76,10 +76,11 @@
   </div>
 </div>{{end}}
 
-{{define "apartmentdetail.policebox"}}
+{{define "apartmentdetail.policebox"}}{{$err := ""}}{{if .errors}}{{$err = index .errors .name}}{{end}}
   <div class="field">
     {{field_label .name .label .help .optional "" .required}}
-    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}>
+    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if $err}} aria-invalid="true" aria-describedby="{{.name}}-error{{if .help}} {{.name}}-help{{end}}"{{else if .help}} aria-describedby="{{.name}}-help"{{end}}{{if .mismatch}} data-mark-mismatch="{{.mismatch}}"{{end}}>
+    {{if $err}}<p class="err-text" id="{{.name}}-error" role="alert">{{$err}}</p>{{end}}
     {{$name := .name}}{{range .findings}}{{if eq .Field $name}}<p class="police-letter-note" role="note" data-police-check-code="{{.Code}}">{{.Text}}</p>{{end}}{{end}}
   </div>
 {{end}}
@@ -128,23 +129,29 @@
   <p class="ui-sub" role="status">{{t "apartment.form.copy_from.notice" "name" .CopiedName}}</p>
 </div>
 {{end}}
-<nav class="prop-strip" aria-label="{{t "property_page.strip.aria"}}">
-  <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{.Cal.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.calendars.title"}}</b><small{{if .Cal.Problem}} class="is-problem"{{end}}>{{if .Cal.Problem}}{{t .Cal.TextKey}}{{else if .CalendarErrors}}{{t "apartment.form.feed.status.error"}}{{else}}{{tp "apartment.form.calendars_count" .FeedsCount}}{{end}}</small></a>
-  <div class="sc sc-link" data-strip="guest" data-state="{{.Guest.State}}"><a class="sc-main" href="#sec-messages"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.guest_link.title"}}</b><small{{if .Guest.Problem}} class="is-problem"{{end}}>{{if .Guest.Problem}}{{t .Guest.TextKey}}{{else}}{{t "wizard.guest_link.ready"}}{{end}}</small>{{if .Pin}}<small class="sc-pin" data-guest-pin>PIN {{.Pin}}</small>{{end}}</a><div class="sc-actions">
-  {{- if .Pin}}<textarea class="sr-only" id="overview-guest-both" readonly rows="2" tabindex="-1" aria-hidden="true">{{.Permalink}}
-PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overview-guest-both" data-copy-label="{{t "property_page.guest_link.copy_both"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-both>{{t "property_page.guest_link.copy_both"}}</button>{{end -}}
-  {{if .Pin}}<input class="sr-only" type="text" id="overview-guest-url" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true"><button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" data-copy="overview-guest-url" data-copy-label="{{t "wizard.guest_link.copy_link"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-link>{{t "wizard.guest_link.copy_link"}}</button>{{else}}{{copy_inline "overview-guest-url" .Permalink (t "wizard.guest_link.copy_link")}}{{end}}</div></div>
-  <a class="sc" href="#sec-police" data-strip="police" data-state="{{.Police.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.police.title"}}</b><small{{if .Police.Problem}} class="is-problem"{{end}}>{{if .Police.Problem}}{{t .Police.TextKey}}{{else}}{{t "property_nav.report_ready"}}{{end}}</small></a>
-  <a class="sc" href="#sec-basics" data-strip="business" data-state="{{.Biz.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "health.business"}}</b><small{{if .Biz.Problem}} class="is-problem"{{end}}>{{if not $a.LegalEntityID}}{{t "property_page.strip.operator_missing"}}{{else if .Biz.Problem}}{{t .Biz.TextKey}}{{else if .Operator}}{{.Operator.Name}}{{else}}{{t "health.business.ok"}}{{end}}</small></a>
-  <a class="sc" href="#sec-fee" data-strip="fee" data-state="{{if $a.StayFeeRateCZK}}ok{{else}}off{{end}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.fee.title"}}</b><small>{{if $a.StayFeeRateCZK}}{{$a.StayFeeRateCZK}} Kč{{else}}{{t "apartments.chip_state.off"}}{{end}}</small></a>
-  <a class="sc" href="#sec-lock" data-strip="door" data-state="{{.DoorPill}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.lock.title"}}</b><small>{{if and .Door (eq .Door.State "on")}}{{t "property_nav.switch_enabled"}}{{else if and .Door (eq .Door.State "times")}}{{t "health.door.times"}}{{else if and .Door (eq .Door.State "offline")}}{{t "health.door.offline"}}{{else}}{{t "property_nav.switch_off"}}{{end}}</small></a>
+<nav class="prop-strip prop-strip-v2" aria-label="{{t "property_page.strip.aria"}}">
+  <div class="sc sc-link" data-strip="guest" data-state="{{.Guest.State}}">
+    <a class="sc-main" href="#sec-messages"><i class="sd" aria-hidden="true"></i><span class="sc-copy"><b>{{t "property_page.guest_link.title"}}</b><small{{if .Guest.Problem}} class="is-problem"{{end}}>{{if .Guest.Problem}}{{t .Guest.TextKey}}{{else}}{{t "wizard.guest_link.ready"}}{{end}}</small></span>{{if .Pin}}<small class="sc-pin" data-guest-pin>PIN {{.Pin}}</small>{{end}}</a>
+    <div class="sc-actions">
+      <input class="sr-only" type="text" id="overview-guest-url" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true"><button class="ui-btn ui-btn-primary" type="button" data-copy="overview-guest-url" data-copy-label="{{t "wizard.guest_link.copy_link"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-link>{{t "wizard.guest_link.copy_link"}}</button>
+      {{- if .Pin}}<input class="sr-only" type="text" id="overview-guest-pin" readonly value="{{.Pin}}" tabindex="-1" aria-hidden="true"><button class="ui-btn ui-btn-secondary" type="button" data-copy="overview-guest-pin" data-copy-label="{{t "property_page.guest_link.copy_pin"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-pin>{{t "property_page.guest_link.copy_pin"}}</button>{{end -}}
+    </div>
+  </div>
+  <div class="prop-strip-list">
+    <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{.Cal.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.calendars.title"}}</b><small{{if .Cal.Problem}} class="is-problem"{{end}}>{{if .Cal.Problem}}{{t .Cal.TextKey}}{{else if .CalendarErrors}}{{t "property_page.strip.calendar_error"}}{{else}}{{tp "apartment.form.calendars_count" .FeedsCount}}{{end}}</small></a>
+    <a class="sc" href="#sec-police" data-strip="police" data-state="{{.Police.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.police.title"}}</b><small{{if .Police.Problem}} class="is-problem"{{end}}>{{if .Police.Problem}}{{t .Police.TextKey}}{{else}}{{t "wizard.guest_link.ready"}}{{end}}</small></a>
+    <a class="sc" href="#sec-basics" data-strip="business" data-state="{{.Biz.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "health.business"}}</b><small{{if .Biz.Problem}} class="is-problem"{{end}}>{{if not $a.LegalEntityID}}{{t "property_page.strip.operator_missing"}}{{else if .Biz.Problem}}{{t .Biz.TextKey}}{{else if .Operator}}{{.Operator.Name}}{{else}}{{t "health.business.ok"}}{{end}}</small></a>
+    <a class="sc" href="#sec-fee" data-strip="fee" data-state="{{if $a.StayFeeRateCZK}}ok{{else}}off{{end}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.fee.title"}}</b><small>{{if $a.StayFeeRateCZK}}{{$a.StayFeeRateCZK}} Kč{{else}}{{t "property_nav.switch_off"}}{{end}}</small></a>
+    <a class="sc" href="#sec-lock" data-strip="door" data-state="{{.DoorPill}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.lock.title"}}</b><small{{if eq .DoorPill "bad"}} class="is-problem"{{end}}>{{if and .Door (eq .Door.State "on")}}{{t "property_nav.switch_enabled"}}{{else if and .Door (eq .Door.State "times")}}{{t "property_page.strip.door_times"}}{{else if and .Door (eq .Door.State "offline")}}{{t "property_page.strip.door_offline"}}{{else}}{{t "property_nav.switch_off"}}{{end}}</small></a>
+  </div>
 </nav>
 <div class="prop-after-strip">
 {{if and .Progress (not .Progress.Hidden)}}
 <section class="pv setup-continue-card" aria-label="{{t "wizard.continue_card_aria"}}">
-  <p>{{t "wizard.continue_card" "done" .Progress.Done "total" .Progress.Total}}
+  <div class="setup-continue-head">
+    <p>{{t "wizard.continue_card" "done" .Progress.Done "total" .Progress.Total}}</p>
     {{if .Progress.ReportingWaiting}}<span class="ui-badge ui-badge-action" data-tone="amber">{{t "setup_guide.reporting.waiting_item"}}</span>{{end}}
-  </p>
+  </div>
   <div class="actions">
     <a class="ui-btn ui-btn-primary" href="{{.Progress.ContinueURL}}">{{t "wizard.continue"}}</a>
     <form method="post" action="/apartments/{{$a.ID}}/setup" class="inline">
@@ -156,7 +163,7 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
 {{else if .SetupHidden}}
 <form method="post" action="/apartments/{{$a.ID}}/setup" class="property-setup-show">
   <input type="hidden" name="_csrf" value="{{csrf}}">
-  <button class="link-button" type="submit" name="action" value="show">{{t "setup_guide.show"}}</button>
+  <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="show">{{t "setup_guide.show"}}</button>
 </form>
 {{end}}
   {{if .LeonCard}}<div class="pv"><a class="r" href="{{.Base}}/leon{{if ne .LeonCard "on"}}/setup{{end}}" data-leon-card="{{.LeonCard}}"><span>{{t "leon_page.title"}} <small>{{t "leon_page.card.hint"}}</small></span>{{t (print "leon_page.card." .LeonCard)}}</a></div>{{end}}
@@ -421,24 +428,12 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
       <p class="ui-sub">{{t "why.police"}}</p>
       <p class="ui-sub"><a href="{{.Base}}?view=settings&amp;section=automation#automation">{{t "automation.timing_title"}} </a></p>
       <div class="police-letter-helpers">
-      <details class="police-letter-find"{{if .LetterFirst}} open{{end}}>
+      <details class="police-letter-find">
         <summary>{{t "police_letter.find_title"}}</summary>
         {{template "apartmentdetail.letterfigure" .}}
       </details>
-      <details class="police-letter-paste" id="police-letter-paste"{{if .LetterFirst}} open{{end}}>
-        <summary>{{t "police_letter.paste_title"}}</summary>
-        <div class="field">
-          <div class="field-label-row"><label for="letter_text">{{t "police_letter.paste_label"}}{{help_tip "police-letter-help" (t "police_letter.paste_help")}}</label></div>
-          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste></textarea>
-        </div>
-        <div class="actions">
-          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{t "police_letter.read_button"}}</button>
-        </div>
-      </details>
       </div>
-      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{t "police_letter.read_failed"}}" data-saved-now="{{t "police_letter.saved_now" "value" "%s"}}"></p>
       {{range .PoliceFindings}}{{if not .Field}}<p class="police-letter-note" data-police-check data-police-check-code="{{.Code}}" role="note">{{.Text}}</p>{{end}}{{end}}
-      <input type="hidden" name="letter_fields" value="" data-letter-fields data-letter-fields-initial="">
       <div class="grid">
         {{template "apartmentdetail.policebox" (kv "name" "uby_idub" "label" (t "setup.label.idub") "value" $a.UbyIDUB "help" (t "apartment.form.ubyport.idub_hint") "optional" false "max" 14 "required" true "findings" .PoliceFindings)}}
       </div>
@@ -461,7 +456,7 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{t "apartment.form.ubyport.no_credentials_link"}}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{t "property_page.police.facility"}}</h2></div>
       <div class="grid">
-        {{template "apartmentdetail.policebox" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" $a.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "findings" .PoliceFindings)}}
+        {{template "apartmentdetail.policebox" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" $a.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "findings" .PoliceFindings "errors" .PoliceErrors "mismatch" (t "apartment.form.ubyport.mark_mismatch"))}}
       </div>
       <div class="grid two">
         {{template "apartmentdetail.policebox" (kv "name" "uby_name" "label" (t "setup.label.facility") "value" $a.UbyName "help" .FacilityHelp "optional" false "max" 35 "required" true "findings" .PoliceFindings)}}
@@ -507,9 +502,6 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
   </details>
 {{template "apartmentdetail.fee" .}}
 
-</form>
-<form id="police-letter-form" method="post" action="{{.Base}}/police-letter" data-discard-warning="{{t "police_letter.discard_warning"}}">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
 </form>
 <details class="prop-sec" id="sec-calendars"{{if index .Open "sec-calendars"}} open{{end}}><summary><span class="dot {{if .CalendarErrors}}r{{else if .FeedsCount}}g{{else}}n{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.calendars.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "calendars" "root" $ "text" .CalendarsState)}}</summary>
   <div class="fields-wrap">

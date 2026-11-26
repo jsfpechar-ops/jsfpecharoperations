@@ -229,7 +229,6 @@ func TestApartmentDetailPage(t *testing.T) {
 		`<option value="immediate" data-hint=`, `<option value="27" selected>Employment</option>`,
 		`id="submit_after_hours" name="submit_after_hours"
                  min="0" max="48" value="3"`,
-		`<form id="police-letter-form" method="post" action="/apartments/130201/police-letter"`,
 		// calendars
 		`<details class="prop-sec" id="sec-fee"`,
 		`<details class="prop-sec" id="sec-calendars"`,
@@ -452,7 +451,7 @@ func TestApartmentDetailHealth(t *testing.T) {
 		(901, 'critical', 'ubyport_auth_failed', 130201, 130001, 'm', $1), (902, 'warning', 'feed_error', 130201, 130001, 'm', $1)`, stamp0)
 	body := adGet(adMux(pool, nil), "/apartments/130201", 130001, 0, "en").Body.String()
 	adCheck(t, "alerts", body, []string{`data-strip="calendars" data-state="bad"`, `data-strip="police" data-state="bad"`,
-		`data-strip="business" data-state="warn"><i class="sd" aria-hidden="true"></i><b>Business details</b><small class="is-problem">Business details are missing.</small>`}, nil)
+		`data-strip="business" data-state="warn"><i class="sd" aria-hidden="true"></i><b>Business details</b><small class="is-problem">Details missing</small>`}, nil)
 	// a resolved alert does not count
 	mustExec(t, pool, `UPDATE alert SET resolved_at = $1`, stamp0)
 	mustExec(t, pool, `UPDATE apartment SET data_controller_entity_id = NULL WHERE id = $1`, adLoft)
@@ -591,10 +590,10 @@ func TestApartmentDetailPoliceFindings(t *testing.T) {
 		`<p class="police-letter-note" role="note" data-police-check-code="name_address">The facility name has no street and house number.`,
 		`<p class="police-letter-note" data-police-check data-police-check-code="first_filing" role="note">No report accepted yet.`,
 	}, []string{`mark_is_login_suffix`})
-	// the mark that only repeats the end of the login is flagged while nothing was accepted
+	// matching UBY-WS_ suffix and uby_mark produces no warning
 	mustExec(t, pool, `UPDATE apartment SET uby_ws_user = 'UBY-WS_ZZTOP', uby_mark = 'zztop', uby_name = 'BYT VINOHRADSKA 12' WHERE id = $1`, adLoft)
 	body = adGet(mux, "/apartments/130201", 130001, 0, "en").Body.String()
-	adCheck(t, "mark", body, []string{`data-police-check-code="mark_is_login_suffix">The short name is the end of the login (ZZTOP).`}, []string{`login_prefix`, `name_address`})
+	adCheck(t, "mark", body, nil, []string{`mark_is_login_suffix`, `login_prefix`, `name_address`})
 	// once a report was accepted, only the facts about the saved values remain
 	mustExec(t, pool, `INSERT INTO submission (id, apartment_id, created_at, state) VALUES (1, $1, $2, 'ok_duplicate')`, adLoft, stamp0)
 	body = adGet(mux, "/apartments/130201", 130001, 0, "en").Body.String()

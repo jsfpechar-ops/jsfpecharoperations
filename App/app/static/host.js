@@ -289,11 +289,17 @@
 
   // 0205: the police abbreviation follows the web-service login as it is
   // typed (UBY-WS_ABCDE gives ABCDE), the rule of validation.mark_from_ws_user.
-  // A value the host typed themselves is never replaced.
+  // When login starts with UBY-WS_, auto-fill zkratka with the suffix after _
+  // and disallow saving if they do not match.
   onPage(function () {
   var wsUser = document.getElementById('uby_ws_user');
   var ubyMark = document.getElementById('uby_mark');
-  if (wsUser && ubyMark) {
+  if (wsUser && ubyMark && claimOnce(wsUser, 'uby-ws-mark-sync')) {
+    var underscoreSuffix = function (login) {
+      var value = (login || '').trim();
+      if (value.toLowerCase().indexOf('uby-ws_') !== 0) return '';
+      return value.slice(7).toUpperCase().slice(0, 6);
+    };
     var markFrom = function (login) {
       var value = (login || '').trim();
       var lower = value.toLowerCase();
@@ -302,15 +308,55 @@
       if (lower.indexOf('uby-ws') === 0) return value.slice(6).toUpperCase().slice(0, 6);
       return '';
     };
-    var autoMark = !ubyMark.value || ubyMark.value === markFrom(wsUser.value);
+    var mismatchMsg = ubyMark.getAttribute('data-mark-mismatch') || 'Must match the part after UBY-WS_ in your login.';
+    var setInlineError = function (msg) {
+      ubyMark.setCustomValidity(msg || '');
+      var errEl = document.getElementById('uby_mark-live-error');
+      if (msg) {
+        ubyMark.setAttribute('aria-invalid', 'true');
+        if (!errEl) {
+          errEl = document.createElement('p');
+          errEl.id = 'uby_mark-live-error';
+          errEl.className = 'err-text';
+          errEl.setAttribute('role', 'alert');
+          ubyMark.insertAdjacentElement('afterend', errEl);
+        }
+        errEl.textContent = msg;
+      } else {
+        if (errEl) errEl.remove();
+        if (!document.getElementById('uby_mark-error')) {
+          ubyMark.removeAttribute('aria-invalid');
+        }
+      }
+    };
+    var checkMatch = function () {
+      var expected = underscoreSuffix(wsUser.value);
+      var cur = (ubyMark.value || '').trim().toUpperCase();
+      if (expected && /^[A-Z0-9]{5,6}$/.test(expected) && cur && cur !== expected) {
+        setInlineError(mismatchMsg);
+        return false;
+      }
+      setInlineError('');
+      return true;
+    };
+    var autoMark = !ubyMark.value || ubyMark.value.trim().toUpperCase() === markFrom(wsUser.value);
     ubyMark.addEventListener('input', function (event) {
       if (event.isTrusted) autoMark = !ubyMark.value;
+      checkMatch();
     });
     wsUser.addEventListener('input', function () {
-      if (!autoMark) return;
-      ubyMark.value = markFrom(wsUser.value);
-      ubyMark.dispatchEvent(new Event('input', { bubbles: true }));
+      var expected = underscoreSuffix(wsUser.value);
+      if (expected !== '' || wsUser.value.trim().toLowerCase().indexOf('uby-ws_') === 0) {
+        ubyMark.value = expected;
+        autoMark = true;
+        ubyMark.dispatchEvent(new Event('input', { bubbles: true }));
+      } else if (autoMark) {
+        ubyMark.value = markFrom(wsUser.value);
+        ubyMark.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      checkMatch();
     });
+    checkMatch();
   }
 
   document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {

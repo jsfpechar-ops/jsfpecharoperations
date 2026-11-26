@@ -96,6 +96,9 @@ CS_MESSAGES: Dict[str, str] = {
     "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.": (
         "Zkratka má 5 nebo 6 písmen či číslic přidělených policií, např. AAKLI."
     ),
+    "The abbreviation must match the part after UBY-WS_ in your login.": (
+        "Zkratka musí odpovídat části za UBY-WS_ v přihlašovacím jménu."
+    ),
     "Accommodation facility name is required.": "Vyplňte název ubytovacího zařízení.",
     "Facility name must be at most 35 characters.": (
         "Název zařízení může mít nejvýše 35 znaků."

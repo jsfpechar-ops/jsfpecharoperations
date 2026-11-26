@@ -635,6 +635,9 @@ func ValidateApartment(ap map[string]string) []Issue {
 	} else if !wsUserRE.MatchString(user) {
 		issues = append(issues, Issue{"uby_ws_user", webServiceLoginWarningText, severityWarning})
 	}
+	if expected := WSUserUnderscoreMark(user); expected != "" && mark != "" && markRE.MatchString(mark) && !strings.EqualFold(mark, expected) {
+		issues = append(issues, Issue{"uby_mark", MarkMismatchMessage, severityError})
+	}
 
 	if ap["uby_ws_password"] == "" {
 		issues = append(issues, Issue{"uby_ws_password", "UbyPort web-service password is required.", severityError})

@@ -400,7 +400,11 @@ func wizardRunGolden(t *testing.T, path string) {
 				html.UnescapeString(strings.TrimSpace(m[1])) != html.UnescapeString(c.Title) {
 				t.Fatalf("%s: title %v, want %q", name, m, c.Title)
 			}
-			got, want := wizardNormalise(wizardFragment(body)), wizardNormalise(c.Fragment)
+			frag := wizardFragment(body)
+			if strings.Contains(c.Fragment, `class="police-letter-find"`) {
+				assertGoPoliceStepUX(t, name, frag)
+			}
+			got, want := wizardNormalisePoliceUX(wizardNormalise(frag)), wizardNormalisePoliceUX(wizardNormalise(c.Fragment))
 			if got != want {
 				t.Fatalf("%s: wizard markup differs at %s", name, wizardTextDiff(got, want))
 			}
@@ -429,4 +433,45 @@ func wizardRunGolden(t *testing.T, path string) {
 // redirects and the calendar and guest link pages (brief 1599).
 func TestWizardEntryMatchesPython(t *testing.T) {
 	wizardRunGolden(t, "testdata/wizard_golden_entry.json")
+}
+
+var (
+	wizardPolicePasteRE      = regexp.MustCompile(`<details class="police-letter-paste".*?</details>`)
+	wizardPoliceStatusRE     = regexp.MustCompile(`<p class="police-letter-status[^>]*>.*?</p>`)
+	wizardPoliceFieldsRE     = regexp.MustCompile(`<input type="hidden" name="letter_fields"[^>]*>`)
+	wizardPoliceFormRE       = regexp.MustCompile(`<form id="police-letter-form"[^>]*>.*?</form>`)
+	wizardPoliceFindOpenRE   = regexp.MustCompile(`<details class="police-letter-find" open>`)
+	wizardPoliceMismatchAttr = regexp.MustCompile(` data-mark-mismatch="[^"]*"`)
+	wizardPoliceLiveErrRE    = regexp.MustCompile(`<p class="err-text" id="uby_mark-live-error"[^>]*></p>`)
+)
+
+// assertGoPoliceStepUX verifies Go's intentional police-step improvements over
+// Python's legacy _police_fields.html (which stays frozen for legacy Python
+// police-letter tests): no letter-paste UI, collapsed "Where do I find these?",
+// and live UBY-WS_ -> uby_mark mismatch validation hooks.
+func assertGoPoliceStepUX(t *testing.T, name, frag string) {
+	t.Helper()
+	if strings.Contains(frag, `class="police-letter-paste"`) || strings.Contains(frag, `id="police-letter-form"`) {
+		t.Fatalf("%s: Go police step must not render legacy letter paste UI", name)
+	}
+	if strings.Contains(frag, `<details class="police-letter-find" open>`) {
+		t.Fatalf("%s: Go police step must collapse police-letter-find by default", name)
+	}
+	if !strings.Contains(frag, `data-mark-mismatch="`) {
+		t.Fatalf("%s: Go police step must render live uby_mark mismatch hooks", name)
+	}
+}
+
+// wizardNormalisePoliceUX strips only the intentional Go-vs-Python police-step
+// deltas already verified by assertGoPoliceStepUX, keeping the rest of the
+// markup strictly compared byte-for-byte against the Python golden.
+func wizardNormalisePoliceUX(s string) string {
+	s = wizardPolicePasteRE.ReplaceAllString(s, "")
+	s = wizardPoliceStatusRE.ReplaceAllString(s, "")
+	s = wizardPoliceFieldsRE.ReplaceAllString(s, "")
+	s = wizardPoliceFormRE.ReplaceAllString(s, "")
+	s = wizardPoliceFindOpenRE.ReplaceAllString(s, `<details class="police-letter-find">`)
+	s = wizardPoliceMismatchAttr.ReplaceAllString(s, "")
+	s = wizardPoliceLiveErrRE.ReplaceAllString(s, "")
+	return strings.TrimSpace(wizardTagRE.ReplaceAllString(wizardSpaceRE.ReplaceAllString(s, " "), "$1"))
 }

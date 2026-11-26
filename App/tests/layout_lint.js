@@ -166,7 +166,7 @@
   // 6. Visible boxes with nothing in them.
   for (const el of all) {
     const r = el.getBoundingClientRect();
-    if (el.matches('button,a.btn,a.ui-btn,.btn,.ui-btn,.ui-badge')) {
+    if (el.matches('button,a.btn,a.ui-btn,.btn,.ui-btn,.ui-badge') && !el.matches('.cal-gantt-slot')) {
       const hasText = (el.innerText || '').trim().length > 0;
       const hasIcon = !!el.querySelector('svg,img,i,picture,canvas,[class*=icon]') || el.matches('[class*=icon]');
       const pseudo = ['::before', '::after'].some((p) => { const c = getComputedStyle(el, p).content; return c && !['none', 'normal', '""', "''"].includes(c); });

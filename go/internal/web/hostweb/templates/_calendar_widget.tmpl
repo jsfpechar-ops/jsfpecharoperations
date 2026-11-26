@@ -1,6 +1,6 @@
 {{define "dash.calendar_widget"}}
 {{- $d := . -}}
-<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261125-cal-head-bg">
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261126-ux-polish">
 <section id="calendar" class="dashboard-calendar{{if $d.Cal.SingleProperty}} cal-single-mode{{end}}" data-calendar data-today="{{$d.TodayISO}}" data-source="/dashboard/calendar" data-cleaning="false" data-readonly="false" data-calendar-date="" data-range-from="" data-range-to="" data-lang="{{$d.Lang}}" aria-labelledby="calendar-title">
   <div class="cal-head" data-cal-head>
   <div class="cal-heading">
@@ -89,5 +89,5 @@
   </dialog>
   {{$d.Cal.CalScripts}}
 </section>
-<script src="/static/dashboard-calendar.js?v=20261107-1001" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261126-ux-polish" defer></script>
 {{end}}

@@ -211,6 +211,11 @@
  ],
  [
   "cs",
+  "The abbreviation must match the part after UBY-WS_ in your login.",
+  "Zkratka musí odpovídat části za UBY-WS_ v přihlašovacím jménu."
+ ],
+ [
+  "cs",
   "The facility abbreviation (zkratka) is required.",
   "Vyplňte zkratku zařízení."
  ],
@@ -523,6 +528,11 @@
   "vi",
   "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
   "Tên viết tắt gồm 5 hoặc 6 chữ cái hoặc chữ số do cảnh sát cấp, ví dụ AAKLI."
+ ],
+ [
+  "vi",
+  "The abbreviation must match the part after UBY-WS_ in your login.",
+  "Tên viết tắt phải khớp với phần sau UBY-WS_ trong tên đăng nhập."
  ],
  [
   "vi",
@@ -841,6 +851,11 @@
  ],
  [
   "en",
+  "The abbreviation must match the part after UBY-WS_ in your login.",
+  "The abbreviation must match the part after UBY-WS_ in your login."
+ ],
+ [
+  "en",
   "The facility abbreviation (zkratka) is required.",
   "The facility abbreviation (zkratka) is required."
  ],
@@ -1153,6 +1168,11 @@
   "",
   "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
   "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "",
+  "The abbreviation must match the part after UBY-WS_ in your login.",
+  "The abbreviation must match the part after UBY-WS_ in your login."
  ],
  [
   "",
