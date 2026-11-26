@@ -1,5 +1,53 @@
 /* Phone per-property carousel cards: warm centered Airbnb style, compact for easy scroll. */
 @media (max-width: 1023px) {
+  body.v2 .prop-rails {
+    margin-top: var(--space-5);
+    gap: 0;
+  }
+
+  body.v2 .prop-rail + .prop-rail {
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  body.v2 .prop-rail-head {
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  body.v2 .prop-rail-title {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  body.v2 .prop-rail-title .property-identity {
+    gap: 10px;
+  }
+
+  body.v2 .prop-rail-title .ui-pdot {
+    width: 12px;
+    height: 12px;
+  }
+
+  body.v2 .prop-rail-cal {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 10px 5px 12px;
+    min-height: 32px;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink2);
+    flex-shrink: 0;
+  }
+
   body.v2 .prop-rail-card {
     flex: 0 0 228px;
     padding: 14px 14px 16px;
