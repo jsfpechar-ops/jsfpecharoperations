@@ -3890,9 +3890,9 @@ body.v2 #stay-fee-settings button.help-tip-btn::after{content:none}
 /* 5. Cleaning page header on tablet (768-1023px) & mobile Property Picker polish (<768px). */
 @media (min-width:768px) and (max-width:1023px){
   body.v2 .cleaning-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
-  body.v2 .cleaning-head > div:first-child{margin-right:auto}
-  body.v2 .cleaning-head .cleaning-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:auto}
-  body.v2 .cleaning-head .btn{display:inline-flex;align-items:center;justify-content:center;width:auto;flex:0 0 auto;height:40px;min-height:40px;padding:0 16px;font-size:14px;border-radius:999px;white-space:nowrap;box-sizing:border-box}
+  body.v2 .cleaning-head > div:first-child{display:none}
+  body.v2 .cleaning-head .cleaning-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:auto;margin-left:auto}
+  body.v2 .cleaning-head .btn{display:inline-flex;align-items:center;justify-content:center;width:auto;flex:0 0 auto;height:44px;min-height:44px;padding:0 16px;font-size:14px;border-radius:999px;white-space:nowrap;box-sizing:border-box}
   body.v2 .cleaning-head .btn.soft{background:#f2f2f0;color:var(--ink)}
   body.v2 .cleaning-head p.cleaning-phone{display:none}
 }
