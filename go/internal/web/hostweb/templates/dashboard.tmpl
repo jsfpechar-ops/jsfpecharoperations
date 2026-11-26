@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2099">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2100"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-notifications.css?v=20261126-2101"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2101">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -154,12 +154,13 @@
 </aside>{{end}}{{end}}
 
 {{define "dash.ny_row"}}{{$line := .line}}{{$first := .first}}<li class="card needs-you-item need" data-tone="{{$line.Tone}}" data-needs-you="{{$line.Kind}}"{{if $line.StayID}} data-needs-you-stay="{{$line.StayID}}"{{end}}{{if or $line.DismissID (eq $line.Kind "guest_link_nudge")}} data-notification{{end}}>
+  <span class="needs-you-icon" aria-hidden="true">{{if eq $line.Kind "guest_link_nudge"}}{{icon "send" 16}}{{else if eq $line.Tone "red"}}{{icon "triangle-alert" 16}}{{else if eq $line.Kind "stay"}}{{icon "users" 16}}{{else}}{{icon "info" 16}}{{end}}</span>
   <div class="needs-you-copy"><strong>{{if $line.Text}}{{$line.Text}}{{else}}{{$line.Subject}}{{end}}</strong>{{if $line.Text}}<span>{{$line.Subject}}</span>{{end}}</div>
   {{- if or $line.Href $line.DismissID (eq $line.Kind "guest_link_nudge")}}
   <div class="needs-you-actions">
+    {{- if eq $line.Kind "guest_link_nudge"}}<form method="post" action="/dashboard/dismiss-guest-link-nudge" class="needs-you-dismiss needs-you-snooze" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="needs-you-snooze-btn">{{t "needs_you.guest_link_nudge.dismiss"}}</button></form>{{end}}
     {{- if $line.Href}}<a class="btn sm{{if not $first}} ghost line{{end}}" href="{{$line.Href}}" data-needs-you-go>{{$line.Action}}</a>{{end}}
-    {{- if $line.DismissID}}<form method="post" action="/alerts/{{$line.DismissID}}/dismiss" class="needs-you-dismiss" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>
-    {{- else if eq $line.Kind "guest_link_nudge"}}<form method="post" action="/dashboard/dismiss-guest-link-nudge" class="needs-you-dismiss" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>{{end}}
+    {{- if $line.DismissID}}<form method="post" action="/alerts/{{$line.DismissID}}/dismiss" class="needs-you-dismiss" data-notification-dismiss><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="needs-you-close-btn" aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 15}}</button></form>{{end}}
   </div>
   {{- end}}
 </li>{{end}}

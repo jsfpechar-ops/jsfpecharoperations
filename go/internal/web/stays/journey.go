@@ -148,16 +148,21 @@ func BuildJourney(res Reservation, prog Progress, sig JourneySignal, today time.
 		})
 	}
 
-	// 4. Police (mandatory on every non-demo stay; red when UbyPort is not connected yet)
+	// 4. Police (mandatory on every non-demo stay, progressive phase 1->2->3->4:
+	// stays calm grey while still waiting on guest details; turns red when overdue/failed
+	// or when guests have filled details and UbyPort credentials are missing).
 	if !isDemo(res.InternalName, res.Source) {
 		polTone, polState := "waiting", "waiting"
 		switch {
 		case prog.Status == "reported" || prog.Status == "not_required" || prog.Cell.State == "filed_on_time":
 			polTone, polState = "done", "filed"
-		case !sig.FilesUbyPort:
-			polTone, polState = "bad", "not_connected"
 		case prog.Status == "failed" || prog.Cell.Level == "overdue":
 			polTone, polState = "bad", "action"
+		case !sig.FilesUbyPort:
+			polState = "not_connected"
+			if prog.Filled > 0 || prog.Status == "ready" || prog.Status == "awaiting_verification" {
+				polTone = "bad"
+			}
 		case prog.Status == "ready" || prog.Status == "awaiting_verification" || prog.Cell.State == "filed_late":
 			polTone, polState = "progress", "pending"
 		}

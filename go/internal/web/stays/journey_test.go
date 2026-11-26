@@ -26,7 +26,7 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 		}
 	})
 
-	t.Run("no lock and no ubyport shows 3 steps with red police", func(t *testing.T) {
+	t.Run("no lock and no ubyport stays calm waiting until guest fills details", func(t *testing.T) {
 		j := BuildJourney(baseRes, Progress{Filled: 0, Expected: ptrInt(2)}, JourneySignal{}, today)
 		if len(j.Steps) != 3 {
 			t.Fatalf("expected 3 steps, got %d", len(j.Steps))
@@ -37,8 +37,13 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 		if j.Steps[1].Key != "form" || j.Steps[1].Tone != "waiting" || j.Steps[1].Counter != "0/2" {
 			t.Errorf("step 1 = %+v, want form/waiting/0/2", j.Steps[1])
 		}
-		if j.Steps[2].Key != "police" || j.Steps[2].Tone != "bad" || j.Steps[2].StateKey != "not_connected" {
-			t.Errorf("step 2 = %+v, want police/bad/not_connected", j.Steps[2])
+		if j.Steps[2].Key != "police" || j.Steps[2].Tone != "waiting" || j.Steps[2].StateKey != "not_connected" {
+			t.Errorf("step 2 = %+v, want police/waiting/not_connected", j.Steps[2])
+		}
+		// Once a guest fills details without UbyPort credentials, phase 4 turns red.
+		jFilled := BuildJourney(baseRes, Progress{Filled: 1, Expected: ptrInt(2)}, JourneySignal{}, today)
+		if jFilled.Steps[2].Key != "police" || jFilled.Steps[2].Tone != "bad" || jFilled.Steps[2].StateKey != "not_connected" {
+			t.Errorf("filled step 2 = %+v, want police/bad/not_connected", jFilled.Steps[2])
 		}
 	})
 
