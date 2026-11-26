@@ -3,40 +3,22 @@ package stays
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestArchiveOldUnfilledHandler(t *testing.T) {
-	url := os.Getenv("UBYHOST_TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("UBYHOST_TEST_DATABASE_URL unset")
-	}
+	pool := dbPool(t)
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer pool.Close()
 
 	at := time.Date(2026, 11, 26, 10, 0, 0, 0, time.UTC)
 	var ownerID, aptID, oldEmptyID, oldWithGuestID, recentEmptyID int64
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO user_account (username, password_hash, role, active, session_version, created_at, email)
 		 VALUES ('arch_old_owner', 'x', 'host', 1, 1, '2026-01-01T00:00:00Z', 'arch_old@example.test')
-		 ON CONFLICT (username) DO UPDATE SET active = 1 RETURNING id`).Scan(&ownerID); err != nil {
+		 RETURNING id`).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_, _ = pool.Exec(ctx, `DELETE FROM legal_acceptance WHERE user_account_id = $1`, ownerID)
-		_, _ = pool.Exec(ctx, `DELETE FROM apartment WHERE owner_user_id = $1`, ownerID)
-		_, _ = pool.Exec(ctx, `DELETE FROM user_account WHERE id = $1`, ownerID)
-	}()
-	_, _ = pool.Exec(ctx, `DELETE FROM legal_acceptance WHERE user_account_id = $1`, ownerID)
-	_, _ = pool.Exec(ctx, `DELETE FROM apartment WHERE owner_user_id = $1`, ownerID)
 	seedLegalAcceptance(t, pool, ownerID, at)
 
 	if err := pool.QueryRow(ctx,
