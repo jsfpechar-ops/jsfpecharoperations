@@ -1,10 +1,10 @@
-/* Revamped "What needs you" notification cards: tinted icon tiles, distinct urgent vs tip rows,
-   clean "Not now" / Lucide dismiss buttons with >= 12px touch & visual clearance. */
+/* Revamped "What needs you" notification cards: symmetrical 3-column geometry,
+   uniform right CTA column, tinted icon tiles, and quiet inline dismiss on optional tips. */
 body.v2 #needs-action .needs-you-list {
   display: block;
   gap: 0;
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -15,7 +15,7 @@ body.v2 #needs-action .needs-you-item.need {
   align-items: start;
   background: var(--card);
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
   padding: 14px 16px;
@@ -77,11 +77,11 @@ body.v2 #needs-action .needs-you-item.need .needs-you-copy strong {
   color: var(--ink);
 }
 
-body.v2 #needs-action .needs-you-item.need .needs-you-copy span {
+body.v2 #needs-action .needs-you-item.need .needs-you-copy .needs-you-sub {
   display: block;
   margin-top: 0;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--ink2);
 }
 
@@ -90,7 +90,8 @@ body.v2 #needs-action .needs-you-item.need .needs-you-dismiss {
   top: auto;
   right: auto;
   transform: none;
-  margin: 0;
+  display: block;
+  margin: 4px 0 0;
 }
 
 body.v2 #needs-action .needs-you-item.need .needs-you-dismiss button::before {
@@ -99,74 +100,55 @@ body.v2 #needs-action .needs-you-item.need .needs-you-dismiss button::before {
 }
 
 body.v2 #needs-action .needs-you-item.need .needs-you-snooze-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline;
   width: auto;
   min-width: 0;
-  min-height: 34px;
-  height: 34px;
-  padding: 0 12px;
+  min-height: 0;
+  height: auto;
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink3);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   white-space: nowrap;
   cursor: pointer;
 }
 
 body.v2 #needs-action .needs-you-item.need .needs-you-snooze-btn:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
-}
-
-body.v2 #needs-action .needs-you-item.need .needs-you-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--ink3);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-body.v2 #needs-action .needs-you-item.need .needs-you-close-btn:hover {
-  background: var(--surface-hover);
   color: var(--ink);
 }
 
 @media (min-width: 768px) {
+  body.v2 #needs-action .needs-you-item.need .needs-you-dismiss {
+    display: inline;
+    margin: 0 0 0 8px;
+  }
+
   body.v2 #needs-action .needs-you-item.need,
   body.v2 #needs-action .needs-you-item.need:has(.needs-you-dismiss) {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 36px minmax(0, 1fr) 128px;
     align-items: center;
-    padding: 12px 16px;
+    padding: 13px 16px;
     gap: 14px;
   }
 
   body.v2 #needs-action .needs-you-item.need .needs-you-actions {
-    display: inline-flex;
+    display: flex;
+    justify-content: flex-end;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 12px;
     margin-top: 0;
   }
 
   body.v2 #needs-action .needs-you-item.need .needs-you-actions .btn.sm {
+    width: 100%;
     min-height: 34px;
     padding: 0 14px;
+    justify-content: center;
     font-size: 13px;
     font-weight: 600;
     border-radius: var(--radius-pill);
@@ -190,16 +172,14 @@ body.v2 #needs-action .needs-you-item.need .needs-you-close-btn:hover {
   body.v2 #needs-action .needs-you-item.need .needs-you-actions {
     grid-column: 1 / -1;
     display: flex;
-    flex-wrap: nowrap;
     align-items: center;
-    gap: 12px;
     margin-top: 2px;
   }
 
   body.v2 #needs-action .needs-you-item.need .needs-you-actions .btn.sm {
-    width: auto;
-    flex: 1 1 auto;
+    width: 100%;
     min-height: 40px;
+    justify-content: center;
     font-size: 14px;
     font-weight: 600;
     padding: 0 16px;
@@ -210,16 +190,5 @@ body.v2 #needs-action .needs-you-item.need .needs-you-close-btn:hover {
     background: var(--card);
     border: 1px solid var(--border);
     color: var(--ink);
-  }
-
-  body.v2 #needs-action .needs-you-item.need .needs-you-snooze {
-    flex: 0 0 auto;
-  }
-
-  body.v2 #needs-action .needs-you-item.need .needs-you-snooze-btn {
-    min-height: 40px;
-    height: 40px;
-    padding: 0 14px;
-    font-size: 14px;
   }
 }

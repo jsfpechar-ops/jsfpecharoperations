@@ -1,5 +1,5 @@
 {{define "stays_list.title"}}{{end}}
-{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2100"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-stays.css?v=20261126-2099">{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2102"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-stays.css?v=20261126-2102">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
@@ -112,10 +112,6 @@
   <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{t "stays.add_stay"}}</button>
 </div>{{end}}</div>
 {{template "stays_onboarding_banner" .}}
-{{if and (not .ShowArchive) (gt .OldUnfilledCount 0)}}<aside class="onboarding-banner old-unfilled-strip" data-old-unfilled-strip>
-  <span>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.label.one"}}{{else}}{{t "stays.old_unfilled.label" (kv "count" .OldUnfilledCount)}}{{end}}</span>
-  <form method="post" action="/reservations/archive-old-unfilled" class="inline" data-confirm data-confirm-message="{{t "stays.old_unfilled.confirm" (kv "count" .OldUnfilledCount)}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost sm" type="submit">{{t "stays.old_unfilled.action"}}</button></form>
-</aside>{{end}}
 {{if .Apartments}}
 <div id="add-stay-panel" class="action-panel hidden stays-panel">
   <div class="ui-section">
@@ -217,6 +213,14 @@
   <form method="post" action="/demo" class="empty-state-extra"><input type="hidden" name="_csrf" value="{{csrf}}">
     <button class="ui-btn ui-btn-secondary" type="submit">{{t "demo.load"}}</button><p class="sub">{{t "demo.load_detail"}}</p></form></div>
 {{else}}{{empty_state "" (t "stays.empty.no_apartments") "/apartments/new" (t "stays.empty.add_first")}}{{end}}
+{{if and (not .ShowArchive) (gt .OldUnfilledCount 0)}}<aside class="stays-cleanup-bar" data-old-unfilled-strip>
+  <span class="stays-cleanup-icon" aria-hidden="true">{{icon "archive" 16}}</span>
+  <div class="stays-cleanup-copy">
+    <strong>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.label.one"}}{{else}}{{t "stays.old_unfilled.label" (kv "count" .OldUnfilledCount)}}{{end}}</strong>
+    <span>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.hint.one"}}{{else}}{{t "stays.old_unfilled.hint"}}{{end}}</span>
+  </div>
+  <form method="post" action="/reservations/archive-old-unfilled" class="stays-cleanup-form" data-confirm data-confirm-message="{{t "stays.old_unfilled.confirm" (kv "count" .OldUnfilledCount)}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost sm stays-cleanup-btn" type="submit">{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.action.one"}}{{else}}{{t "stays.old_unfilled.action"}}{{end}}</button></form>
+</aside>{{end}}
 <details class="stays-index-card stays-links stays-tools ph-hide">
   <summary class="stays-tools-summary">
     <span class="stays-tools-copy"><strong>{{t "stays.tools.title"}}</strong><span class="stays-tools-hint">{{t "stays.tools.hint"}}</span></span>

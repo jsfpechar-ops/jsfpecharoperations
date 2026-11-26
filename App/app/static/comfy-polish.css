@@ -1,5 +1,30 @@
 /* Excel-aligned Reporting / Status columns across Stays list and Dashboard Today table,
-   gap-free connected journey pipeline, calm underline tabs, and collapsed Reports & exports. */
+   crisp unmistakable stay row borders, gap-free journey pipeline, calm tabs, and collapsed Reports. */
+body.v2 .stays-desk,
+body.v2 .ov-table {
+  border-color: var(--border);
+}
+
+body.v2 .stays-desk thead th,
+body.v2 .ov-table thead th {
+  border-bottom: 1px solid var(--border);
+}
+
+body.v2 .stays-desk tbody td,
+body.v2 .ov-table tbody td {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+body.v2 .stays-desk tbody tr:last-child td,
+body.v2 .ov-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+body.v2 .stays-desk tbody tr.clickable-row:hover td,
+body.v2 .ov-table tbody tr.clickable-row:hover td {
+  background: var(--canvas-subtle);
+}
+
 body.v2 .stays-desk tbody td {
   vertical-align: top;
   padding-top: 14px;
