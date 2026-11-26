@@ -80,11 +80,11 @@ def seed_comfy_world(db_url: str) -> dict[str, int]:
                VALUES (%s, %s, 'LK-9001', 'stay', 'issued', 'SECRET-PIN-9988', %s, %s, %s)""",
             (stay_green, apt1, now_ts, now_ts, now_ts),
         )
-        for idx in range(2):
+        for idx, first in enumerate(("Anna", "Petr")):
             cur.execute(
-                """INSERT INTO guest (reservation_id, first_name, surname, birth_date, nationality, doc_number, stay_from, stay_to, submit_state, created_at, updated_at)
-                   VALUES (%s, %s, 'Novakova', '1990-05-10', 'DEU', %s, %s, %s, 'reported', %s, %s)""",
-                (stay_green, f"Anna{idx+1}", f"DOC900{idx}", iso(0), iso(3), now_ts, now_ts),
+                """INSERT INTO guest (reservation_id, first_name, surname, birth_date, nationality, doc_type, doc_number, res_street, res_city, res_country, purpose, signature_png, stay_from, stay_to, submit_state, submitted_at, created_at, updated_at)
+                   VALUES (%s, %s, 'Novakova', '10051990', 'DEU', 'passport', %s, 'Hauptstrasse 12', 'Berlin', 'DEU', '10', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', %s, %s, 'sent', %s, %s, %s)""",
+                (stay_green, first, f"DOC900{idx}", iso(0), iso(3), now_ts, now_ts, now_ts),
             )
 
         # Stay B (apt1): checked out yesterday, 1/2 guests, failed TTLock, failed UbyPort (non-overlapping with Stay A)

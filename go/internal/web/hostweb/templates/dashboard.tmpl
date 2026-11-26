@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2091">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2092">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -140,7 +140,7 @@
 <div class="card cal ov-section">
   <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
   {{- range $d.CalRows}}
-  <div class="cgrid crow"><div class="cn" title="{{.Name}}"><a class="cal-row-prop-link" href="{{cal_prop_href $d.Apartments .Name}}">{{property_identity (cal_prop_id $d.Apartments .Name) .Name true}}</a></div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
+  <div class="cgrid crow"><div class="cn" title="{{.Name}}"><a class="cal-row-prop-link" href="{{cal_prop_href $d.Apartments .Name}}">{{property_identity (cal_prop_id $d.Apartments .Name) .Name true}}</a></div>{{range .Bars}}{{$meta := bar_meta $d.Rows .URL .ColStart .ColEnd}}<a class="bar {{.CSS}}{{if $meta}} has-meta{{end}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{bar_display_label .Label $meta}}</span>{{if $meta}}<span class="bar-meta">{{$meta}}</span>{{end}}</a>{{end}}</div>
   {{- end}}
 </div>
 </div>

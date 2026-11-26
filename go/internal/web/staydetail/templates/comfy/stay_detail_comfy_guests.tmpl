@@ -43,11 +43,9 @@
         {{template "staydetail.id_line" (guest_line . $.Access)}}
         {{if .Guest.Row.Note}}<small>{{t "stay.detail.guests.note" "text" .Guest.Row.Note}}</small>{{end}}
         {{if .Guest.EnteredBy}}<small>{{t "stay.detail.guests.entered_by"}}: <span>{{entered_by_label lang .Guest.EnteredBy}}</span></small>{{end}}
-        {{if eq (len .Issues) 1}}
-          <div class="guest-issue-one" data-tone="{{guest_issues_tone .Issues}}"><span class="guest-issues-dot" aria-hidden="true"></span><span>{{range .Issues}}{{validation_message .Message lang}}{{end}}</span></div>
-        {{else if gt (len .Issues) 1}}
+        {{if .Issues}}
           <details class="guest-issues" data-tone="{{guest_issues_tone .Issues}}">
-            <summary class="guest-issues-summary"><span class="guest-issues-dot" aria-hidden="true"></span><span>{{missing_details_label lang (len .Issues)}}</span>{{icon "chevron-down" 14}}</summary>
+            <summary class="guest-issues-summary"><span class="guest-issues-dot" aria-hidden="true"></span><span>{{missing_details_summary lang .Issues}}</span>{{icon "chevron-down" 14}}</summary>
             <ul class="guest-issues-list">
               {{range .Issues}}<li class="{{if eq .Severity "error"}}is-err{{else}}is-warn{{end}}">{{validation_message .Message lang}}</li>{{end}}
             </ul>

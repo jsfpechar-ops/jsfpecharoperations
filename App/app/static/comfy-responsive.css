@@ -57,15 +57,34 @@ body.v2 .cal .crow .cn .property-identity > span:last-child {
 body.v2 .cal .crow .bar {
   justify-content: center;
   text-align: center;
+  gap: 6px;
   margin: 0 3px;
   padding: 0 8px;
   border: 1px solid transparent;
+}
+
+body.v2 .cal .crow .bar.has-meta {
+  justify-content: space-between;
+  text-align: left;
+  padding: 0 6px 0 10px;
 }
 
 body.v2 .cal .crow .bar .bar-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+body.v2 .cal .crow .bar .bar-meta {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: inherit;
+  opacity: 0.9;
 }
 
 body.v2 .cal .crow .bar.b-ok {

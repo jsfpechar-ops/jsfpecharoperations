@@ -90,3 +90,33 @@ func TestBuildDesktopWindow_AutoDefaultAndExplicit(t *testing.T) {
 		}
 	})
 }
+
+func TestBarMetaAndDisplayLabel(t *testing.T) {
+	two := 2
+	rows := []stays.Row{
+		{
+			Reservation: stays.Reservation{ID: 101, DateFrom: "2026-11-26", DateTo: "2026-11-29"},
+			Progress:    stays.Progress{Filled: 2, Expected: &two},
+		},
+		{
+			Reservation: stays.Reservation{ID: 102, DateFrom: "2026-11-26", DateTo: "2026-11-29"},
+			Progress:    stays.Progress{Filled: 0, Expected: nil},
+		},
+	}
+
+	if got := barMeta(rows, "/reservations/101", 2, 3); got != "" {
+		t.Errorf("1-column narrow bar should omit meta badge, got %q", got)
+	}
+	if got := barMeta(rows, "/reservations/101", 2, 5); got != "2/2" {
+		t.Errorf("multi-night bar with expected guests = %q, want 2/2", got)
+	}
+	if got := barMeta(rows, "/reservations/102", 2, 5); got != "3n" {
+		t.Errorf("multi-night bar without expected guests = %q, want 3n", got)
+	}
+	if got := barDisplayLabel("Anna Novakova · 3n", "2/2"); got != "Anna Novakova" {
+		t.Errorf("barDisplayLabel with meta = %q, want Anna Novakova", got)
+	}
+	if got := barDisplayLabel("Claire Martin", ""); got != "Claire Martin" {
+		t.Errorf("barDisplayLabel without meta = %q, want Claire Martin", got)
+	}
+}

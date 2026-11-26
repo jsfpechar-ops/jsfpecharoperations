@@ -232,3 +232,68 @@ func calPropID(apts []apartmentRow, name string) int64 {
 	}
 	return 0
 }
+
+// barMeta returns a compact right-side badge ("2/2", "0/2", or "3n") for
+// multi-night Gantt bars (span >= 2 columns) so stay pills stay left-anchored
+// to arrival while feeling visually balanced across their full width.
+func barMeta(rows []stays.Row, barURL string, colStart, colEnd int) string {
+	if colEnd-colStart < 2 {
+		return ""
+	}
+	id := barStayID(barURL)
+	if id == 0 {
+		return ""
+	}
+	for _, r := range rows {
+		if r.Reservation.ID != id {
+			continue
+		}
+		if r.Progress.Expected != nil && *r.Progress.Expected > 0 {
+			return fmt.Sprintf("%d/%d", r.Progress.Filled, *r.Progress.Expected)
+		}
+		if r.Progress.Filled > 0 {
+			return fmt.Sprintf("%d", r.Progress.Filled)
+		}
+		if n := todayNights(r.Reservation); n > 0 {
+			return fmt.Sprintf("%dn", n)
+		}
+		return ""
+	}
+	return ""
+}
+
+// barDisplayLabel strips a trailing " · N" guest count when barMeta already
+// renders the guest/form counter on the right edge of the Gantt bar.
+func barDisplayLabel(label, meta string) string {
+	if meta == "" {
+		return label
+	}
+	if idx := strings.LastIndex(label, " · "); idx > 0 {
+		tail := strings.TrimSpace(label[idx+len(" · "):])
+		if len(tail) > 0 && tail[0] >= '0' && tail[0] <= '9' {
+			return label[:idx]
+		}
+	}
+	return label
+}
+
+func barStayID(barURL string) int64 {
+	const prefix = "/reservations/"
+	i := strings.Index(barURL, prefix)
+	if i < 0 {
+		return 0
+	}
+	rest := barURL[i+len(prefix):]
+	end := 0
+	for end < len(rest) && rest[end] >= '0' && rest[end] <= '9' {
+		end++
+	}
+	if end == 0 {
+		return 0
+	}
+	var id int64
+	for j := 0; j < end; j++ {
+		id = id*10 + int64(rest[j]-'0')
+	}
+	return id
+}

@@ -41,6 +41,8 @@ var dashFuncs = template.FuncMap{
 	"journey_strip":       stays.RenderJourneyStrip,
 	"cal_prop_href":       calPropHref,
 	"cal_prop_id":         calPropID,
+	"bar_meta":            barMeta,
+	"bar_display_label":   barDisplayLabel,
 	"dash_short_date":     dashShortDate,
 }
 
