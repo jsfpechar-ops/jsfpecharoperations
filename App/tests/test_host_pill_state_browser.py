@@ -154,6 +154,9 @@ def _assert_current_pill_dark(page, selector):
 def test_stays_current_pill_stays_dark_on_hover_and_focus(playwright_api, host, base, width):
     browser, page = _open(playwright_api, host, base, "/reservations", width)
     try:
+        if width >= 1024:
+            page.locator("[data-filter-toggle]").click()
+            page.wait_for_selector("#stays-filter-panel:not(.is-collapsed)", timeout=5000)
         current = page.locator(".stays-pills .settings-pill.is-current").first
         assert page.locator(".stays-pills .settings-pill.is-current").count() == 1, "no current Stays pill"
         current.hover()

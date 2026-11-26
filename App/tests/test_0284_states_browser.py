@@ -71,6 +71,10 @@ def test_hover_changes_every_clickable_thing(base):
         browser, page = _page(playwright, base, cookie)
         for path, selector in targets:
             page.goto(base + path + ("&" if "?" in path else "?") + "lang=en")
+            if selector == "a.settings-pill:not([aria-current])":
+                toggle = page.locator("[data-filter-toggle]")
+                if toggle.count() and toggle.is_visible():
+                    toggle.click()
             element = page.locator(selector + ":visible").first
             assert element.count(), (path, selector)
             page.mouse.move(1, 1)

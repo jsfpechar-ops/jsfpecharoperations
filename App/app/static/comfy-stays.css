@@ -1,27 +1,34 @@
 /* Stays toolbar: quiet underline tabs on the left, stays-scoped Search + Filters on the right. */
-.stays-toolbar {
+body.v2 .stays-toolbar {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  margin: 0 0 var(--space-3);
 }
 
-.stays-toolbar-tools {
+body.v2 .stays-toolbar-tools {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.stays-search {
+body.v2 .stays-search {
   position: relative;
   display: flex;
   align-items: center;
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-.stays-search-icon {
+body.v2 .stays-search-icon {
   position: absolute;
   left: 11px;
   color: var(--ink3);
@@ -71,7 +78,7 @@ body.v2 .stays-toolbar-tools .stays-filter-btn {
 }
 
 @media (min-width: 1024px) {
-  .stays-toolbar {
+  body.v2 .stays-toolbar {
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
@@ -90,12 +97,12 @@ body.v2 .stays-toolbar-tools .stays-filter-btn {
     margin-bottom: 0;
   }
 
-  .stays-toolbar-tools {
+  body.v2 .stays-toolbar-tools {
     padding-bottom: 6px;
     flex-shrink: 0;
   }
 
-  .stays-search {
+  body.v2 .stays-search {
     flex: 0 1 210px;
     width: 210px;
   }

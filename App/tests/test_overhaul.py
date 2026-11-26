@@ -135,6 +135,13 @@ def _stay_sources(page_text: str):
             r'class="source-badge">(?:<img[^>]*>)?([^<]+)', page_text
         )
     ]
+    if not badges:
+        badges = [
+            value.strip()
+            for value in re.findall(
+                r'class="stay-source-icon" title="([^"]+)"', page_text
+            )
+        ]
     if badges:
         return badges
     return [
@@ -318,9 +325,9 @@ def test_reservation_rows_are_full_click_targets():
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
         assert re.search(r'class="[^"]*\bclickable-row\b', page.text)
-        # Open remains in the menu and native date link; the row has no duplicate button.
+        # Open remains on the stay identity link and slide-over drawer; the row has no duplicate button or per-row menu.
         assert 'class="btn row-open"' not in page.text
-        assert 'class="row-menu-item" href="/reservations/' in page.text
+        assert f'href="/reservations/{stays[0]}?return_to=' in page.text
     finally:
         _cleanup()
 

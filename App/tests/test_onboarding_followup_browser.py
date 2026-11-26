@@ -43,9 +43,8 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         if width >= 1024:  # v2 desk table; phones get the grouped row list
             row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
             assert row.locator(".stay-portal-link").count() == 0
-            assert row.locator("td a.stay-identity-link").count() == 1  # v2: the guest name opens the stay (the mockup has no Open cue)
-            assert row.locator('.row-actions > button[data-copy]').count() == 0
-            assert row.locator('button[data-copy]').is_hidden()
+            assert row.locator("td a.stay-identity-link").count() == 1
+            assert row.locator("td.row-actions").count() == 0
             row.scroll_into_view_if_needed()
             before = row.bounding_box()
             target = row  # v2 (mockup): the row itself takes the hover colour
@@ -63,11 +62,17 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
             _fits(page)
             _shot(page, f"36-uniform-stays-hover-{lang}-{width}.png")
 
-            trigger = row.locator(".row-menu-trigger")
+            # Clicking the stay row opens the slide-over Stay detail drawer; Copy link & Open full page live there.
+            row.click()
+            drawer = page.locator("#stays-drawer")
+            drawer.wait_for(state="visible", timeout=5000)
+            page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+            trigger = drawer.locator(".stays-drawer-actions .row-menu-trigger")
             trigger.click()
             menu = page.locator(".row-menu-panel.is-open")
             assert menu.get_by_role("menuitem", name=_t(lang, "host.copy_guest_form_link"), exact=True).is_visible()
-            menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).click()
+            trigger.click()
+            drawer.locator(f'a.stays-drawer-icon-btn[href^="/reservations/{stay_id}?"]').click()
             page.wait_for_url(f"**/reservations/{stay_id}?**")
         else:
             phone_row = page.locator(f'.stays-phone a.card.stay[href^="/reservations/{stay_id}?"]')
@@ -92,11 +97,17 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
             row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
             row.focus()
             page.keyboard.press("Enter")
-            page.wait_for_url(f"**/reservations/{stay_id}?**")
-            page.goto(f"{base}/reservations?range=all&lang={lang}")
-            _ready(page)
+            drawer = page.locator("#stays-drawer")
+            drawer.wait_for(state="visible", timeout=5000)
+            page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+            assert drawer.locator(f'a.stays-drawer-icon-btn[href^="/reservations/{stay_id}?"]').count() == 1
+            drawer.locator("[data-stays-drawer-close]").click()
+            assert drawer.is_hidden()
             page.locator(f'tr[data-href^="/reservations/{stay_id}?"] td[data-card="badge"]').click()
-            page.wait_for_url(f"**/reservations/{stay_id}?**")
+            drawer.wait_for(state="visible", timeout=5000)
+            page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+            assert drawer.locator(f'a.stays-drawer-icon-btn[href^="/reservations/{stay_id}?"]').count() == 1
+            drawer.locator("[data-stays-drawer-close]").click()
 
         page.goto(f"{base}/apartments?lang={lang}")
 
