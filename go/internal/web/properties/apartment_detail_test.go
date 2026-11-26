@@ -451,7 +451,7 @@ func TestApartmentDetailHealth(t *testing.T) {
 		(901, 'critical', 'ubyport_auth_failed', 130201, 130001, 'm', $1), (902, 'warning', 'feed_error', 130201, 130001, 'm', $1)`, stamp0)
 	body := adGet(adMux(pool, nil), "/apartments/130201", 130001, 0, "en").Body.String()
 	adCheck(t, "alerts", body, []string{`data-strip="calendars" data-state="bad"`, `data-strip="police" data-state="bad"`,
-		`data-strip="business" data-state="warn"><i class="sd" aria-hidden="true"></i><b>Business details</b><small class="is-problem">Business details are missing.</small>`}, nil)
+		`data-strip="business" data-state="warn"><i class="sd" aria-hidden="true"></i><b>Business details</b><small class="is-problem">Details missing</small>`}, nil)
 	// a resolved alert does not count
 	mustExec(t, pool, `UPDATE alert SET resolved_at = $1`, stamp0)
 	mustExec(t, pool, `UPDATE apartment SET data_controller_entity_id = NULL WHERE id = $1`, adLoft)

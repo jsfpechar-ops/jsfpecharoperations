@@ -489,9 +489,21 @@ func (v *detailView) derive(lang string) {
 	a := v.A
 	v.Address = strings.Join(nonEmpty(pyStrip(a.AddrStreet+" "+a.AddrHouseNo), a.AddrObec), ", ")
 	v.AddressSub = pyStrip(v.Address) != ""
+	stripShort := map[string]string{
+		"health.calendar.none":     "property_page.strip.calendar_none",
+		"health.calendar.error":    "property_page.strip.calendar_error",
+		"health.guest_link.unused": "property_page.strip.guest_unused",
+		"health.police.missing":    "property_page.strip.police_missing",
+		"health.police.login":      "property_page.strip.police_login",
+		"health.business.missing":  "property_page.strip.business_missing",
+	}
 	pill := func(key string) detailStrip {
 		row := v.Health[key]
-		return detailStrip{State: row.State, Problem: row.State == "bad" || row.State == "warn", TextKey: row.TextKey}
+		textKey := row.TextKey
+		if shortKey, ok := stripShort[textKey]; ok {
+			textKey = shortKey
+		}
+		return detailStrip{State: row.State, Problem: row.State == "bad" || row.State == "warn", TextKey: textKey}
 	}
 	v.Cal, v.Guest, v.Police, v.Biz = pill("calendar"), pill("guest_link"), pill("police"), pill("business")
 	v.PoliceOK = v.Health["police"].State == "ok"

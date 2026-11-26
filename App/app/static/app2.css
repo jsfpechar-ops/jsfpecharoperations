@@ -3757,47 +3757,75 @@ body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:non
 
 /* 2026-11-26 Airbnb-minimal mobile & cross-app polish */
 
-/* 1. Quick-start property strip (Go prop-strip-v2): full-width Guest link card with split Copy link + Copy PIN,
-      compact top-aligned status tiles with zero vertical stretching and zero orphan slots. */
-body.v2 .prop-strip.prop-strip-v2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px;margin:0 auto 16px;max-width:980px;align-items:stretch}
-body.v2 .prop-strip.prop-strip-v2 .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:start;align-content:start;min-height:64px;padding:12px 14px;background:var(--s);border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
-body.v2 .prop-strip.prop-strip-v2 .sc .sd{grid-row:1;align-self:start;margin-top:4px;width:9px;height:9px;border-radius:50%;background:#c9c9c3}
-body.v2 .prop-strip.prop-strip-v2 .sc b{grid-column:2;font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);min-width:0;overflow-wrap:anywhere}
-body.v2 .prop-strip.prop-strip-v2 .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
-body.v2 .prop-strip.prop-strip-v2 div.sc.sc-link{order:-1;grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 16px;min-height:0}
-body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1 1 220px;min-height:0;align-content:center}
-body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sd{margin-top:0;flex:none}
-body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main b{font-size:15px;font-weight:700;line-height:1.25}
-body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main small{font-size:13px;line-height:1.3}
-body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sc-pin{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:var(--side2);color:var(--ink);font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:700;letter-spacing:.06em}
+/* 1. Quick-start property strip (Go prop-strip-v2):
+      - Hero Guest Link card (single clean header + PIN pill + split Copy link / Copy PIN buttons)
+      - Unified calm Apple/Airbnb grouped status list on phone & tablet (<1024px) with 1-2 word pills & chevrons
+      - Crisp 5-column horizontal compact tab strip on desktop (>=1024px) */
+body.v2 .prop-strip.prop-strip-v2{display:flex;flex-direction:column;gap:12px;margin:0 auto 18px;max-width:980px}
+body.v2 .prop-strip.prop-strip-v2 .sc .sd{width:8px;height:8px;border-radius:50%;background:#d0cec7;flex:none}
+body.v2 .prop-strip.prop-strip-v2 .sc[data-state="ok"] .sd{background:var(--ok)}
+body.v2 .prop-strip.prop-strip-v2 .sc[data-state="warn"] .sd{background:var(--warn)}
+body.v2 .prop-strip.prop-strip-v2 .sc[data-state="bad"] .sd{background:var(--bad)}
+/* Hero Guest Link card */
+body.v2 .prop-strip.prop-strip-v2 div.sc.sc-link{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 16px;min-height:0;background:var(--s);border:1px solid var(--line);border-radius:16px;box-sizing:border-box}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 240px;min-height:0;text-decoration:none;color:inherit}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-copy b{font-size:15px;font-weight:700;line-height:1.2;color:var(--ink)}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-copy small{font-size:12.5px;font-weight:500;line-height:1.25;color:var(--ink3)}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-copy small.is-problem{color:var(--warn);font-weight:600}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sc-pin{margin-left:auto;flex:none;display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:var(--side2);color:var(--ink);font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
 body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
 body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;border-radius:999px;white-space:nowrap}
 body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-primary{background:var(--acc);color:#fff;border:1px solid var(--acc)}
 body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-secondary{background:var(--s);color:var(--ink);border:1px solid var(--line)}
 body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-secondary:hover{background:var(--side2);border-color:var(--ink3)}
+/* Unified calm grouped settings card (<1024px) */
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list{display:flex;flex-direction:column;background:var(--s);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc{display:grid;grid-template-columns:8px minmax(0,1fr) auto 10px;align-items:center;column-gap:10px;row-gap:0;min-height:48px;padding:10px 14px 10px 16px;background:transparent;border:0;border-radius:0;color:inherit;text-decoration:none;box-sizing:border-box;transition:background .15s}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc + .sc{border-top:1px solid var(--line)}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc:hover{background:var(--bg);border-color:var(--line)}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc.is-current{background:var(--side2);box-shadow:inset 3px 0 0 var(--ink)}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc .sd{grid-column:1;grid-row:1;align-self:center;margin:0}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc b{grid-column:2;grid-row:1;font-size:14px;font-weight:600;line-height:1.25;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc small{grid-column:3;grid-row:1;font-size:12.5px;font-weight:500;line-height:1.2;color:var(--ink3);white-space:nowrap;text-align:right}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="ok"] small{color:var(--ink2);font-weight:600}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="warn"] small.is-problem{padding:3px 9px;border-radius:999px;background:var(--warns);color:var(--warn);font-size:12px;font-weight:600}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="bad"] small.is-problem{padding:3px 9px;border-radius:999px;background:var(--bads);color:var(--bad);font-size:12px;font-weight:600}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc::after{content:"";grid-column:4;grid-row:1;width:6px;height:6px;border-right:1.75px solid var(--ink3);border-bottom:1.75px solid var(--ink3);transform:rotate(-45deg);opacity:.5;justify-self:end;transition:opacity .15s,transform .15s}
+body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc:hover::after{opacity:.95;transform:translateX(1px) rotate(-45deg)}
 @media (max-width:639px){
-  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  body.v2 .prop-strip.prop-strip-v2 .sc:last-child:not(.sc-link){grid-column:1/-1}
   body.v2 .prop-strip.prop-strip-v2 div.sc.sc-link{flex-direction:column;align-items:stretch;gap:12px}
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main{flex:none;width:100%}
-  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions:not(:has([data-guest-copy-pin])){grid-template-columns:minmax(0,1fr)}
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{width:100%;min-width:0;padding:10px 12px;white-space:normal;text-align:center}
 }
 @media (max-width:359px){
-  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:minmax(0,1fr)}
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc{column-gap:8px;padding:10px 12px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc b{font-size:13.5px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc small{font-size:11.5px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="warn"] small.is-problem,
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="bad"] small.is-problem{padding:2px 7px;font-size:11.5px}
 }
-@media (min-width:640px) and (max-width:1279px){
-  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (min-width:640px) and (max-width:1023px){
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:40px;padding:8px 16px;font-size:13px}
 }
 @media (min-width:1024px){
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-copy{flex-direction:row;align-items:baseline;gap:8px}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sc-pin{margin-left:4px}
   body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:36px;padding:7px 14px;font-size:13px}
-  body.v2 nav.prop-strip.prop-strip-v2 .sc.is-current{background:var(--s);border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
-}
-@media (min-width:1280px){
-  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;background:transparent;border:0;border-radius:0;overflow:visible}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc{grid-template-columns:8px minmax(0,1fr);column-gap:8px;row-gap:3px;min-height:58px;padding:10px 12px;background:var(--s);border:1px solid var(--line);border-radius:14px;align-content:center}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc + .sc{border-top:1px solid var(--line)}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc:hover{background:var(--s);border-color:var(--ink3)}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc.is-current{background:var(--s);border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc .sd{grid-row:1;align-self:center}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc b{grid-column:2;grid-row:1;font-size:13.5px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc small{grid-column:2;grid-row:2;justify-self:start;text-align:left;font-size:12px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="warn"] small.is-problem,
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc[data-state="bad"] small.is-problem{padding:1px 7px;font-size:11.5px;margin-top:1px}
+  body.v2 .prop-strip.prop-strip-v2 .prop-strip-list .sc::after{display:none}
 }
 
 /* 2. Setup continue card: clean header row separating progress and amber badge, touch-friendly actions. */
