@@ -1,36 +1,72 @@
-/* Phone per-property carousel cards: warm centered Airbnb style, compact for easy scroll. */
+/* Phone per-property carousel: clear visual property badge + balanced card scale
+   (comfortable screen-filling card for 1-property hosts; scannable airy card for multi-property managers). */
 @media (max-width: 1023px) {
   body.v2 .prop-rails {
-    margin-top: var(--space-5);
+    padding-top: var(--space-5);
     gap: 0;
   }
 
   body.v2 .prop-rail + .prop-rail {
-    margin-top: var(--space-5);
+    margin-top: var(--space-6);
     padding-top: var(--space-5);
     border-top: 1px solid var(--line);
   }
 
   body.v2 .prop-rail-head {
-    margin-bottom: 12px;
-    gap: 12px;
+    margin-bottom: 14px;
+    gap: 10px;
   }
 
   body.v2 .prop-rail-title {
-    font-size: 19px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--ink);
     line-height: 1.2;
+    min-width: 0;
   }
 
   body.v2 .prop-rail-title .property-identity {
-    gap: 10px;
+    gap: 0;
   }
 
   body.v2 .prop-rail-title .ui-pdot {
-    width: 12px;
-    height: 12px;
+    display: none;
+  }
+
+  body.v2 .prop-rail-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    background: var(--teal-bg);
+    color: var(--teal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="1"]) .prop-rail-icon {
+    background: var(--teal-bg);
+    color: var(--teal);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="2"]) .prop-rail-icon {
+    background: var(--blue-bg);
+    color: var(--blue);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="3"]) .prop-rail-icon {
+    background: var(--purple-bg);
+    color: var(--purple);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="4"]) .prop-rail-icon {
+    background: var(--orange-bg);
+    color: var(--orange);
   }
 
   body.v2 .prop-rail-cal {
@@ -48,10 +84,11 @@
     flex-shrink: 0;
   }
 
+  /* Multi-property balanced card: airy & readable while letting managers scan properties. */
   body.v2 .prop-rail-card {
-    flex: 0 0 228px;
-    padding: 14px 14px 16px;
-    gap: 8px;
+    flex: 0 0 260px;
+    padding: 20px 18px 20px;
+    gap: 10px;
     align-items: center;
     text-align: center;
     border-radius: var(--radius-lg);
@@ -60,7 +97,7 @@
   body.v2 .prop-rail-card .prop-rail-tag {
     background: transparent;
     padding: 0;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--ink3);
   }
@@ -76,12 +113,12 @@
   }
 
   body.v2 .prop-rail-av {
-    width: 44px;
-    height: 44px;
+    width: 50px;
+    height: 50px;
     border-radius: var(--radius-pill);
     background: var(--bads);
     color: var(--brand);
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -90,18 +127,51 @@
   }
 
   body.v2 .prop-rail-card .prop-rail-name {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     line-height: 1.25;
+    letter-spacing: -0.015em;
   }
 
   body.v2 .prop-rail-card .prop-rail-meta {
-    font-size: 12.5px;
-    line-height: 1.35;
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   body.v2 .prop-rail-card .prop-rail-foot {
     justify-content: center;
-    margin-top: 2px;
+    margin-top: 4px;
+  }
+
+  /* Single-property host (most users): comfortably large card filling the phone viewport. */
+  body.v2 .prop-rails--single .prop-rail-card {
+    flex: 0 0 min(296px, 76vw);
+    min-height: 272px;
+    padding: 28px 22px 26px;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-tag {
+    font-size: 14px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-av {
+    width: 58px;
+    height: 58px;
+    font-size: 22px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-name {
+    font-size: 21px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-meta {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-foot {
+    margin-top: 6px;
   }
 }

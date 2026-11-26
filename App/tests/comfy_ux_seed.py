@@ -159,11 +159,12 @@ def seed_comfy_world(db_url: str) -> dict[str, int]:
             (solo_uid, now_ts),
         )
         solo_apt = cur.fetchone()[0]
-        cur.execute(
-            """INSERT INTO reservation (apartment_id, source, uid, summary, date_from, date_to, declared_guests, status, created_at, updated_at)
-               VALUES (%s, 'manual', 'uid-solo-1', 'Solo Guest', %s, %s, 1, 'active', %s, %s)""",
-            (solo_apt, iso(1), iso(4), now_ts, now_ts),
-        )
+        for idx, (d1, d2, name) in enumerate([(0, 3, "Solo Guest"), (4, 7, "Next Guest")]):
+            cur.execute(
+                """INSERT INTO reservation (apartment_id, source, uid, summary, date_from, date_to, declared_guests, status, created_at, updated_at)
+                   VALUES (%s, 'manual', %s, %s, %s, %s, 2, 'active', %s, %s)""",
+                (solo_apt, f"uid-solo-{idx}", name, iso(d1), iso(d2), now_ts, now_ts),
+            )
 
     return {
         "host_id": host_id,

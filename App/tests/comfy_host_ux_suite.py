@@ -21,6 +21,7 @@ def comfy_world(go_web):
     return {
         **ids,
         "cookie": session_cookie(go_web["secret"], ids["host_id"]),
+        "solo_cookie": session_cookie(go_web["secret"], ids["solo_uid"]),
         "base": go_web["base_url"],
     }
 
@@ -35,6 +36,7 @@ def test_comfy_ux_all_pages_pass_layout_lint_and_capture_shots(go_web, comfy_wor
         "comfy-stay-detail": f"/reservations/{comfy_world['stay_urgent']}",
     }
     findings = lint_go_paths(go_web, paths, comfy_world["cookie"])
+    findings += lint_go_paths(go_web, {"comfy-dashboard-single": "/"}, comfy_world["solo_cookie"])
     assert_no_layout_findings(findings)
 
 

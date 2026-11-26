@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2097">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2099">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -78,11 +78,11 @@
 
 <div class="quiet ov-month ph-hide" data-dashboard-month><span>{{t "dashboard.month.label"}}</span> <span class="ov-mi"><b>{{$d.MonthGuests}}</b> {{tp "dashboard.month.guests" $d.MonthGuests}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthNights}}</b> {{tp "dashboard.month.nights" $d.MonthNights}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthReported}}</b> {{tp "dashboard.month.reported" $d.MonthReported}}</span></div>
 
-<div class="prop-rails ph-only" data-prop-rails>
+<div class="prop-rails ph-only{{if eq (len $d.PropertyRails) 1}} prop-rails--single{{end}}" data-prop-rails data-prop-count="{{len $d.PropertyRails}}">
 {{- range $d.PropertyRails}}
   <section class="prop-rail" data-prop-rail="{{.ID}}" aria-label="{{.Name}}">
     <header class="prop-rail-head">
-      <h2 class="prop-rail-title">{{property_identity .ID .Name false}}</h2>
+      <h2 class="prop-rail-title"><span class="prop-rail-icon" aria-hidden="true">{{icon "house" 17}}</span>{{property_identity .ID .Name false}}</h2>
       <a class="prop-rail-cal" href="{{.CalendarHref}}">{{t "dashboard.rail.calendar"}}{{icon "chevron-right" 16}}</a>
     </header>
     {{- if .Cards}}
