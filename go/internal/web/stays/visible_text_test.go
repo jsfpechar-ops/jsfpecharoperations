@@ -105,6 +105,29 @@ func staysListGET(t *testing.T, mux http.Handler, now time.Time, ownerID int64, 
 	return rec.Body.String()
 }
 
+// applyComfyJourneyDelta adjusts Python's legacy phone-card status strings in
+// stays_visible_golden.json to Go's Brief 2088 4-step journey strip (which
+// replaces the single phone status pill with SVG icons and the filled-guest
+// counter while keeping every other visible line in exact parity with Python).
+func applyComfyJourneyDelta(lines []string) []string {
+	out := make([]string, len(lines))
+	copy(out, lines)
+	inPhone := true
+	for i, line := range out {
+		if line == "Guest" {
+			inPhone = false
+		}
+		if !inPhone {
+			continue
+		}
+		switch line {
+		case "Incomplete", "Waiting for guest", "overdue by 2 days":
+			out[i] = "0"
+		}
+	}
+	return out
+}
+
 func TestStaysListVisibleTextMatchesPython(t *testing.T) {
 	pool := dbPool(t)
 	now := fixedToday()
@@ -113,29 +136,20 @@ func TestStaysListVisibleTextMatchesPython(t *testing.T) {
 	Register(mux, pool, createGetenv, func() time.Time { return now },
 		func(_ string, h http.HandlerFunc) http.Handler { return h })
 	g := loadStaysVisibleGolden(t)
-	if os.Getenv("STAYS_UPDATE_GOLDEN") == "1" {
-		for idx := range g.Cases {
-			html := staysListGET(t, mux, now, ownerID, g.Cases[idx].Path, g.Cases[idx].Lang)
-			g.Cases[idx].Lines = staysVisibleLines(html)
-		}
-		raw, err := json.MarshalIndent(g, "", "  ")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile("testdata/stays_visible_golden.json", append(raw, '\n'), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
 	for _, c := range g.Cases {
 		html := staysListGET(t, mux, now, ownerID, c.Path, c.Lang)
+		if !strings.Contains(html, `class="stay-journey"`) {
+			t.Fatalf("%s: expected 4-step journey strip on stays list", c.Name)
+		}
 		got := staysVisibleLines(html)
-		for i := 0; i < len(got) || i < len(c.Lines); i++ {
+		wantLines := applyComfyJourneyDelta(c.Lines)
+		for i := 0; i < len(got) || i < len(wantLines); i++ {
 			var have, want string
 			if i < len(got) {
 				have = got[i]
 			}
-			if i < len(c.Lines) {
-				want = c.Lines[i]
+			if i < len(wantLines) {
+				want = wantLines[i]
 			}
 			if have != want {
 				t.Fatalf("%s: line %d got %q want %q", c.Name, i, have, want)
