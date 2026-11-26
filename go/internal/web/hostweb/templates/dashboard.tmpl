@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2090">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -8,10 +8,10 @@
 {{- $ny := $d.NyLines -}}
 {{- if $d.CalView}}
 {{- if $d.Cal.ShowPicker}}
-<div class="head ov-head cal-index-head ph-only">
+<div class="head ov-head cal-index-head cal-mobile-only">
   <h1 class="hl"><span>{{t "calendar.index.title"}}</span></h1>
 </div>
-<div class="cal-prop-index ph-only" data-cal-prop-index>
+<div class="cal-prop-index cal-mobile-only" data-cal-prop-index>
   {{- range $d.Cal.IndexCards}}
   <a class="card cal-prop-card" href="{{.Href}}" data-cal-prop-card="{{.ID}}">
     <span class="cal-prop-card-name">{{property_identity .ID .Name false}}</span>
@@ -19,13 +19,13 @@
   </a>
   {{- end}}
 </div>
-<div class="cal-desk-shell ph-hide">
+<div class="cal-desk-shell cal-tablet-up">
   <div class="head ov-head"><div><div class="ov-title-row"><h1 class="hl"><span>{{t "nav.calendar"}}</span></h1></div></div><a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{t "stays.add_stay"}}</a></div>
   {{template "dash.calendar_widget" $d}}
 </div>
 {{- else}}
 {{- if $d.Cal.ShowBackToAll}}
-<div class="cal-prop-back ph-only" data-cal-prop-back>
+<div class="cal-prop-back cal-mobile-only" data-cal-prop-back>
   <a class="cal-prop-back-link" href="/?cal_view=calendar">{{icon "chevron-left" 18}}<span>{{t "calendar.index.back"}}</span></a>
 </div>
 {{- end}}
@@ -89,33 +89,60 @@
 </div>
 <p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a></p>
 
-<h2 class="sec{{if or $d.CalView (not $d.KeyRows)}} ph-hide{{end}}"><span class="ph-hide">{{t "dashboard.today.title"}}</span><span class="ph-only">{{t "dashboard.ph.window"}}</span></h2>
-<div class="hs ph-only{{if or $d.CalView (not (or $d.KeyRows $d.NextArrival))}} ph-hide{{end}}">
-{{- range $d.KeyRows}}
-  {{- $label := dash_label .Row.Reservation}}
-  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
-    <span class="kind{{if eq .Kind "leaves"}} out{{else}} in{{end}}">{{if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "today"}}{{t "calendar.arrival"}}{{else}}{{t "dashboard.ph.kind.arrived"}}{{end}}</span>
-    <div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</div></div></div>
-    {{template "dash.pill" .Row}}
-  </a>
-{{- else}}
-  {{- with $d.NextArrival}}{{$label := .Label}}
-  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}"><span class="kind in">{{t "dashboard.ph.kind.next"}}</span><div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}</div></div></div>{{template "dash.pill" .Row}}</a>
-  {{- end}}
+<div class="prop-rails ph-only" data-prop-rails>
+{{- range $d.PropertyRails}}
+  <section class="prop-rail" data-prop-rail="{{.ID}}" aria-label="{{.Name}}">
+    <header class="prop-rail-head">
+      <h2 class="prop-rail-title">{{property_identity .ID .Name false}}</h2>
+      <a class="prop-rail-cal" href="{{.CalendarHref}}">{{t "dashboard.rail.calendar"}}{{icon "chevron-right" 16}}</a>
+    </header>
+    {{- if .Cards}}
+    <div class="prop-rail-track" data-prop-rail-track>
+      {{- range .Cards}}
+      <a class="card prop-rail-card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
+        <div class="prop-rail-top">
+          <span class="prop-rail-name">{{.Label}}</span>
+          <span class="prop-rail-tag" data-kind="{{.Kind}}">{{if eq .Kind "today"}}{{t "calendar.arrival"}}{{else if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "in_house"}}{{t "dashboard.rail.in_house"}}{{else}}{{t "dashboard.rail.upcoming"}}{{end}}</span>
+        </div>
+        <div class="prop-rail-meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}}{{if gt (dash_guests .Row.Progress) 0}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}{{end}}</div>
+        <div class="prop-rail-foot">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}}{{else}}{{template "dash.pill" .Row}}{{end}}</div>
+      </a>
+      {{- end}}
+      {{- if .HasMore}}
+      <a class="card prop-rail-card prop-rail-more" href="{{.MoreHref}}">
+        <span>{{t "dashboard.rail.more_stays"}}</span>{{icon "chevron-right" 18}}
+      </a>
+      {{- end}}
+    </div>
+    {{- else}}
+    <p class="prop-rail-empty">{{t "dashboard.rail.no_upcoming"}}</p>
+    {{- end}}
+  </section>
+{{- end}}
+{{- if gt $d.TotalActiveProps 5}}
+  <p class="prop-rails-all"><a href="/apartments">{{t "dashboard.rail.all_properties" (kv "count" $d.TotalActiveProps)}}{{icon "chevron-right" 16}}</a></p>
 {{- end}}
 </div>
+
+<div class="ov-work-head ph-hide">
+  <h2 class="sec">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7"}}{{else}}{{t "dashboard.today.title"}}{{end}}</h2>
+  <nav class="ov-window-switch" aria-label="{{t "dashboard.today.title"}}" data-window-switch>
+    <a class="ov-window-tab{{if eq $d.DesktopWindow "today"}} is-active{{end}}" href="/?window=today"{{if eq $d.DesktopWindow "today"}} aria-current="page"{{end}}>{{t "dashboard.window.today"}}</a>
+    <a class="ov-window-tab{{if eq $d.DesktopWindow "next7"}} is-active{{end}}" href="/?window=next7"{{if eq $d.DesktopWindow "next7"}} aria-current="page"{{end}}>{{t "dashboard.window.next7"}}</a>
+  </nav>
+</div>
 <div class="card ov-table ph-hide" data-dashboard-refresh="work"><table><thead><tr><th>{{t "archive.col.guest"}}</th><th>{{t "stay_fees.col.property"}}</th><th>{{t "host.stay_dates"}}</th><th>{{t "filter.status"}}</th><th></th></tr></thead><tbody>
-{{- range $d.TodayRows}}
+{{- range $d.DesktopRows}}
   <tr class="dashboard-row clickable-row{{if eq .Row.Progress.Cell.Level "overdue"}} is-overdue{{end}}" data-stay-id="{{.Row.Reservation.ID}}" data-href="/reservations/{{.Row.Reservation.ID}}?return_to=/" tabindex="0" role="link">
     <td class="dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{.Row.Reservation.ID}}?return_to=/">{{dash_label .Row.Reservation}}</a>
       <small>{{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</small></td>
-    <td>{{property_identity .Row.Reservation.ApartmentID (dash_label .Row.Reservation) true}}</td>
-    <td>{{if .Arriving}}{{t "calendar.arrival"}} · {{tp "dashboard.today.nights" .Nights}}{{else}}{{t "calendar.departure"}}{{end}}</td>
+    <td>{{property_identity .Row.Reservation.ApartmentID .Row.Reservation.InternalName true}}</td>
+    <td>{{if .Arriving}}{{t "calendar.arrival"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{else}} · {{tp "dashboard.today.nights" .Nights}}{{end}}{{else}}{{t "calendar.departure"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{end}}{{end}}</td>
     <td class="dashboard-row-task">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}} {{end}}{{template "dash.pill" .Row}}</td>
     <td class="dots dashboard-row-actions"></td>
   </tr>
 {{- else}}
-  <tr><td colspan="5">{{t "dashboard.today.empty"}}</td></tr>
+  <tr><td colspan="5">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7_empty"}}{{else}}{{t "dashboard.today.empty"}}{{end}}</td></tr>
 {{- end}}
 </tbody></table></div>
 {{- end}}

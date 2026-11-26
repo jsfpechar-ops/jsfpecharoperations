@@ -1,0 +1,24 @@
+/* Responsive visibility and viewport refinements for Briefs 2089-2090. */
+@media (min-width: 768px) {
+  .cal-mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .cal-tablet-up {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .prop-rails.ph-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .ov-work-head.ph-hide {
+    display: none !important;
+  }
+}

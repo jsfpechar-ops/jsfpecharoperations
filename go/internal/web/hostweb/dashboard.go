@@ -40,6 +40,7 @@ var dashFuncs = template.FuncMap{
 	"dash_is_demo":        dashIsDemo,
 	"journey_strip":       stays.RenderJourneyStrip,
 	"cal_prop_href":       calPropHref,
+	"dash_short_date":     dashShortDate,
 }
 
 var dashTemplates = layout.MustParseFuncs(dashStrings, dashFuncs, dashFS, "templates/*.tmpl")
@@ -47,7 +48,19 @@ var dashTemplates = layout.MustParseFuncs(dashStrings, dashFuncs, dashFS, "templ
 // dashboardPage wraps DashboardData with view state for Briefs 2089-2090.
 type dashboardPage struct {
 	DashboardData
-	Cal calPageView
+	Cal              calPageView
+	DesktopWindow    string
+	DesktopRows      []desktopStayRow
+	PropertyRails    []propertyRail
+	TotalActiveProps int
+}
+
+func dashShortDate(lang, iso string) string {
+	t, ok := pyDay(iso)
+	if !ok {
+		return iso
+	}
+	return stayRange(lang, t.Format("2006-01-02"), t.Format("2006-01-02"))
 }
 
 func calPropHref(apts []apartmentRow, name string) string {
@@ -165,6 +178,9 @@ func DashboardHandler(pool *pgxpool.Pool, getenv func(string) string, lookupEnv 
 			page.Nav = "calendar"
 			page.Title = dashStrings.T(hw.Lang(r), "nav.calendar", nil)
 			pd.Cal = buildCalendarView(data, r.URL.Query().Get("cal_property"), today)
+		} else {
+			pd.PropertyRails, pd.TotalActiveProps = buildPropertyRails(data.Apartments, data.Rows, today)
+			pd.DesktopWindow, pd.DesktopRows = buildDesktopWindow(data.Rows, data.TodayRows, r.URL.Query().Get("window"), today)
 		}
 		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, dashTemplates, "dashboard", pd); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

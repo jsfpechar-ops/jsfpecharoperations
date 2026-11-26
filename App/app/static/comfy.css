@@ -307,3 +307,226 @@
     display: none;
   }
 }
+
+/* === Brief 2090: Phone Per-Property Stay Rails & Desktop Today/Next-7 Switcher === */
+.prop-rails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.prop-rail {
+  min-width: 0;
+}
+
+.prop-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.prop-rail-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.prop-rail-cal {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 2px 0 var(--space-2);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.prop-rail-cal:hover {
+  color: var(--ink);
+}
+
+.prop-rail-track {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding: 2px 2px 6px 2px;
+  scrollbar-width: none;
+}
+
+.prop-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.prop-rail-card {
+  flex: 0 0 278px;
+  max-width: 82%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 12px 14px;
+  min-height: 98px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.prop-rail-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.prop-rail-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.prop-rail-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--canvas-subtle);
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.prop-rail-tag[data-kind="today"],
+.prop-rail-tag[data-kind="tomorrow"] {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+}
+
+.prop-rail-tag[data-kind="in_house"] {
+  background: var(--status-done-bg);
+  color: var(--status-done-ink);
+}
+
+.prop-rail-tag[data-kind="leaves"] {
+  background: var(--status-action-bg);
+  color: var(--status-action-ink);
+}
+
+.prop-rail-meta {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prop-rail-foot {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.prop-rail-more {
+  flex: 0 0 148px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  background: var(--canvas-subtle);
+}
+
+.prop-rail-empty {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.prop-rails-all {
+  margin: var(--space-2) 0 0 0;
+}
+
+.prop-rails-all a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Desktop Today / Next 7 days switcher */
+.ov-work-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 var(--space-2) 0;
+}
+
+.ov-work-head .sec {
+  margin: 0;
+}
+
+.ov-window-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--canvas-subtle);
+  gap: 2px;
+}
+
+.ov-window-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ov-window-tab.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(32, 32, 30, 0.08);
+}
+
+.ov-table .dashboard-row-task {
+  white-space: nowrap;
+}
