@@ -36,6 +36,7 @@ type listPage struct {
 	Apartments        []apartmentItem
 	Status            string
 	Report            string
+	Query             string
 	ApartmentID       int64
 	DateFrom          string
 	DateTo            string
@@ -110,7 +111,7 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			}
 		}
 		data := listPage{
-			View: v, Apartments: apts, Status: p.Status, Report: p.Report,
+			View: v, Apartments: apts, Status: p.Status, Report: p.Report, Query: p.Query,
 			ApartmentID: p.ApartmentID, DateFrom: p.DateFrom, DateTo: p.DateTo,
 			DateRange: p.DateRange, ShowArchive: p.ShowArchive,
 			ReturnTo: returnTo(r), HasAny: hasAny, FeedCount: feedCount, DemoAvailable: demoAvail,

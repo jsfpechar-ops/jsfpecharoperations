@@ -109,15 +109,14 @@ func staysListGET(t *testing.T, mux http.Handler, now time.Time, ownerID int64, 
 // stays_visible_golden.json to Go's Comfy UX updates: Brief 2088 replaces the
 // single phone status pill with the 4-step journey strip (filled-guest counter),
 // removes retired "Request payment", moves the duplicate header "Download house
-// book" into the collapsed "Reports & exports" footer, and places "Filters"
-// before "Add stay".
+// book" into the collapsed "Reports & exports" footer, and places "Filters" in
+// the toolbar right after the tabs ("Archived").
 func applyComfyJourneyDelta(lines []string) []string {
 	out := make([]string, 0, len(lines)+2)
 	inPhone := true
 	removedHeaderHB := false
-	swappedHeader := false
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
+	movedFilters := ""
+	for _, line := range lines {
 		if line == "Guest" {
 			inPhone = false
 		}
@@ -128,13 +127,8 @@ func applyComfyJourneyDelta(lines []string) []string {
 			removedHeaderHB = true
 			continue
 		}
-		if !swappedHeader && i+1 < len(lines) &&
-			((line == "Add stay" && lines[i+1] == "Filters") ||
-				(line == "Přidat pobyt" && lines[i+1] == "Filtry") ||
-				(line == "Thêm lượt lưu trú" && lines[i+1] == "Bộ lọc")) {
-			out = append(out, lines[i+1], line)
-			i++
-			swappedHeader = true
+		if movedFilters == "" && (line == "Filters" || line == "Filtry" || line == "Bộ lọc") {
+			movedFilters = line
 			continue
 		}
 		if line == "Police reports" {
@@ -151,6 +145,10 @@ func applyComfyJourneyDelta(lines []string) []string {
 			}
 		}
 		out = append(out, line)
+		if movedFilters != "" && (line == "Archived" || line == "Archivované" || line == "Đã lưu trữ") {
+			out = append(out, movedFilters)
+			movedFilters = ""
+		}
 	}
 	return out
 }

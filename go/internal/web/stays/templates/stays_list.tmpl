@@ -1,5 +1,5 @@
 {{define "stays_list.title"}}{{end}}
-{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095">{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-stays.css?v=20261126-2096">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
@@ -109,7 +109,6 @@
 <div class="stays-head-actions">
   {{if .View.ManualSend}}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{.ReturnTo}}">
     <button class="btn ghost send-all" type="submit"{{if not .View.ReadySendCount}} disabled{{end}} title="{{t "send.all_ready_hint"}}">{{icon "send" 16}}<span>{{t "send.all_ready"}}{{if .View.ReadySendCount}} ({{.View.ReadySendCount}}){{end}}</span></button></form>{{end}}
-  <button class="btn ghost ph-hide" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{t "host.filter.filters"}}</button>
   <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{t "stays.add_stay"}}</button>
 </div>{{end}}</div>
 {{template "stays_onboarding_banner" .}}
@@ -139,7 +138,22 @@
     </form>
   </div>
 </div>
-<div class="stays-pills">{{template "stays_chips" .}}</div>
+<div class="stays-toolbar">
+  <div class="stays-pills">{{template "stays_chips" .}}</div>
+  <div class="stays-toolbar-tools">
+    <form method="get" action="/reservations" class="stays-search" role="search" aria-label="{{t "stays.search.label"}}">
+      <input type="hidden" name="range" value="{{.DateRange}}">
+      <input type="hidden" name="status" value="{{.Status}}">
+      {{if .ApartmentID}}<input type="hidden" name="apartment" value="{{.ApartmentID}}">{{end}}
+      {{if .ShowArchive}}<input type="hidden" name="archive_scope" value="1">{{end}}
+      {{if .Report}}<input type="hidden" name="report" value="{{.Report}}">{{end}}
+      {{icon "search" 15 "stays-search-icon"}}
+      <input class="stays-search-input" type="search" name="q" value="{{.Query}}" placeholder="{{t "stays.search.placeholder"}}" aria-label="{{t "stays.search.label"}}">
+      {{if .Query}}<a class="stays-search-clear" href="/reservations?range={{.DateRange}}&status={{.Status}}{{if .ApartmentID}}&apartment={{.ApartmentID}}{{end}}{{if .Report}}&report={{.Report}}{{end}}" aria-label="{{t "stays.search.clear"}}">{{icon "x" 14}}</a>{{end}}
+    </form>
+    <button class="btn ghost sm ph-hide stays-filter-btn" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{icon "sliders-horizontal" 14}}<span>{{t "host.filter.filters"}}</span></button>
+  </div>
+</div>
 <p class="sub ph-hide" data-filter-summary><span>{{.StayProperty}}</span><span aria-hidden="true"> · </span><span>{{t (printf "stays.filter.state.%s" .Status)}}</span>
   {{if and (eq .DateRange "custom") (or .DateFrom .DateTo)}}<span aria-hidden="true"> · </span>
     {{if and .DateFrom .DateTo}}{{t "host.filter.range_between" (kv "start" (date_cz .DateFrom) "end" (date_cz .DateTo))}}
@@ -163,6 +177,7 @@
   </div>
   {{if .ShowArchive}}<input type="hidden" name="archive_scope" value="1">{{end}}
   {{if .Report}}<input type="hidden" name="report" value="{{.Report}}">{{end}}
+  {{if .Query}}<input type="hidden" name="q" value="{{.Query}}">{{end}}
   <div class="filter-panel-actions">
     <button class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom">{{t "host.filter.apply_filters"}}</button>
     <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{t "confirm.cancel"}}</button>

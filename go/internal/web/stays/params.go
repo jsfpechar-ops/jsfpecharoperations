@@ -26,6 +26,7 @@ type Params struct {
 	DateRange   string
 	ShowArchive bool
 	Report      string
+	Query       string
 	Page        int
 	Raw         url.Values
 }
@@ -34,9 +35,14 @@ type Params struct {
 // today is the Prague civil date (calendar day only).
 func ParseParams(q url.Values, today time.Time) Params {
 	raw := cloneValues(q)
+	query := strings.TrimSpace(q.Get("q"))
+	if len([]rune(query)) > 100 {
+		query = string([]rune(query)[:100])
+	}
 	p := Params{
 		Status: strings.TrimSpace(q.Get("status")),
 		Report: strings.TrimSpace(q.Get("report")),
+		Query:  query,
 		Raw:    raw,
 	}
 	if p.Status == "" {

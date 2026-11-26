@@ -28,7 +28,10 @@
     "stays.journey.state.police.filed": "odesláno",
     "stays.journey.state.police.action": "vyžaduje akci",
     "stays.tools.title": "Hlášení a exporty",
-    "stays.tools.hint": "Hlášení policii, domovní kniha a CSV"
+    "stays.tools.hint": "Hlášení policii, domovní kniha a CSV",
+    "stays.search.placeholder": "Hledat pobyty…",
+    "stays.search.label": "Hledat pobyty",
+    "stays.search.clear": "Vymazat hledání"
   },
   "en": {
     "stays.old_unfilled.label.one": "1 older unfilled calendar stay.",
@@ -59,7 +62,10 @@
     "stays.journey.state.police.filed": "filed",
     "stays.journey.state.police.action": "needs action",
     "stays.tools.title": "Reports & exports",
-    "stays.tools.hint": "Police reports, guest register, CSV & house book"
+    "stays.tools.hint": "Police reports, guest register, CSV & house book",
+    "stays.search.placeholder": "Search stays…",
+    "stays.search.label": "Search stays",
+    "stays.search.clear": "Clear search"
   },
   "vi": {
     "stays.old_unfilled.label.one": "1 lượt lưu trú cũ chưa điền từ lịch.",
@@ -90,6 +96,9 @@
     "stays.journey.state.police.filed": "đã khai báo",
     "stays.journey.state.police.action": "cần xử lý",
     "stays.tools.title": "Báo cáo & xuất dữ liệu",
-    "stays.tools.hint": "Báo cáo công an, sổ khách & CSV"
+    "stays.tools.hint": "Báo cáo công an, sổ khách & CSV",
+    "stays.search.placeholder": "Tìm lượt lưu trú…",
+    "stays.search.label": "Tìm lượt lưu trú",
+    "stays.search.clear": "Xóa tìm kiếm"
   }
 }

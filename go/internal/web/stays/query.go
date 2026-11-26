@@ -167,6 +167,21 @@ func listSQL(owner int64, p Params, today string, overdueIDs []int64) (string, [
 	if p.Report == "failed" {
 		sql += ` AND EXISTS (SELECT 1 FROM guest g WHERE g.reservation_id = r.id AND g.submit_state IN ('error', 'blocked'))`
 	}
+	if p.Query != "" {
+		esc := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(p.Query)
+		n++
+		pat := "%" + esc + "%"
+		sql += fmt.Sprintf(` AND (COALESCE(r.summary, '') ILIKE $%d ESCAPE '\'
+			OR COALESCE(a.internal_name, '') ILIKE $%d ESCAPE '\'
+			OR r.date_from ILIKE $%d ESCAPE '\'
+			OR r.date_to ILIKE $%d ESCAPE '\'
+			OR EXISTS (SELECT 1 FROM guest g WHERE g.reservation_id = r.id AND g.archived_at IS NULL
+				AND (COALESCE(g.first_name, '') ILIKE $%d ESCAPE '\'
+				OR COALESCE(g.surname, '') ILIKE $%d ESCAPE '\'
+				OR (COALESCE(g.first_name, '') || ' ' || COALESCE(g.surname, '')) ILIKE $%d ESCAPE '\')))`,
+			n, n, n, n, n, n, n)
+		args = append(args, pat)
+	}
 	_ = today
 	return sql, args
 }

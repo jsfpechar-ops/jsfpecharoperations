@@ -67,6 +67,7 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
         });
         const headBtnCount = document.querySelectorAll('.stays-head-actions > button, .stays-head-actions > a').length;
         const toolsDetails = document.querySelector('details.stays-tools');
+        const hasStaysSearch = !!document.querySelector('.stays-search input[name="q"]');
         return {
             docOverflow: document.documentElement.scrollWidth - window.innerWidth,
             journeyCount: document.querySelectorAll('.stays-desk .stay-journey').length,
@@ -76,6 +77,7 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
             polIcons,
             dateAlignDiffs,
             headBtnCount,
+            hasStaysSearch,
             toolsCollapsed: !!toolsDetails && !toolsDetails.open,
             toolsLinks: toolsDetails ? toolsDetails.querySelectorAll('a.airbnb-index-row').length : 0,
         };
@@ -89,8 +91,16 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
     assert stays_desk["okPills"] and all(p["text"] == "Reported" for p in stays_desk["okPills"]), stays_desk
     assert all(ic == "police" for ic in stays_desk["polIcons"]) and stays_desk["polIcons"], stays_desk
     assert all(d <= 1 for d in stays_desk["dateAlignDiffs"]), stays_desk
-    assert stays_desk["headBtnCount"] <= 2, f"Stays header should only show Filters + Add stay: {stays_desk}"
+    assert stays_desk["headBtnCount"] == 1 and stays_desk["hasStaysSearch"], stays_desk
     assert stays_desk["toolsCollapsed"] and stays_desk["toolsLinks"] == 4, stays_desk
+
+    # Verify stays-scoped search filters stays directly by guest name.
+    page.fill('.stays-search input[name="q"]', "Anna")
+    page.press('.stays-search input[name="q"]', "Enter")
+    page.wait_for_url("**q=Anna**", timeout=5000)
+    page.wait_for_load_state("networkidle")
+    search_rows = page.locator(".stays-desk tbody tr").count()
+    assert search_rows == 1 and "Anna Novakova" in page.inner_text(".stays-desk"), search_rows
 
     page.goto(f"{base}/reservations/{stay_red}", wait_until="networkidle")
     detail_desk = page.evaluate(
