@@ -143,9 +143,9 @@ func calmNeedsYouLines(
 	}
 	cutoff7 := today.AddDate(0, 0, -7)
 	type candidate struct {
-		line         nyLine
-		aptID        int64
-		unfilledNag  bool
+		line        nyLine
+		aptID       int64
+		unfilledNag bool
 	}
 	var cands []candidate
 	covered := map[int64]bool{}
