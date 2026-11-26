@@ -1,20 +1,56 @@
 {
-  "en": {
-    "needs_you.guest_link_nudge.title": "Guests are not filling in the form yet (%(stays)s stays)",
-    "needs_you.guest_link_nudge.body": "Add your guest link to Airbnb or Booking messages (%(properties)s properties).",
-    "needs_you.guest_link_nudge.body.one": "Add your guest link to Airbnb or Booking messages (1 property).",
-    "needs_you.guest_link_nudge.action": "Set up guest link"
-  },
   "cs": {
-    "needs_you.guest_link_nudge.title": "Hosté ještě nevyplňují formulář (%(stays)s pobytů)",
-    "needs_you.guest_link_nudge.body": "Přidejte odkaz pro hosty do zpráv na Airbnb nebo Bookingu (%(properties)s byty).",
-    "needs_you.guest_link_nudge.body.one": "Přidejte odkaz pro hosty do zpráv na Airbnb nebo Bookingu (1 byt).",
-    "needs_you.guest_link_nudge.action": "Nastavit odkaz"
+    "needs_you.guest_link_nudge.title": "Odkaz pro hosty zatím neposíláte automaticky",
+    "needs_you.guest_link_nudge.body.one": "1 pobyt čeká na údaje hosta. Vložte odkaz ubytování do automatických zpráv na portálu.",
+    "needs_you.guest_link_nudge.body": "{count} pobytů čeká na údaje hosta. Vložte odkaz ubytování do automatických zpráv na portálu.",
+    "needs_you.guest_link_nudge.cta": "Nastavit odkaz",
+    "needs_you.guest_link_nudge.dismiss": "Teď ne",
+    "calendar.index.title": "Kalendáře",
+    "calendar.index.back": "Všechna ubytování",
+    "dashboard.rail.calendar": "Kalendář",
+    "dashboard.rail.more_stays": "Další pobyty",
+    "dashboard.rail.no_upcoming": "Žádné nadcházející pobyty",
+    "dashboard.rail.all_properties": "Všechna ubytování ({count})",
+    "dashboard.rail.in_house": "Ubytováno",
+    "dashboard.rail.upcoming": "Nadcházející",
+    "dashboard.window.today": "Dnes",
+    "dashboard.window.next7": "Příštích 7 dní",
+    "dashboard.window.next7_empty": "V příštích 7 dnech žádné příjezdy ani odjezdy."
+  },
+  "en": {
+    "needs_you.guest_link_nudge.title": "Share your guest form link automatically",
+    "needs_you.guest_link_nudge.body.one": "1 stay is waiting for guest details. Paste your property link into your booking portal messages.",
+    "needs_you.guest_link_nudge.body": "{count} stays are waiting for guest details. Paste your property link into your booking portal messages.",
+    "needs_you.guest_link_nudge.cta": "Set up link",
+    "needs_you.guest_link_nudge.dismiss": "Not now",
+    "calendar.index.title": "Calendars",
+    "calendar.index.back": "All properties",
+    "dashboard.rail.calendar": "Calendar",
+    "dashboard.rail.more_stays": "More stays",
+    "dashboard.rail.no_upcoming": "No upcoming stays",
+    "dashboard.rail.all_properties": "All properties ({count})",
+    "dashboard.rail.in_house": "In house",
+    "dashboard.rail.upcoming": "Upcoming",
+    "dashboard.window.today": "Today",
+    "dashboard.window.next7": "Next 7 days",
+    "dashboard.window.next7_empty": "No check-ins or check-outs in the next 7 days."
   },
   "vi": {
-    "needs_you.guest_link_nudge.title": "Khách chưa điền biểu mẫu (%(stays)s lượt lưu trú)",
-    "needs_you.guest_link_nudge.body": "Thêm liên kết cho khách vào tin nhắn Airbnb hoặc Booking (%(properties)s chỗ ở).",
-    "needs_you.guest_link_nudge.body.one": "Thêm liên kết cho khách vào tin nhắn Airbnb hoặc Booking (1 chỗ ở).",
-    "needs_you.guest_link_nudge.action": "Thiết lập liên kết"
+    "needs_you.guest_link_nudge.title": "Chia sẻ liên kết biểu mẫu khách tự động",
+    "needs_you.guest_link_nudge.body.one": "1 lượt lưu trú đang chờ thông tin khách. Dán liên kết chỗ ở vào tin nhắn tự động trên cổng đặt phòng.",
+    "needs_you.guest_link_nudge.body": "{count} lượt lưu trú đang chờ thông tin khách. Dán liên kết chỗ ở vào tin nhắn tự động trên cổng đặt phòng.",
+    "needs_you.guest_link_nudge.cta": "Thiết lập liên kết",
+    "needs_you.guest_link_nudge.dismiss": "Để sau",
+    "calendar.index.title": "Lịch",
+    "calendar.index.back": "Tất cả chỗ ở",
+    "dashboard.rail.calendar": "Lịch",
+    "dashboard.rail.more_stays": "Thêm lượt lưu trú",
+    "dashboard.rail.no_upcoming": "Không có lượt lưu trú sắp tới",
+    "dashboard.rail.all_properties": "Tất cả chỗ ở ({count})",
+    "dashboard.rail.in_house": "Đang lưu trú",
+    "dashboard.rail.upcoming": "Sắp tới",
+    "dashboard.window.today": "Hôm nay",
+    "dashboard.window.next7": "7 ngày tới",
+    "dashboard.window.next7_empty": "Không có khách đến hoặc đi trong 7 ngày tới."
   }
 }

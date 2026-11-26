@@ -202,3 +202,108 @@
   gap: var(--space-2);
   flex-wrap: wrap;
 }
+
+/* === Brief 2089: Mobile Calendar Property Index & Single-Property Month === */
+.cal-row-prop-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cal-row-prop-link:hover {
+  text-decoration: underline;
+}
+
+.cal-prop-index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.cal-prop-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 14px 16px;
+  min-height: 92px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cal-prop-card:hover,
+.cal-prop-card:focus-visible {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.cal-prop-card-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.cal-prop-card-mini {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-cal-svg {
+  display: block;
+}
+
+.mini-cal-dot {
+  fill: var(--border-strong);
+}
+
+.mini-cal-bar-calm {
+  fill: var(--blue-bg);
+  stroke: var(--blue);
+  stroke-width: 0.75;
+}
+
+.mini-cal-bar-warn {
+  fill: var(--status-action-bg);
+  stroke: var(--amber);
+  stroke-width: 0.85;
+}
+
+.mini-cal-today {
+  stroke: var(--brand);
+}
+
+.cal-prop-back {
+  margin-bottom: var(--space-2);
+}
+
+.cal-prop-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: 0 var(--space-2) 0 0;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cal-prop-back-link:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .cal-single-mode [data-cal-property],
+  .cal-single-mode .cal-view-segment {
+    display: none;
+  }
+}

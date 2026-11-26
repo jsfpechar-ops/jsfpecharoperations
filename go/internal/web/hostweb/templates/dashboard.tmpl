@@ -4,15 +4,46 @@
 {{- $d := . -}}
 {{if not $d.Apartments}}
 {{template "dash.empty" $d}}
-{{else}}
+{{- else}}
 {{- $ny := $d.NyLines -}}
+{{- if $d.CalView}}
+{{- if $d.Cal.ShowPicker}}
+<div class="head ov-head cal-index-head ph-only">
+  <h1 class="hl"><span>{{t "calendar.index.title"}}</span></h1>
+</div>
+<div class="cal-prop-index ph-only" data-cal-prop-index>
+  {{- range $d.Cal.IndexCards}}
+  <a class="card cal-prop-card" href="{{.Href}}" data-cal-prop-card="{{.ID}}">
+    <span class="cal-prop-card-name">{{property_identity .ID .Name false}}</span>
+    <span class="cal-prop-card-mini">{{.MiniSVG}}</span>
+  </a>
+  {{- end}}
+</div>
+<div class="cal-desk-shell ph-hide">
+  <div class="head ov-head"><div><div class="ov-title-row"><h1 class="hl"><span>{{t "nav.calendar"}}</span></h1></div></div><a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{t "stays.add_stay"}}</a></div>
+  {{template "dash.calendar_widget" $d}}
+</div>
+{{- else}}
+{{- if $d.Cal.ShowBackToAll}}
+<div class="cal-prop-back ph-only" data-cal-prop-back>
+  <a class="cal-prop-back-link" href="/?cal_view=calendar">{{icon "chevron-left" 18}}<span>{{t "calendar.index.back"}}</span></a>
+</div>
+{{- end}}
+<div class="head ov-head"><div>
+  <div class="ov-title-row">
+    {{- if $d.Cal.PropertyName}}<h1 class="hl"><span>{{property_identity $d.Cal.PropertyID $d.Cal.PropertyName false}}</span></h1>
+    {{- else}}<h1 class="hl"><span>{{t "nav.calendar"}}</span></h1>{{end}}
+  </div>
+</div><a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{t "stays.add_stay"}}</a></div>
+{{template "dash.calendar_widget" $d}}
+{{- end}}
+{{- else}}
 <div class="ph-top ph-only">
   <nav class="seg" aria-label="{{t "dashboard.title"}}"><a class="on" href="/" aria-current="page">{{t "nav.today"}}</a><a href="/reservations">{{t "dashboard.ph.upcoming"}}</a></nav>
 </div>
 <div class="head ov-head"><div>
   <div class="ov-title-row">
-    {{- if $d.CalView}}<h1 class="hl{{if not $ny}} done{{end}}"><span>{{t "nav.calendar"}}</span></h1>
-    {{- else}}<h1 class="hl{{if not $ny}} done{{end}}"><span class="ph-hide">{{t "dashboard.title"}}</span><span class="ph-only" aria-hidden="true">{{if $ny}}{{tp "dashboard.ph.need" (len $ny)}}{{else}}{{t "dashboard.ph.done"}}{{end}}</span></h1><span class="ph-hide">{{page_help "dashboard"}}</span>{{end}}
+    <h1 class="hl{{if not $ny}} done{{end}}"><span class="ph-hide">{{t "dashboard.title"}}</span><span class="ph-only" aria-hidden="true">{{if $ny}}{{tp "dashboard.ph.need" (len $ny)}}{{else}}{{t "dashboard.ph.done"}}{{end}}</span></h1><span class="ph-hide">{{page_help "dashboard"}}</span>
   </div>
   <p class="sub ph-hide">{{$d.TodayLong}}</p>
   <div class="ov-quiet ph-hide">
@@ -52,7 +83,7 @@
 <div class="card cal ov-section">
   <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
   {{- range $d.CalRows}}
-  <div class="cgrid crow"><div class="cn" title="{{.Name}}">{{.Name}}</div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
+  <div class="cgrid crow"><div class="cn" title="{{.Name}}"><a class="cal-row-prop-link" href="{{cal_prop_href $d.Apartments .Name}}">{{.Name}}</a></div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
   {{- end}}
 </div>
 </div>
@@ -87,6 +118,7 @@
   <tr><td colspan="5">{{t "dashboard.today.empty"}}</td></tr>
 {{- end}}
 </tbody></table></div>
+{{- end}}
 {{end}}
 {{end}}
 
