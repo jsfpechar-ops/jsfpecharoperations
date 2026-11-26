@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-25.
+Updated: 2026-11-26.
 
 ## Go cutover (11-25)
 - PR #1319: 2040–2085 done, `parity_gate.sh` PASS, main merged. Owner: `scripts/merge-pr-on-green.sh 1319`, then deploy (autopurge off week 1).
@@ -15,6 +15,7 @@ Updated: 2026-11-25.
 
 ## Next
 - 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
+- Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 + polish green (PR #1335).
 - Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 merged (#1252).
 - 2000: no police nags on Overview without UbyPort login.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.

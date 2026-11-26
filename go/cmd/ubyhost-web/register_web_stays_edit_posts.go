@@ -16,5 +16,6 @@ import (
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
 		stays.RegisterEditPosts(mux, pool, os.Getenv, time.Now, m.wrap, completionHooks(pool))
+		stays.RegisterArchiveOld(mux, pool, os.Getenv, time.Now, m.wrap)
 	})
 }

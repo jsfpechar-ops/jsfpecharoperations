@@ -63,6 +63,7 @@ type View struct {
 	HandFiling   HandFiling
 	StayInvoice  *invoices.StayInvoice
 	DoorCode     *doorcodes.Shown
+	Journey      stays.StayJourney
 }
 
 // SendControls is the part of reporting.send_controls the stay page reads.

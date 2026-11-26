@@ -1,9 +1,10 @@
 {{define "stays_list.title"}}{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2102"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-stays.css?v=20261126-2102">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
 {{else if and $progress.NotRegistered (gt (not_registered $progress) 0)}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (not_registered $progress)}}</span></span>
-{{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
+{{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok" title="{{deadline_badge $cell}}">{{t "status.reported"}}</span>
 {{else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
 {{else if and (or (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
 {{else if or (eq $progress.Status "reported") (eq $progress.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>
@@ -48,36 +49,58 @@
 {{define "stays_phone_card"}}{{ $root := .Root }}{{ $row := .Row }}{{ $res := $row.Reservation }}{{ $prog := $row.Progress }}
 {{ $who := shown_name $res $prog.Guests }}
 {{ $href := printf "/reservations/%d?return_to=%s" $res.ID (encode_return $root.ReturnTo) }}
-<a class="card stay" href="{{$href}}" data-stay-search-item>
+<a class="card stay" href="{{$href}}">
   <span class="sav">{{if $who}}{{initial_rune $who}}{{else}}{{printf "%d" (day_of_month $res.DateFrom)}}{{end}}</span>
   <span class="in">{{if $who}}<b>{{$who}}</b><small>{{stay_range $root.Lang $res.DateFrom $res.DateTo}} &middot; {{$res.InternalName}}</small>
   {{else}}<b>{{stay_range $root.Lang $res.DateFrom $res.DateTo}}</b><small>{{$res.InternalName}}</small>{{end}}
   {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
-  {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
-  {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}
+  {{else}}{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}}{{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
+  {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}{{end}}
   </span>{{icon "chevron-right" 20 "chev"}}
 </a>{{end}}
 {{define "stays_desk_row"}}{{ $root := .Root }}{{ $row := .Row }}{{ $res := $row.Reservation }}{{ $prog := $row.Progress }}
 {{ $shown := shown_name $res $prog.Guests }}
 {{ $stayLabel := stay_label $res }}
 {{ $href := printf "/reservations/%d?return_to=%s" $res.ID (encode_return $root.ReturnTo) }}
-<tr class="clickable-row" data-href="{{$href}}" data-stay-id="{{$res.ID}}" data-stay-search-item tabindex="0" role="link"
+<tr class="clickable-row" data-href="{{$href}}" tabindex="0" role="link"
     aria-label="{{$stayLabel}} · {{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}">
   <td data-card="primary" data-label="{{t "stays.table.guest"}}">
-    <div class="stay-guest-line">{{ $mark := source_mark $res.Source }}{{ $srcLabel := source_label $root.Lang $res.Source }}<span class="stay-source-icon" title="{{$srcLabel}}">{{if $mark}}{{$mark}}{{else}}{{icon "calendar-days" 15}}{{end}}<span class="sr-only">{{$srcLabel}}</span></span>{{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>{{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>{{end}}{{if and (is_nil_int $prog.Expected) (not $prog.Guests)}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}</div>
+    {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
+    {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
+    {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
+    <small>{{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}} &middot; {{else}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
   </td>
-  <td class="stays-col-prop" data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
-  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.dates"}}"><span class="stay-dates-span" title="{{tp "stays.table.nights" (nights $res.DateFrom $res.DateTo)}}">{{date_cz $res.DateFrom}} – {{date_cz $res.DateTo}}</span></td>
-  <td class="nowrap stays-col-guests" data-card="guests" data-label="{{t "stays.table.guests"}}">
-    {{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
+  <td data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
+  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.arrival"}}">{{date_cz $res.DateFrom}}</td>
+  <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.departure"}}">
+    {{date_cz $res.DateTo}}
+    <small>{{tp "stays.table.nights" (nights $res.DateFrom $res.DateTo)}}
+      {{if in_house $prog.Anchor $prog.HasAnchor $res.DateTo $root.Today}} &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "stays.table.in_house"}}</span>{{end}}
+    </small>
   </td>
-  <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
+  <td class="stay-rep-td" data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
-    {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
-    {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}
+    {{else}}<div class="stay-rep-grid">{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}}{{end}}<div class="stay-rep-status">{{if $prog.HasCell}}{{template "v2_status_pill" $row}}{{if and (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}<small>{{deadline_badge $prog.Cell}}</small>{{end}}{{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}</div></div>{{end}}
   </td>
-  <td class="nowrap stays-col-deadline" data-card="deadline" data-label="{{t "stays.table.deadline"}}">
-    {{if and (eq $res.Status "active") $prog.HasCell (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}{{deadline_badge $prog.Cell}}{{else}}<span class="muted" aria-hidden="true">–</span>{{end}}
+  <td class="row-actions" data-card="actions" data-label="">
+    {{row_menu_begin}}
+      <a class="row-menu-item" href="{{$href}}" role="menuitem">{{t "common.open"}}</a>
+      {{if $res.PermalinkToken}}{{copy_inline (printf "stay-link-%d" $res.ID) (printf "%s/l/%s/%d" $root.PublicBase (slug_or $res.PermalinkSlug $res.PermalinkToken) $res.ID) (t "host.copy_guest_form_link") "menuitem"}}{{end}}
+      <a class="row-menu-item" href="/reservations/{{$res.ID}}/guests/new" role="menuitem">{{t "stays.row.add_guest"}}</a>
+      {{if $res.PermalinkToken}}<a class="row-menu-item" href="/l/{{slug_or $res.PermalinkSlug $res.PermalinkToken}}/{{$res.ID}}" target="_blank" rel="noopener" role="menuitem">{{t "stays.row.open_guest_form"}}</a>{{end}}
+      {{if $root.ShowArchive}}
+      <form method="post" action="/reservations/{{$res.ID}}/unarchive" class="row-menu-form">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button class="row-menu-item" type="submit" role="menuitem">{{t "stays.row.restore"}}</button>
+      </form>
+      {{else}}
+      <form method="post" action="/reservations/{{$res.ID}}/archive" class="row-menu-form">
+        <input type="hidden" name="return_to" value="{{$root.ReturnTo}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button class="row-menu-item" type="submit" role="menuitem" data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">{{t "host.delete"}}</button>
+      </form>
+      {{end}}
+    {{row_menu_end}}
   </td>
 </tr>{{end}}
 {{define "stays_list"}}
@@ -87,15 +110,6 @@
   {{if .View.ManualSend}}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{.ReturnTo}}">
     <button class="btn ghost send-all" type="submit"{{if not .View.ReadySendCount}} disabled{{end}} title="{{t "send.all_ready_hint"}}">{{icon "send" 16}}<span>{{t "send.all_ready"}}{{if .View.ReadySendCount}} ({{.View.ReadySendCount}}){{end}}</span></button></form>{{end}}
   <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{t "stays.add_stay"}}</button>
-  <span class="row-menu stays-head-menu" data-row-menu>
-    <button class="btn ghost row-menu-trigger stays-head-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="{{t "stays.head.more"}}">{{icon "ellipsis-vertical" 18}}</button>
-    <span class="row-menu-panel" role="menu" hidden>
-      <a class="row-menu-item" href="/submissions" role="menuitem">{{t "tabs.stays.reports"}}</a>
-      <a class="row-menu-item" href="/housebook" role="menuitem">{{t "tabs.stays.register"}}</a>
-      <a data-turbo="false" class="row-menu-item" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook role="menuitem">{{t "stays.housebook_download"}}</a>
-      <a data-turbo="false" class="row-menu-item" href="/reservations.csv?{{.CSVExportParams}}" data-csv-export="/reservations.csv" data-csv-params="{{.CSVExportParams}}" data-csv-scope-label="{{.StayProperty}}" role="menuitem">{{t "csv.export_stays"}}</a>
-    </span>
-  </span>
 </div>{{end}}</div>
 {{template "stays_onboarding_banner" .}}
 {{if .Apartments}}
@@ -120,28 +134,31 @@
     </form>
   </div>
 </div>
-<div class="stays-toolbar ph-hide">
-  <div class="stays-toolbar-controls">
-    <label class="stays-search">
-      <span class="sr-only">{{t "stays.search.placeholder"}}</span>
-      {{icon "search" 16}}
-      <input type="search" class="stays-search-input" data-stays-search placeholder="{{t "stays.search.placeholder"}}" autocomplete="off">
-    </label>
-    <button class="btn ghost stays-filter-btn" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{icon "sliders-horizontal" 16}}<span>{{t "host.filter.filters"}}</span></button>
-  </div>
-  <div class="stays-toolbar-meta">
-    <p class="sub" data-filter-summary><span>{{.StayProperty}}</span><span aria-hidden="true"> · </span><span>{{t (printf "stays.filter.state.%s" .Status)}}</span>
-      {{if and (eq .DateRange "custom") (or .DateFrom .DateTo)}}<span aria-hidden="true"> · </span>
-        {{if and .DateFrom .DateTo}}{{t "host.filter.range_between" (kv "start" (date_cz .DateFrom) "end" (date_cz .DateTo))}}
-        {{else if .DateFrom}}{{t "host.filter.range_from" (kv "date" (date_cz .DateFrom))}}
-        {{else}}{{t "host.filter.range_until" (kv "date" (date_cz .DateTo))}}{{end}}{{end}}</p>
-    {{if or (ne .ApartmentID 0) (ne .Status "active") (eq .DateRange "custom")}}<p class="sub stays-scope-reset"><a data-stays-reset href="{{if .ShowArchive}}/reservations?range=archive{{else}}/reservations?range=all{{end}}">{{t "stays.filter.reset_scope"}}</a></p>{{end}}
+<div class="stays-toolbar">
+  <div class="stays-pills">{{template "stays_chips" .}}</div>
+  <div class="stays-toolbar-tools">
+    <form method="get" action="/reservations" class="stays-search" role="search" aria-label="{{t "stays.search.label"}}">
+      <input type="hidden" name="range" value="{{.DateRange}}">
+      <input type="hidden" name="status" value="{{.Status}}">
+      {{if .ApartmentID}}<input type="hidden" name="apartment" value="{{.ApartmentID}}">{{end}}
+      {{if .ShowArchive}}<input type="hidden" name="archive_scope" value="1">{{end}}
+      {{if .Report}}<input type="hidden" name="report" value="{{.Report}}">{{end}}
+      {{icon "search" 15 "stays-search-icon"}}
+      <input class="stays-search-input" type="search" name="q" value="{{.Query}}" placeholder="{{t "stays.search.placeholder"}}" aria-label="{{t "stays.search.label"}}">
+      {{if .Query}}<a class="stays-search-clear" href="/reservations?range={{.DateRange}}&status={{.Status}}{{if .ApartmentID}}&apartment={{.ApartmentID}}{{end}}{{if .Report}}&report={{.Report}}{{end}}" aria-label="{{t "stays.search.clear"}}">{{icon "x" 14}}</a>{{end}}
+    </form>
+    <button class="btn ghost sm ph-hide stays-filter-btn" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{icon "sliders-horizontal" 14}}<span>{{t "host.filter.filters"}}</span></button>
   </div>
 </div>
+<p class="sub ph-hide" data-filter-summary><span>{{.StayProperty}}</span><span aria-hidden="true"> · </span><span>{{t (printf "stays.filter.state.%s" .Status)}}</span>
+  {{if and (eq .DateRange "custom") (or .DateFrom .DateTo)}}<span aria-hidden="true"> · </span>
+    {{if and .DateFrom .DateTo}}{{t "host.filter.range_between" (kv "start" (date_cz .DateFrom) "end" (date_cz .DateTo))}}
+    {{else if .DateFrom}}{{t "host.filter.range_from" (kv "date" (date_cz .DateFrom))}}
+    {{else}}{{t "host.filter.range_until" (kv "date" (date_cz .DateTo))}}{{end}}{{end}}</p>
+{{if or (ne .ApartmentID 0) (ne .Status "active") (eq .DateRange "custom")}}<p class="sub ph-hide stays-scope-reset"><a data-stays-reset href="{{if .ShowArchive}}/reservations?range=archive{{else}}/reservations?range=all{{end}}">{{t "stays.filter.reset_scope"}}</a></p>{{end}}
 <div class="saved-views" data-saved-views data-label="{{t "stays.filter.saved_views"}}"></div>
 {{if .ShowArchive}}<p class="sub ph-hide">{{t "stays.archive_note"}}</p>{{end}}
 <form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel stays-filter is-collapsed" data-filter-panel data-filter-route="stays" data-original-range="{{.DateRange}}">
-  <div class="stays-pills">{{template "stays_chips" .}}</div>
   <div class="filter-fields">
     <div class="ui-field"><label for="apartment">{{t "stays.filter.apartment"}}</label>
       <select id="apartment" name="apartment"><option value="">{{t "host.filter.all_properties"}}</option>{{range .Apartments}}<option value="{{.ID}}" {{if eq .ID $.ApartmentID}}selected{{end}}>{{.Name}}</option>{{end}}</select></div>
@@ -156,6 +173,7 @@
   </div>
   {{if .ShowArchive}}<input type="hidden" name="archive_scope" value="1">{{end}}
   {{if .Report}}<input type="hidden" name="report" value="{{.Report}}">{{end}}
+  {{if .Query}}<input type="hidden" name="q" value="{{.Query}}">{{end}}
   <div class="filter-panel-actions">
     <button class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom">{{t "host.filter.apply_filters"}}</button>
     <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{t "confirm.cancel"}}</button>
@@ -164,8 +182,6 @@
 {{end}}
 {{if .View.Rows}}
 {{$root := .}}
-<div class="stays-workspace" data-stays-workspace>
-<div class="stays-workspace-main">
 <div class="stays-phone">
 {{if index $root.Groups "today"}}<h2 class="sec">{{t "stays.grp.today"}}</h2>{{range index $root.Groups "today"}}{{template "stays_phone_card" (kv "Root" $root "Row" .)}}{{end}}{{end}}
 {{if index $root.Groups "week"}}<h2 class="sec">{{t "stays.grp.week"}}</h2>{{range index $root.Groups "week"}}{{template "stays_phone_card" (kv "Root" $root "Row" .)}}{{end}}{{end}}
@@ -174,7 +190,7 @@
 </div>
 <div class="card stays-desk"><table>
   <thead><tr>
-    <th>{{t "stays.table.guest"}}</th><th class="stays-col-prop">{{t "stays.table.property"}}</th><th>{{t "stays.table.dates"}}</th><th class="stays-col-guests">{{t "stays.table.guests"}}</th><th>{{t "stays.table.reporting"}}</th><th class="stays-col-deadline">{{t "stays.table.deadline"}}</th>
+    <th>{{t "stays.table.guest"}}</th><th>{{t "stays.table.property"}}</th><th>{{t "stays.table.arrival"}}</th><th>{{t "stays.table.departure"}}</th><th>{{t "stays.table.reporting"}}</th><th><span class="sr-only">{{t "common.open"}}</span></th>
   </tr></thead>
   <tbody class="stays-list">{{range .View.Rows}}{{template "stays_desk_row" (kv "Root" $root "Row" .)}}{{end}}</tbody>
 </table></div>
@@ -187,18 +203,6 @@
 </nav>
 {{if .View.NextURL}}<div class="list stays-more" data-stays-more><a class="link" href="{{.View.NextURL}}" rel="next"><span>{{t "stays.more"}}</span>{{icon "chevron-right" 16}}</a></div>{{end}}
 {{end}}
-</div>
-<div class="stays-drawer-backdrop" data-stays-drawer-backdrop hidden></div>
-<aside id="stays-drawer" class="stays-drawer" data-stays-drawer hidden aria-label="{{t "stays.drawer.title"}}"
-  data-open-full-label="{{t "stays.drawer.open_full"}}"
-  data-close-label="{{t "common.close"}}"
-  data-loading-label="{{t "stays.drawer.loading"}}"
-  data-label-property="{{t "stays.table.property"}}"
-  data-label-dates="{{t "stays.table.dates"}}"
-  data-label-guests="{{t "stays.table.guests"}}"
-  data-label-reporting="{{t "stays.table.reporting"}}"
-  data-label-add-guest="{{t "stays.row.add_guest"}}"></aside>
-</div>
 {{else if .ShowArchive}}{{empty_state "" (t "stays.empty.archive")}}
 {{else if .HasAny}}{{empty_state "" (t "stays.empty.filter") "/reservations?range=all" (t "stays.empty.show_all") (kv "primary" false)}}
 {{else if .Apartments}}{{if .FeedCount}}{{empty_state "" (t "stays.empty.none") "/apartments" (t "stays.empty.go_apartments") (kv "primary" false)}}
@@ -209,10 +213,24 @@
   <form method="post" action="/demo" class="empty-state-extra"><input type="hidden" name="_csrf" value="{{csrf}}">
     <button class="ui-btn ui-btn-secondary" type="submit">{{t "demo.load"}}</button><p class="sub">{{t "demo.load_detail"}}</p></form></div>
 {{else}}{{empty_state "" (t "stays.empty.no_apartments") "/apartments/new" (t "stays.empty.add_first")}}{{end}}
-<div class="stays-index-card stays-links stays-phone-links">
-  <a class="airbnb-index-row" href="/submissions"><span class="airbnb-icon">{{icon "shield" 24}}</span><span class="airbnb-label">{{t "tabs.stays.reports"}}</span>{{icon "chevron-right" 16}}</a>
-  <a class="airbnb-index-row" href="/housebook"><span class="airbnb-icon">{{icon "book-open" 24}}</span><span class="airbnb-label">{{t "tabs.stays.register"}}</span>{{icon "chevron-right" 16}}</a>
-  <a data-turbo="false" class="airbnb-index-row" href="/reservations.csv?{{.CSVExportParams}}"><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 20}}</a>
-  <a data-turbo="false" class="airbnb-index-row stays-phone-only" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook-phone><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "stays.housebook_download"}}<small>{{t "stays.housebook_hint"}}</small></span>{{icon "chevron-right" 20}}</a>
-</div>
+{{if and (not .ShowArchive) (gt .OldUnfilledCount 0)}}<aside class="stays-cleanup-bar" data-old-unfilled-strip>
+  <span class="stays-cleanup-icon" aria-hidden="true">{{icon "archive" 16}}</span>
+  <div class="stays-cleanup-copy">
+    <strong>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.label.one"}}{{else}}{{t "stays.old_unfilled.label" (kv "count" .OldUnfilledCount)}}{{end}}</strong>
+    <span>{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.hint.one"}}{{else}}{{t "stays.old_unfilled.hint"}}{{end}}</span>
+  </div>
+  <form method="post" action="/reservations/archive-old-unfilled" class="stays-cleanup-form" data-confirm data-confirm-message="{{t "stays.old_unfilled.confirm" (kv "count" .OldUnfilledCount)}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost sm stays-cleanup-btn" type="submit">{{if eq .OldUnfilledCount 1}}{{t "stays.old_unfilled.action.one"}}{{else}}{{t "stays.old_unfilled.action"}}{{end}}</button></form>
+</aside>{{end}}
+<details class="stays-index-card stays-links stays-tools ph-hide">
+  <summary class="stays-tools-summary">
+    <span class="stays-tools-copy"><strong>{{t "stays.tools.title"}}</strong><span class="stays-tools-hint">{{t "stays.tools.hint"}}</span></span>
+    {{icon "chevron-down" 16}}
+  </summary>
+  <div class="stays-tools-list">
+    <a class="airbnb-index-row ph-hide" href="/submissions"><span class="airbnb-icon">{{icon "police" 20}}</span><span class="airbnb-label">{{t "tabs.stays.reports"}}</span>{{icon "chevron-right" 16}}</a>
+    <a class="airbnb-index-row ph-hide" href="/housebook"><span class="airbnb-icon">{{icon "book-open" 20}}</span><span class="airbnb-label">{{t "tabs.stays.register"}}</span>{{icon "chevron-right" 16}}</a>
+    <a data-turbo="false" class="airbnb-index-row ph-hide" href="/reservations.csv?{{.CSVExportParams}}" data-csv-export="/reservations.csv" data-csv-params="{{.CSVExportParams}}" data-csv-scope-label="{{.StayProperty}}"><span class="airbnb-icon">{{icon "download" 20}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 16}}</a>
+    <a data-turbo="false" class="airbnb-index-row ph-hide" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook><span class="airbnb-icon">{{icon "download" 20}}</span><span class="airbnb-label">{{t "stays.housebook_download"}}<small>{{t "stays.housebook_hint"}}</small></span>{{icon "chevron-right" 16}}</a>
+  </div>
+</details>
 {{end}}

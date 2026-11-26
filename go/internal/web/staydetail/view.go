@@ -172,5 +172,10 @@ func Build(ctx context.Context, d Deps, ownerID, id int64, rawReturnTo string, a
 			return View{}, false, err
 		}
 	}
+	sigs, err := stays.LoadJourneySignals(ctx, d.Pool, []int64{id}, pragueToday(at))
+	if err != nil {
+		return View{}, false, err
+	}
+	v.Journey = stays.BuildJourney(s.Reservation, det.Progress, sigs[id], pragueToday(at))
 	return v, true, nil
 }
