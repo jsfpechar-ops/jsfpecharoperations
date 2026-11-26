@@ -17,7 +17,8 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 :where(body.v2 .field){display:block;margin-bottom:12px}
 :where(body.v2 input[type=checkbox],body.v2 [role=switch]){width:20px;height:20px;accent-color:var(--acc)}
 :where(body.v2 input[type=checkbox]:focus-visible,body.v2 [role=switch]:focus-visible){outline:2px solid #d0452d;outline-offset:2px}
-:where(body.v2 .ui-btn){border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+:where(body.v2 .ui-btn){display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;text-decoration:none;box-sizing:border-box}
+:where(body.v2 .ui-btn .ui-icon){flex:none}
 :where(body.v2 .ui-btn-secondary,body.v2 .ui-btn-quiet){background:#efefeb;color:var(--ink)}
 :where(body.v2 .ui-btn-compact){padding:6px 12px;font-size:13px}
 @media (max-width:1023px){:where(body.v2 input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),body.v2 select,body.v2 textarea,body.v2 .ui-btn){min-height:44px}}
@@ -226,8 +227,10 @@ body.v2 kbd{font-size:12px!important}
 /* 0711 AA, tap-target and menu fixes (orchestrator decisions, 2026-11-01) */
 body.v2 .cal .bar.b-ok{color:var(--ok)}
 body.v2 .cal .bar.b-warn{color:var(--warn)}
-body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;color:var(--ink2);font:inherit;font-size:12px;text-decoration:underline;min-height:24px;display:inline-flex;align-items:center;cursor:pointer}
-@media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px}body.v2 .search{min-height:44px}}
+body.v2 .ui-btn-quiet{background:transparent;border:0;box-shadow:none;padding:6px 12px;border-radius:999px;color:var(--ink2);font:inherit;font-size:13px;font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background .15s,color .15s}
+body.v2 .ui-btn-quiet:hover{background:var(--side2);color:var(--ink)}
+body.v2 .ui-btn-quiet.ui-btn-icon,body.v2 .row-menu-trigger.ui-btn-quiet{padding:0;background:transparent}
+@media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px;padding:10px 16px;font-size:14px}body.v2 .ui-btn-quiet:not(.ui-btn-icon):not(.row-menu-trigger):not(.list-filter-more-toggle){background:var(--side2);color:var(--ink)}body.v2 .search{min-height:44px}}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
 /* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
 .side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
@@ -2335,7 +2338,7 @@ body.v2 .property-settings-form .field input:not([type=checkbox]):not([type=radi
 /* 0851 property editor savebar: Discard/Cancel as quiet text left, Save as the one coral pill right */
 body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
 body.v2 .savebar[data-for="property-settings-form"] .btn,body.v2 .savebar[data-for="property-settings-form"] .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
-body.v2 .savebar[data-for="property-settings-form"] .btn.ghost,body.v2 .savebar[data-for="property-settings-form"] .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+body.v2 .savebar[data-for="property-settings-form"] .btn.ghost,body.v2 .savebar[data-for="property-settings-form"] .btn.ghost{margin-right:auto;padding:0 20px;background:var(--side2);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"],body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
 body.v2 .savebar[data-for="property-settings-form"] [hidden]{display:none}
 @media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
@@ -3750,4 +3753,112 @@ body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:non
   body.v2 .stays-workspace .stays-desk th:nth-child(4),body.v2 .stays-workspace .stays-desk td:nth-child(4){width:8%}
   body.v2 .stays-workspace .stays-desk th:nth-child(5),body.v2 .stays-workspace .stays-desk td:nth-child(5){width:18%}
   body.v2 .stays-workspace .stays-desk th:nth-child(6),body.v2 .stays-workspace .stays-desk td:nth-child(6){width:14%}
+}
+
+/* 2026-11-26 Airbnb-minimal mobile & cross-app polish */
+
+/* 1. Quick-start property strip: full-width Guest link card with split Copy link + Copy PIN,
+      compact top-aligned status tiles with zero vertical stretching and zero orphan slots. */
+body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px;margin:0 auto 16px;max-width:980px;align-items:stretch}
+body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:start;align-content:start;min-height:64px;padding:12px 14px;background:var(--s);border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
+body.v2 .prop-strip .sc .sd{grid-row:1;align-self:start;margin-top:4px;width:9px;height:9px;border-radius:50%;background:#c9c9c3}
+body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip div.sc.sc-link{order:-1;grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 16px;min-height:0}
+body.v2 .prop-strip .sc-link .sc-main{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1 1 220px;min-height:0;align-content:center}
+body.v2 .prop-strip .sc-link .sc-main .sd{margin-top:0;flex:none}
+body.v2 .prop-strip .sc-link .sc-main b{font-size:15px;font-weight:700;line-height:1.25}
+body.v2 .prop-strip .sc-link .sc-main small{font-size:13px;line-height:1.3}
+body.v2 .prop-strip .sc-link .sc-main .sc-pin{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:var(--side2);color:var(--ink);font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:700;letter-spacing:.06em}
+body.v2 .prop-strip .sc-link .sc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
+body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;border-radius:999px;white-space:nowrap}
+body.v2 .prop-strip .sc-link .sc-actions .ui-btn-primary{background:var(--acc);color:#fff;border:1px solid var(--acc)}
+body.v2 .prop-strip .sc-link .sc-actions .ui-btn-secondary{background:var(--s);color:var(--ink);border:1px solid var(--line)}
+body.v2 .prop-strip .sc-link .sc-actions .ui-btn-secondary:hover{background:var(--side2);border-color:var(--ink3)}
+@media (max-width:639px){
+  body.v2 .prop-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip .sc:last-child:not(.sc-link){grid-column:1/-1}
+  body.v2 .prop-strip div.sc.sc-link{flex-direction:column;align-items:stretch;gap:12px}
+  body.v2 .prop-strip .sc-link .sc-main{flex:none;width:100%}
+  body.v2 .prop-strip .sc-link .sc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+  body.v2 .prop-strip .sc-link .sc-actions:not(:has([data-guest-copy-pin])){grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{width:100%;min-width:0;padding:10px 12px;white-space:normal;text-align:center}
+}
+@media (max-width:359px){
+  body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip .sc-link .sc-actions{grid-template-columns:minmax(0,1fr)}
+}
+@media (min-width:640px) and (max-width:1023px){
+  body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:40px;padding:8px 16px;font-size:13px}
+}
+@media (min-width:1024px){
+  body.v2 .prop-strip{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:36px;padding:7px 14px;font-size:13px}
+  body.v2 nav.prop-strip .sc.is-current{background:var(--s);border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+}
+
+/* 2. Setup continue card: clean header row separating progress and amber badge, touch-friendly actions. */
+body.v2 .prop-after-strip .setup-continue-card{background:var(--s);border:1px solid var(--line);border-radius:16px;padding:16px;margin:0}
+body.v2 .setup-continue-card .setup-continue-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+body.v2 .setup-continue-card .setup-continue-head p{margin:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.35}
+body.v2 .setup-continue-card .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+body.v2 .setup-continue-card .actions form.inline{margin:0}
+@media (max-width:767px){
+  body.v2 .setup-continue-card .actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%}
+  body.v2 .setup-continue-card .actions .ui-btn,body.v2 .setup-continue-card .actions form.inline,body.v2 .setup-continue-card .actions form.inline .ui-btn{width:100%}
+}
+
+/* 3. Design System Rule 7: unify help "?" across property settings & host pages —
+      18 px crisp circle inline right after the label, invisible 44 px tap target on phone/tablet.
+      Never a visible 44 px white bordered circle. */
+body.v2 .property-settings-form .help-tip-btn,
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn,
+body.v2 .host-stay-detail .help-tip-btn,
+body.v2 .stays-title-row .help-tip-btn,
+body.v2 .police-deadline-row .help-tip-btn{
+  position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0 0 0 4px;
+  border:0;border-radius:50%;background:transparent;color:var(--ink3);
+  font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;box-sizing:border-box;
+}
+body.v2 .property-settings-form .help-tip-btn::after,
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn::after,
+body.v2 .host-stay-detail .help-tip-btn::after,
+body.v2 .stays-title-row .help-tip-btn::after,
+body.v2 .police-deadline-row .help-tip-btn::after{
+  content:"";position:absolute;z-index:-1;left:50%;top:50%;width:18px;height:18px;
+  transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;background:var(--s);box-sizing:border-box;
+}
+body.v2 .property-settings-form .help-tip-btn:is(:hover,[aria-expanded=true]),
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:is(:hover,[aria-expanded=true]),
+body.v2 .host-stay-detail .help-tip-btn:is(:hover,[aria-expanded=true]){
+  background:transparent;color:var(--brand-ink);
+}
+body.v2 .property-settings-form .help-tip-btn:is(:hover,[aria-expanded=true])::after,
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:is(:hover,[aria-expanded=true])::after,
+body.v2 .host-stay-detail .help-tip-btn:is(:hover,[aria-expanded=true])::after{
+  background:var(--brand-soft);border-color:var(--brand);
+}
+@media (max-width:1023px){
+  body.v2 .property-settings-form .help-tip-btn,
+  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .property-settings-form .help-tip-btn,
+  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn,
+  body.v2 .host-stay-detail .help-tip-btn,
+  body.v2 .stays-title-row .help-tip-btn,
+  body.v2 .police-deadline-row .help-tip-btn{
+    width:44px;height:44px;min-width:44px;min-height:44px;
+    margin:-12px -12px -12px -6px;
+    border:0;background:transparent;
+  }
+  body.v2 .property-settings-form .help-tip-btn::after,
+  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn::after,
+  body.v2 .host-stay-detail .help-tip-btn::after,
+  body.v2 .stays-title-row .help-tip-btn::after,
+  body.v2 .police-deadline-row .help-tip-btn::after{
+    left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);
+  }
+  /* Stay-fee uses an inline SVG icon instead of a text "?" — keep no duplicate ::after ring */
+  body.v2 #stay-fee-settings .help-tip-btn{margin:-13px -26px -13px 0;justify-content:flex-start}
+  body.v2 #stay-fee-settings .help-tip-btn::after{content:none}
 }

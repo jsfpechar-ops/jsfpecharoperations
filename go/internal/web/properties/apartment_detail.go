@@ -446,7 +446,7 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 	if v.LinkNext, err = s.detailNextStay(ctx, a, now); err != nil {
 		return err
 	}
-	if v.Purposes, err = s.detailPurposes(ctx); err != nil {
+	if v.Purposes, err = s.detailPurposes(ctx, lang); err != nil {
 		return err
 	}
 	if v.LeonCard, err = s.detailLeonCard(ctx, a); err != nil {
