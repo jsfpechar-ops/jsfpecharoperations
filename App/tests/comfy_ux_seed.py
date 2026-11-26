@@ -13,25 +13,30 @@ def session_cookie(secret: str, uid: int) -> str:
     return serializer.dumps({"uid": uid, "sv": 1, "iat": int(time.time())})
 
 
-def seed_comfy_world(db_url: str, host_id: int, first_apt_id: int) -> dict[str, int]:
+def seed_comfy_world(db_url: str) -> dict[str, int]:
     today = dt.date.today()
     iso = lambda delta: (today + dt.timedelta(days=delta)).isoformat()
     now_ts = dt.datetime.now(dt.timezone.utc).isoformat()
 
     with psycopg.connect(db_url) as conn, conn.cursor() as cur:
         cur.execute(
-            """UPDATE apartment
-               SET internal_name = 'Vinohrady Loft',
-                   permalink_token = 'tok-vinohrady',
-                   lock_provider = 'ttlock',
-                   lock_id = 'LK-9001',
-                   uby_idub = 'IDUB1234',
-                   uby_ws_user = 'wsuser',
-                   uby_ws_password_enc = 'enc-dummy'
-               WHERE id = %s""",
-            (first_apt_id,),
+            """INSERT INTO user_account (username, password_hash, role, active, session_version, created_at, email, two_factor_prompted_at)
+               VALUES ('comfy_host_2087', 'x', 'host', 1, 1, %s, 'comfy@example.test', %s) RETURNING id""",
+            (now_ts, now_ts),
         )
-        apt1 = first_apt_id
+        host_id = cur.fetchone()[0]
+        for doc, ver in (("terms", "t1"), ("privacy", "p1"), ("dpa", "d1")):
+            cur.execute(
+                """INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method)
+                   VALUES (%s, %s, %s, %s, 'backfill')""",
+                (host_id, doc, ver, now_ts),
+            )
+        cur.execute(
+            """INSERT INTO apartment (owner_user_id, internal_name, permalink_token, lock_provider, lock_id, uby_idub, uby_ws_user, uby_ws_password_enc, active, created_at)
+               VALUES (%s, 'Vinohrady Loft', 'tok-vinohrady', 'ttlock', 'LK-9001', 'IDUB1234', 'wsuser', 'enc-dummy', 1, %s) RETURNING id""",
+            (host_id, now_ts),
+        )
+        apt1 = cur.fetchone()[0]
 
         cur.execute(
             """INSERT INTO apartment (owner_user_id, internal_name, permalink_token, active, created_at)
@@ -161,6 +166,7 @@ def seed_comfy_world(db_url: str, host_id: int, first_apt_id: int) -> dict[str, 
         )
 
     return {
+        "host_id": host_id,
         "apt1": apt1,
         "apt2": apt2,
         "apt3": apt3,

@@ -5,8 +5,6 @@ import os
 
 import pytest
 
-pytest_plugins = ("tests.go_web_harness",)
-
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 if REQUIRE_BROWSER:
     import playwright.sync_api as sync_api
@@ -24,14 +22,13 @@ from tests.go_web_harness import (
 
 @pytest.fixture(scope="module")
 def comfy_world(go_web):
-    return seed_comfy_world(
-        go_web["database_url"], go_web["host_id"], go_web["apartment_id"]
-    )
+    return seed_comfy_world(go_web["database_url"])
 
 
 def test_comfy_ux_all_pages_pass_layout_lint_and_capture_shots(
-    go_web, go_cookie, comfy_world
+    go_web, comfy_world
 ):
+    comfy_cookie = session_cookie(go_web["secret"], comfy_world["host_id"])
     paths = {
         "comfy-dashboard": "/",
         "comfy-cal-index": "/?cal_view=calendar",
@@ -39,14 +36,15 @@ def test_comfy_ux_all_pages_pass_layout_lint_and_capture_shots(
         "comfy-stays": "/reservations",
         "comfy-stay-detail": f"/reservations/{comfy_world['stay_urgent']}",
     }
-    findings = lint_go_paths(go_web, paths, go_cookie)
+    findings = lint_go_paths(go_web, paths, comfy_cookie)
     assert_no_layout_findings(findings)
 
 
 def test_comfy_ux_rigorous_geometry_and_design_invariants(
-    go_web, go_cookie, comfy_world
+    go_web, comfy_world
 ):
     base = go_web["base_url"]
+    comfy_cookie = session_cookie(go_web["secret"], comfy_world["host_id"])
     solo_cookie = session_cookie(go_web["secret"], comfy_world["solo_uid"])
 
     with sync_api.sync_playwright() as playwright:
@@ -57,7 +55,7 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         register_static_routes(ctx)
         ctx.add_cookies(
             [
-                {"name": "ubyhost_session", "value": go_cookie, "url": base + "/"},
+                {"name": "ubyhost_session", "value": comfy_cookie, "url": base + "/"},
                 {"name": "ubyhost_lang", "value": "cs", "url": base + "/"},
             ]
         )
@@ -255,7 +253,7 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         register_static_routes(dctx)
         dctx.add_cookies(
             [
-                {"name": "ubyhost_session", "value": go_cookie, "url": base + "/"},
+                {"name": "ubyhost_session", "value": comfy_cookie, "url": base + "/"},
                 {"name": "ubyhost_lang", "value": "cs", "url": base + "/"},
             ]
         )

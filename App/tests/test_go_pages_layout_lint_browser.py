@@ -327,3 +327,10 @@ def test_go_access_page_states_pass_the_layout_lint(go_web, go_cookie):
         assert page.locator('input[name="custom_label"]').count() == 1
         browser.close()
 
+
+from tests.comfy_host_ux_checks import (  # noqa: E402, F401
+    comfy_world,
+    test_comfy_ux_all_pages_pass_layout_lint_and_capture_shots,
+    test_comfy_ux_rigorous_geometry_and_design_invariants,
+)
+
