@@ -97,6 +97,54 @@ func TestPinRedirectHonoursSession(t *testing.T) {
 	}
 }
 
+func TestClaimConfirmRedirectsToPinWithoutSession(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	secret := strings.Repeat("p", 32)
+	t.Setenv("UBYHOST_SECRET_KEY", secret)
+	t.Setenv("UBYHOST_GUEST_PIN", "1")
+	getenv := func(k string) string {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+		return ""
+	}
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%9000000000 + 5000000
+	userID := aptID
+	tok := fmt.Sprintf("claimpin%d", aptID)
+	resID := aptID + 1
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("cp%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '654321', $4)`, aptID, userID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
+
+	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
+	postPath := fmt.Sprintf("/l/%s/%d/claim/confirm?lang=en", tok, resID)
+	req := httptest.NewRequest(http.MethodPost, postPath, strings.NewReader("secret=ignored"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("token", tok)
+	req.SetPathValue("reservation_id", fmt.Sprintf("%d", resID))
+	rec := httptest.NewRecorder()
+	d.claimConfirm(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d, want redirect to PIN", rec.Code)
+	}
+	loc := rec.Header().Get("Location")
+	if !strings.Contains(loc, "/l/") || !strings.Contains(loc, "return_to") {
+		t.Fatalf("location %q", loc)
+	}
+	if !strings.Contains(loc, "claim%2Fconfirm") && !strings.Contains(loc, "claim/confirm") {
+		t.Fatalf("return_to must preserve claim/confirm, got %q", loc)
+	}
+}
+
 func TestStayOverviewBySlugRedirectsToNew(t *testing.T) {
 	pool := testPoolOptional(t)
 	if pool == nil {

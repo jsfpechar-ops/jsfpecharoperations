@@ -116,6 +116,13 @@ func TestPropertyPageRedirectAndMissing(t *testing.T) {
 			t.Errorf("%s: %d, want 404", slug, rec.Code)
 		}
 	}
+	req := httptest.NewRequest(http.MethodGet, "/p/nope?lang=en", nil)
+	req.Header.Set("Accept", "text/html")
+	htmlRec := httptest.NewRecorder()
+	mux.ServeHTTP(htmlRec, req)
+	if htmlRec.Code != http.StatusNotFound || !strings.Contains(htmlRec.Body.String(), "Page not found") {
+		t.Fatalf("html client: status %d body snippet %q", htmlRec.Code, htmlRec.Body.String()[:min(120, htmlRec.Body.Len())])
+	}
 }
 
 func TestPropertyPageEscapesAndSplits(t *testing.T) {

@@ -174,3 +174,122 @@ func TestReservationCreateInsertsRow(t *testing.T) {
 func strconvFormat(id int64) string {
 	return fmt.Sprintf("%d", id)
 }
+
+func TestReservationCreateStartsClaimOnGuestEmail(t *testing.T) {
+	t.Setenv("UBYHOST_MAIL_BACKEND", "console")
+	t.Setenv("PUBLIC_BASE_URL", "https://ubyhost.example")
+	pool := dbPool(t)
+	ctx := context.Background()
+	now := time.Date(2026, 7, 2, 12, 0, 0, 0, time.UTC)
+	stamp := isoStamp(now)
+	var ownerID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO user_account (username, password_hash, role, active, session_version, created_at)
+		VALUES ('create-claim-host', 'x', 'host', 1, 1, $1) RETURNING id`, stamp).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+	seedLegalAcceptance(t, pool, ownerID, now)
+	var entityID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at)
+		VALUES ($1, 'Entity', $2) RETURNING id`, ownerID, stamp).Scan(&entityID); err != nil {
+		t.Fatal(err)
+	}
+	var aptID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, automation_mode, submit_after_hours, active, created_at)
+		VALUES ($1,$2,'Claim flat','claimcreatetok','manual',24,1,$3) RETURNING id`, ownerID, entityID, stamp).Scan(&aptID); err != nil {
+		t.Fatal(err)
+	}
+	getenv := func(k string) string {
+		switch k {
+		case "PUBLIC_BASE_URL":
+			return "https://ubyhost.example"
+		default:
+			return createGetenv(k)
+		}
+	}
+	mux := http.NewServeMux()
+	Register(mux, pool, getenv, func() time.Time { return now },
+		func(_ string, h http.HandlerFunc) http.Handler { return h })
+	rec := createCSRFPost(t, mux, now, "nonce-create-claim", ownerID, map[string]string{
+		"apartment_id":    strconvFormat(aptID),
+		"date_from":       "2026-08-01",
+		"date_to":         "2026-08-03",
+		"expected_guests": "2",
+		"guest_email":     " newguest@example.test ",
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("create: code %d", rec.Code)
+	}
+	loc := rec.Header().Get("Location")
+	var resID int64
+	if _, err := fmt.Sscanf(loc, "/reservations/%d", &resID); err != nil {
+		t.Fatalf("parse reservation id from %q: %v", loc, err)
+	}
+	var auditN int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM audit WHERE action = 'guest_link_sent_on_create' AND detail = $1`,
+		fmt.Sprintf("reservation=%d", resID)).Scan(&auditN); err != nil || auditN != 1 {
+		t.Fatalf("audit guest_link_sent_on_create count=%d err=%v", auditN, err)
+	}
+	var claimState string
+	if err := pool.QueryRow(ctx, `SELECT state FROM reservation_claim WHERE reservation_id = $1`, resID).Scan(&claimState); err != nil {
+		t.Fatal(err)
+	}
+	if claimState != claimStateProvisional {
+		t.Fatalf("claim state %q, want provisional", claimState)
+	}
+	var outboxN int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key = $1`,
+		fmt.Sprintf("claim:%d:v1", resID)).Scan(&outboxN); err != nil || outboxN != 1 {
+		t.Fatalf("claim outbox count=%d err=%v", outboxN, err)
+	}
+}
+
+func TestReservationCreateSkipsClaimWithoutGuestEmail(t *testing.T) {
+	t.Setenv("UBYHOST_MAIL_BACKEND", "console")
+	pool := dbPool(t)
+	ctx := context.Background()
+	now := time.Date(2026, 7, 3, 12, 0, 0, 0, time.UTC)
+	stamp := isoStamp(now)
+	var ownerID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO user_account (username, password_hash, role, active, session_version, created_at)
+		VALUES ('create-no-email', 'x', 'host', 1, 1, $1) RETURNING id`, stamp).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+	seedLegalAcceptance(t, pool, ownerID, now)
+	var entityID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at)
+		VALUES ($1, 'Entity', $2) RETURNING id`, ownerID, stamp).Scan(&entityID); err != nil {
+		t.Fatal(err)
+	}
+	var aptID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, automation_mode, submit_after_hours, active, created_at)
+		VALUES ($1,$2,'No mail flat','nomailtok','manual',24,1,$3) RETURNING id`, ownerID, entityID, stamp).Scan(&aptID); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	Register(mux, pool, createGetenv, func() time.Time { return now },
+		func(_ string, h http.HandlerFunc) http.Handler { return h })
+	rec := createCSRFPost(t, mux, now, "nonce-create-no-mail", ownerID, map[string]string{
+		"apartment_id":    strconvFormat(aptID),
+		"date_from":       "2026-09-01",
+		"date_to":         "2026-09-03",
+		"expected_guests": "2",
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("create: code %d", rec.Code)
+	}
+	var resID int64
+	if _, err := fmt.Sscanf(rec.Header().Get("Location"), "/reservations/%d", &resID); err != nil {
+		t.Fatalf("location %q", rec.Header().Get("Location"))
+	}
+	var auditN int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM audit WHERE action = 'guest_link_sent_on_create' AND detail = $1`,
+		fmt.Sprintf("reservation=%d", resID)).Scan(&auditN); err != nil || auditN != 0 {
+		t.Fatalf("unexpected audit count=%d err=%v", auditN, err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM reservation_claim WHERE reservation_id = $1`, resID).Scan(&auditN); err != nil {
+		t.Fatal(err)
+	}
+	if auditN != 0 {
+		t.Fatalf("claim row count=%d without guest email", auditN)
+	}
+}
