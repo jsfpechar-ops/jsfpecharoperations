@@ -1,11 +1,33 @@
 {{/* Port of App/app/templates/cleaning.html with _cleaning_screen.html (host, not read-only). Brief 1570. */}}
 {{define "cleaning.title"}}{{end}}
+{{define "cleaning.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093">{{end}}
 {{define "cleaning"}}
 <h1 class="sr-only cleaning-phone">{{ct $.Lang "title"}}</h1>
-<div class="head cleaning-head"><div><h1 class="big">{{ct $.Lang "title"}}</h1><p class="sub cleaning-phone">{{ct $.Lang "subtitle_short"}}</p></div><div class="cleaning-actions"><a class="btn soft" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ct $.Lang "add"}}</a><a class="btn soft" href="/cleaning/properties">{{ct $.Lang "settings"}}</a></div><a class="btn" href="/cleaning/shares">{{ct $.Lang "share_cleaner"}}</a></div>
+<div class="head cleaning-head"><div><h1 class="big">{{ct $.Lang "title"}}</h1><p class="sub cleaning-phone">{{if .ShowBackToAll}}{{.PropertyName}}{{else}}{{ct $.Lang "subtitle_short"}}{{end}}</p></div><div class="cleaning-actions"><a class="btn soft" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ct $.Lang "add"}}</a><a class="btn soft" href="/cleaning/properties">{{ct $.Lang "settings"}}</a></div><a class="btn" href="/cleaning/shares">{{ct $.Lang "share_cleaner"}}</a></div>
 <div class="cleaning-page">
 {{if .Notice}}<p class="cleaning-notice" role="status">{{ct $.Lang .Notice}}</p>{{end}}
+{{if .ShowPicker}}
+<div class="cal-mobile-only">
+  <div class="cal-prop-index" data-cleaning-picker>
+    {{range .IndexCards}}
+    <a class="cal-prop-card" href="{{.Href}}">
+      <span class="cal-prop-card-name">{{.Name}}</span>
+      <span class="cal-prop-card-mini">{{.MiniSVG}}</span>
+    </a>
+    {{end}}
+  </div>
+</div>
+<div class="cal-tablet-up">
+  {{template "host_calendar" .}}
+</div>
+{{else}}
+{{if .ShowBackToAll}}
+<div class="cal-prop-back cal-mobile-only">
+  <a class="cal-prop-back-link" href="/cleaning">{{icon "chevron-left" 18}}<span>{{ct $.Lang "all"}}</span></a>
+</div>
+{{end}}
 {{template "host_calendar" .}}
+{{end}}
 <section id="cleaning-list" class="cleaning-list" aria-labelledby="cleaning-list-title" tabindex="-1">
   <h2 id="cleaning-list-title" class="visually-hidden">{{ct $.Lang "list"}}</h2>
   <p class="cleaning-list-error" data-cleaning-error role="alert" hidden></p>

@@ -609,7 +609,7 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
   .dashboard-calendar[data-readonly="false"] .cal-day .cal-num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; line-height:1; }
   .dashboard-calendar[data-readonly="false"] .cal-day.is-today .cal-num { background:var(--coral, #d0452d); color:#fff; }
   .dashboard-calendar[data-readonly="false"] .cal-week.is-dots .cal-day.is-past .cal-day-number { color:var(--ink-muted); }
-  .dashboard-calendar[data-readonly="false"] .cal-dots { justify-content:center; gap:3px; min-height:6px; max-width:100%; overflow:hidden; padding:0 6px; box-sizing:border-box; }
+  .dashboard-calendar[data-readonly="false"] .cal-dots { justify-content:center; gap:3px; min-height:6px; max-width:100%; overflow:hidden; padding:0 2px; box-sizing:border-box; }
   .dashboard-calendar[data-readonly="false"] .cal-dot { flex:0 1 10px; width:10px; min-width:0; height:4px; border-radius:2px; }
   .dashboard-calendar[data-readonly="false"] .cal-dot-more { font-size:11px; }
   .dashboard-calendar[data-readonly="false"] .cal-week.is-dots .cal-day.is-selected { background:#222; border-color:#222; box-shadow:none; outline:none; }
@@ -721,7 +721,9 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 }
 
 /* 0815: host cleaning calendar uses the Airbnb tiles above (their root selector is [data-readonly="false"], the same specificity as before) and shows cleaning tags only. The shared cleaner page (data-readonly="true") is unchanged. */
-.dashboard-calendar[data-readonly="false"] .cal-clean-tag { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; box-sizing:border-box; height:18px; min-width:18px; padding:0 4px; border-radius:9px; background:var(--status-action-bg); }
+.dashboard-calendar[data-readonly="false"] .cal-clean-tag { display:inline-flex; align-items:center; justify-content:center; gap:2px; flex:0 0 auto; box-sizing:border-box; height:18px; min-width:18px; max-width:100%; padding:0 5px; border-radius:9px; background:var(--status-action-bg); color:var(--status-action-ink); font-size:11px; font-weight:700; line-height:1; }
+.dashboard-calendar[data-readonly="false"] .cal-clean-tag .cal-cleaning-icon { flex:none; }
+.dashboard-calendar[data-readonly="false"] .cal-day.is-selected .cal-clean-tag { background:rgba(255,255,255,.22); color:#fff; }
 .dashboard-calendar[data-readonly="false"] .cal-tile-chip.cal-clean-chip { display:flex; align-items:center; gap:4px; box-sizing:border-box; height:22px; line-height:22px; padding:0 6px; border:0; border-radius:6px; background:var(--status-action-bg); color:var(--status-action-ink); font-size:12px; font-weight:400; }
 .dashboard-calendar[data-readonly="false"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { flex:0 0 12px; }
 .cleaning-page:has(.dashboard-calendar[data-readonly="false"]) :is(#cleaning-list, .cleaning-legend) { display:none; }

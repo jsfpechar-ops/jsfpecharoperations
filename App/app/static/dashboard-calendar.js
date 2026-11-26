@@ -37,7 +37,7 @@
     if (event.kind !== "cleaning") return eventPoint(event, edge);
     return dayPoint(event.start) + (edge === "end" ? 1 : 0);
   }
-  function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
+  function autoView(mode, propertyCount, ganttMin) { return mode === "auto" ? (propertyCount >= (ganttMin || 3) ? "gantt" : "calendar") : mode; }
   function lanes(events, start, end) {
     const leftEdge = dayPoint(start), rightEdge = dayPoint(end), ends = [], segments = [];
     let cleaningLane = null;
@@ -132,9 +132,10 @@
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  // 0956: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
-  function ganttAllowed() { return !state.property && state.properties.length >= 3; }
-  function view() { return phoneDots() || !ganttAllowed() ? "calendar" : autoView(state.mode, state.properties.length); }
+  // Cleaning calendar defaults to Gantt from 2+ properties on tablet/desktop; stays calendar uses 3+.
+  function ganttMinProps() { return cleaningMode ? 2 : 3; }
+  function ganttAllowed() { return !state.property && state.properties.length >= ganttMinProps(); }
+  function view() { return phoneDots() || !ganttAllowed() ? "calendar" : autoView(state.mode, state.properties.length, ganttMinProps()); }
   function range() {
     if (view() === "gantt" && cleaningMode) return [state.date,
       state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
@@ -377,8 +378,12 @@
           const dayCleanings = state.events.filter(event => event.kind === "cleaning" && displayOverlap(event, date, addDays(date, 1)));
           const marks = el("div", "cal-dots");
           marks.dataset.calDots = String(dayCleanings.length);
-          dayCleanings.slice(0, 2).forEach(() => { const tag = el("span", "cal-clean-tag"); appendCleaningIcon(tag, "cal-cleaning-icon"); marks.append(tag); });
-          if (dayCleanings.length > 2) marks.append(el("span", "cal-dot-more", "+" + String(dayCleanings.length - 2)));
+          if (dayCleanings.length) {
+            const tag = el("span", "cal-clean-tag");
+            appendCleaningIcon(tag, "cal-cleaning-icon");
+            if (dayCleanings.length > 1) tag.append(el("span", "cal-clean-count", String(dayCleanings.length)));
+            marks.append(tag);
+          }
           button.append(marks);
           const chips = el("div", "cal-tile-chips");
           dayCleanings.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip cal-clean-chip"); appendCleaningIcon(chip, "cal-cleaning-icon"); chip.append(el("span", "", event.startTime || (cleaningLabels.title || labels.cleaning))); chips.append(chip); });
