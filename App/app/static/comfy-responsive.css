@@ -61,6 +61,15 @@ body.v2 .cal .crow .bar {
   margin: 0 3px;
   padding: 0 8px;
   border: 1px solid transparent;
+  cursor: pointer;
+  transition: filter 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+body.v2 .cal .crow .bar:hover,
+body.v2 .cal .crow .bar:focus-visible {
+  filter: brightness(0.96);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-0.5px);
 }
 
 body.v2 .cal .crow .bar.has-meta {

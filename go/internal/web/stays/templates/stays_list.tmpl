@@ -1,10 +1,10 @@
 {{define "stays_list.title"}}{{end}}
-{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088">{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2093">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
 {{else if and $progress.NotRegistered (gt (not_registered $progress) 0)}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (not_registered $progress)}}</span></span>
-{{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
+{{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok" title="{{deadline_badge $cell}}">{{t "status.reported"}}</span>
 {{else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
 {{else if and (or (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
 {{else if or (eq $progress.Status "reported") (eq $progress.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>
@@ -78,11 +78,9 @@
       {{if in_house $prog.Anchor $prog.HasAnchor $res.DateTo $root.Today}} &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "stays.table.in_house"}}</span>{{end}}
     </small>
   </td>
-  <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
+  <td class="stay-rep-td" data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
-    {{else}}{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}} {{end}}{{if $prog.HasCell}}{{template "v2_status_pill" $row}}
-      {{if and (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}<small>{{deadline_badge $prog.Cell}}</small>{{end}}
-    {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}{{end}}
+    {{else}}<div class="stay-rep-grid">{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}}{{end}}<div class="stay-rep-status">{{if $prog.HasCell}}{{template "v2_status_pill" $row}}{{if and (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}<small>{{deadline_badge $prog.Cell}}</small>{{end}}{{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}</div></div>{{end}}
   </td>
   <td class="row-actions" data-card="actions" data-label="">
     {{row_menu_begin}}

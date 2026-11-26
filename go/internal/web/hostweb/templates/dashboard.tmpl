@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2092">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2093">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -127,7 +127,7 @@
       <small>{{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</small></td>
     <td>{{property_identity .Row.Reservation.ApartmentID .Row.Reservation.InternalName true}}</td>
     <td>{{if .Arriving}}{{t "calendar.arrival"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{else}} · {{tp "dashboard.today.nights" .Nights}}{{end}}{{else}}{{t "calendar.departure"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{end}}{{end}}</td>
-    <td class="dashboard-row-task">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}} {{end}}{{template "dash.pill" .Row}}</td>
+    <td class="dashboard-row-task"><div class="stay-rep-grid">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}}{{end}}<div class="stay-rep-status">{{template "dash.pill" .Row}}</div></div></td>
     <td class="dots dashboard-row-actions"></td>
   </tr>
 {{- else}}
@@ -169,7 +169,7 @@
 {{- if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{- else if eq $p.Status "failed"}}<span class="pill p-bad">{{progress_pill $p.Status $res.AutomationMode}}</span>
 {{- else if dash_not_registered $p}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (dash_not_registered $p)}}</span></span>
-{{- else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
+{{- else if eq $cell.State "filed_on_time"}}<span class="pill p-ok" title="{{deadline_badge $cell}}">{{t "status.reported"}}</span>
 {{- else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
 {{- else if and (or (eq $p.Status "awaiting_guest") (eq $p.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
 {{- else if or (eq $p.Status "reported") (eq $p.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>

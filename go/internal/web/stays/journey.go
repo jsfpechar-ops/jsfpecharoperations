@@ -15,10 +15,10 @@ import (
 )
 
 // JourneyStep is one icon step in the 4-step stay journey strip:
-// Link (mail) -> Form (users) -> Code (key-round) -> Police (landmark).
+// Link (mail) -> Form (users) -> Code (key-round) -> Police (police).
 type JourneyStep struct {
 	Key      string // "link" | "form" | "code" | "police"
-	Icon     string // "mail" | "users" | "key-round" | "landmark"
+	Icon     string // "mail" | "users" | "key-round" | "police"
 	Tone     string // "waiting" | "progress" | "done" | "bad"
 	Counter  string // e.g. "1/2" for form step
 	StateKey string // i18n suffix: "unclaimed", "sent", "verified", "empty", "partial", "complete", "waiting", "issuing", "ready", "available", "failed", "pending", "filed", "action"
@@ -160,7 +160,7 @@ func BuildJourney(res Reservation, prog Progress, sig JourneySignal, today time.
 			polTone, polState = "progress", "pending"
 		}
 		steps = append(steps, JourneyStep{
-			Key: "police", Icon: "landmark", Tone: polTone, StateKey: polState,
+			Key: "police", Icon: "police", Tone: polTone, StateKey: polState,
 		})
 	}
 

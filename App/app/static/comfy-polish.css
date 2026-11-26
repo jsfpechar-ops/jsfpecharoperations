@@ -1,0 +1,172 @@
+/* Calm unified "What needs you" notification strip and Excel-aligned Reporting columns. */
+body.v2 #needs-action .needs-you-list {
+  display: block;
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+body.v2 #needs-action .needs-you-item.need {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+body.v2 #needs-action .needs-you-item.need:last-child {
+  border-bottom: 0;
+}
+
+body.v2 #needs-action .needs-you-item.need > .needs-you-copy > strong::before {
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+body.v2 #needs-action .needs-you-item.need .needs-you-dismiss {
+  position: static;
+  top: auto;
+  right: auto;
+  transform: none;
+  margin: 0;
+}
+
+body.v2 #needs-action .needs-you-item.need .needs-you-dismiss .link-btn {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  color: var(--ink3);
+}
+
+@media (min-width: 768px) {
+  body.v2 #needs-action .needs-you-item.need,
+  body.v2 #needs-action .needs-you-item.need:has(.needs-you-dismiss) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px 16px;
+    gap: 14px;
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-copy strong {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-copy span {
+    display: inline;
+    margin-top: 0;
+    font-size: 13px;
+    color: var(--ink3);
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-actions {
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-actions .btn.sm {
+    min-height: 30px;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+  }
+
+  body.v2 #needs-action .needs-you-item.need[data-tone="red"] .needs-you-actions .btn.sm:not(.ghost) {
+    background: var(--bads);
+    color: var(--bad);
+    border: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 767px) {
+  body.v2 #needs-action .needs-you-item.need .needs-you-actions {
+    gap: 12px;
+  }
+
+  body.v2 #needs-action .needs-you-item.need .needs-you-actions .btn.sm {
+    min-height: 36px;
+    font-size: 14px;
+    padding: 0 14px;
+  }
+}
+
+/* Excel-aligned Reporting / Status columns across Stays list and Dashboard Today table. */
+.stay-rep-grid {
+  display: grid;
+  grid-template-columns: 146px minmax(112px, 1fr);
+  align-items: center;
+  column-gap: 12px;
+}
+
+.stay-rep-grid .stay-journey {
+  display: grid;
+  grid-template-columns: 26px 50px 26px 26px;
+  column-gap: 6px;
+  align-items: center;
+  width: 146px;
+}
+
+.stay-rep-grid .stay-journey-step {
+  box-sizing: border-box;
+  width: 26px;
+  padding: 0;
+  justify-content: center;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="link"] {
+  grid-column: 1;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="form"] {
+  grid-column: 2;
+  width: 50px;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="code"] {
+  grid-column: 3;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="police"] {
+  grid-column: 4;
+}
+
+.stay-rep-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stay-rep-status .pill {
+  white-space: nowrap;
+}
+
+.stay-rep-status small {
+  display: block;
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink3);
+  line-height: 1.25;
+}

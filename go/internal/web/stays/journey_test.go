@@ -59,7 +59,7 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 			{"link", "mail", "done"},
 			{"form", "users", "done"},
 			{"code", "key-round", "done"},
-			{"police", "landmark", "done"},
+			{"police", "police", "done"},
 		}
 		for i, w := range want {
 			if j.Steps[i].Key != w.key || j.Steps[i].Icon != w.icon || j.Steps[i].Tone != w.tone {
@@ -124,7 +124,7 @@ func TestRenderJourneyStripAndBar(t *testing.T) {
 		{Key: "link", Icon: "mail", Tone: "done", StateKey: "verified"},
 		{Key: "form", Icon: "users", Tone: "progress", Counter: "1/2", StateKey: "partial"},
 		{Key: "code", Icon: "key-round", Tone: "waiting", StateKey: "waiting"},
-		{Key: "police", Icon: "landmark", Tone: "bad", StateKey: "action"},
+		{Key: "police", Icon: "police", Tone: "bad", StateKey: "action"},
 	}}
 	strip := string(RenderJourneyStrip("cs", j))
 	if !strings.Contains(strip, `class="stay-journey"`) || !strings.Contains(strip, `data-step="police" data-tone="bad"`) {
