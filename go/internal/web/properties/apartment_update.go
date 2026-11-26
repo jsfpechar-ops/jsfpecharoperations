@@ -53,6 +53,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/privacy"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stayfees"
@@ -90,6 +91,8 @@ type apartmentRefusal struct {
 	operatorError   string            // an i18n key from apartmentOperatorError, never from the form
 	addressErrors   map[string]string // apartmentAddressErrorList
 	addressOrder    []string          // its key order
+	policeErrors    map[string]string // uby_mark / police field validation errors
+	policeOrder     []string
 	sharedTimeError string            // an i18n key set by this file, never from the form
 	lockTimesError  bool
 	feeAccountError bool // refuse_fee_save: the council account did not normalise
@@ -173,9 +176,12 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 				}
 			}
 		}
-		view.AddressErrors, view.OperatorError, view.SharedTimeError = ref.addressErrors, ref.operatorError, ref.sharedTimeError
+		view.AddressErrors, view.PoliceErrors, view.OperatorError, view.SharedTimeError = ref.addressErrors, ref.policeErrors, ref.operatorError, ref.sharedTimeError
 		for _, field := range ref.addressOrder {
 			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", field})
+		}
+		for _, field := range ref.policeOrder {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"police", field})
 		}
 		if ref.operatorError == "flash.error.no_such_controller" {
 			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", "data_controller_entity_id"})
@@ -193,7 +199,7 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 			}
 			view.SettingsSection, view.LockTimesError = "lock", true
 		}
-		if ref.operatorError != "" || len(ref.addressErrors) > 0 || ref.sharedTimeError != "" || ref.lockTimesError {
+		if ref.operatorError != "" || len(ref.addressErrors) > 0 || len(ref.policeErrors) > 0 || ref.sharedTimeError != "" || ref.lockTimesError {
 			view.Status = http.StatusBadRequest
 		}
 	}
@@ -432,6 +438,27 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		if errs, order := apartmentAddressErrorList(merged, q.lang); len(errs) > 0 {
 			s.refuseApartmentSave(w, r, q, a, apartmentRefusal{addressErrors: errs, addressOrder: order})
 			return
+		}
+	}
+	if has(r, "uby_ws_user") || has(r, "uby_mark") {
+		wsUser := a.UbyWSUser
+		if has(r, "uby_ws_user") {
+			wsUser = pay.text["uby_ws_user"]
+		}
+		mark := a.UbyMark
+		if has(r, "uby_mark") {
+			mark = pay.text["uby_mark"]
+		}
+		if expected := validation.WSUserUnderscoreMark(wsUser); expected != "" {
+			if pyStrip(mark) == "" {
+				cols = setColumn(cols, "uby_mark", expected)
+			} else if !strings.EqualFold(pyStrip(mark), expected) {
+				s.refuseApartmentSave(w, r, q, a, apartmentRefusal{
+					policeErrors: map[string]string{"uby_mark": validationi18n.Localize(validation.MarkMismatchMessage, q.lang)},
+					policeOrder:  []string{"uby_mark"},
+				})
+				return
+			}
 		}
 	}
 	if cols, err = s.withPassword(cols, pay.password); err != nil {

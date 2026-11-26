@@ -80,6 +80,7 @@ apartment.form.ubyport.idub_hint
 apartment.form.ubyport.idub_label
 apartment.form.ubyport.login_hint
 apartment.form.ubyport.mark_hint
+apartment.form.ubyport.mark_mismatch
 apartment.form.ubyport.mark_label
 apartment.form.ubyport.name_example
 apartment.form.ubyport.name_hint
@@ -184,7 +185,6 @@ setup.ready.text
 setup.ready.text_no_pin
 setup.ready.title
 setup.sec.done
-setup.sec.minutes
 setup.sec.optional
 setup.sec.police_untested
 setup.sec.recommended

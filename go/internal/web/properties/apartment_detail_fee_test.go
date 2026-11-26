@@ -143,7 +143,7 @@ func TestApartmentDetailFeeBare(t *testing.T) {
 		stay_fee_authority_name = NULL, stay_fee_authority_address = NULL, stay_fee_authority_contact = NULL WHERE id = $1`, adPlain)
 	body := adGet(adMux(pool, nil), "/apartments/130202?return_to=/stay-fees/130202", 130001, 0, "en").Body.String()
 	adCheck(t, "bare fee", body, []string{
-		`<span class="dot n" aria-hidden="true"></span><div><b>Stay fee</b></div><small class="sec-state">not used · about 3 min</small>`,
+		`<span class="dot n" aria-hidden="true"></span><div><b>Stay fee</b></div><small class="sec-state">not used</small>`,
 		`<p class="small fee-return-note"><a href="/stay-fees/130202"> Back to stay fees</a></p>`,
 		`<option value="130201"`, `data-rate="50"`, `data-cadence="quarterly"`, `data-vs="5566"`,
 		`stay_fee_rate_czk" aria-describedby="stay_fee_rate_czk-help" min="0" max="50" step="1"

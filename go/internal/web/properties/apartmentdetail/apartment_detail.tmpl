@@ -14,7 +14,7 @@
   <div class="banner ok section-notice" role="status" tabindex="-1" data-section-notice><span class="grow">{{.root.FlashMsg}}</span></div>
   {{end}}{{end}}{{end}}
 
-{{define "apartmentdetail.state"}}<small class="sec-state">{{.text}}{{if not (index .root.SectionDone .key)}} · {{t "setup.sec.minutes" "n" (index .root.SectionMinutes .key)}}{{end}}</small>{{end}}
+{{define "apartmentdetail.state"}}<small class="sec-state">{{.text}}</small>{{end}}
 
 {{define "apartmentdetail.missing"}}{{if .items}}<div class="prop-sec-missing" data-missing="{{.key}}" role="note"><ul class="readiness-list">{{range .items}}<li class="readiness-item"><a href="#{{.Anchor}}" data-fix-label="{{t (print "apartment.form.readiness.item." .Key)}}">{{t "apartment.form.readiness.missing"}} {{t (print "apartment.form.readiness.item." .Key)}}</a>{{if .Message}}<span class="readiness-why">{{.Message}}</span>{{end}}</li>{{end}}</ul></div>{{end}}{{end}}
 
@@ -76,10 +76,11 @@
   </div>
 </div>{{end}}
 
-{{define "apartmentdetail.policebox"}}
+{{define "apartmentdetail.policebox"}}{{$err := ""}}{{if .errors}}{{$err = index .errors .name}}{{end}}
   <div class="field">
     {{field_label .name .label .help .optional "" .required}}
-    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}>
+    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if $err}} aria-invalid="true" aria-describedby="{{.name}}-error{{if .help}} {{.name}}-help{{end}}"{{else if .help}} aria-describedby="{{.name}}-help"{{end}}{{if .mismatch}} data-mark-mismatch="{{.mismatch}}"{{end}}>
+    {{if $err}}<p class="err-text" id="{{.name}}-error" role="alert">{{$err}}</p>{{end}}
     {{$name := .name}}{{range .findings}}{{if eq .Field $name}}<p class="police-letter-note" role="note" data-police-check-code="{{.Code}}">{{.Text}}</p>{{end}}{{end}}
   </div>
 {{end}}
@@ -421,24 +422,12 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
       <p class="ui-sub">{{t "why.police"}}</p>
       <p class="ui-sub"><a href="{{.Base}}?view=settings&amp;section=automation#automation">{{t "automation.timing_title"}} </a></p>
       <div class="police-letter-helpers">
-      <details class="police-letter-find"{{if .LetterFirst}} open{{end}}>
+      <details class="police-letter-find">
         <summary>{{t "police_letter.find_title"}}</summary>
         {{template "apartmentdetail.letterfigure" .}}
       </details>
-      <details class="police-letter-paste" id="police-letter-paste"{{if .LetterFirst}} open{{end}}>
-        <summary>{{t "police_letter.paste_title"}}</summary>
-        <div class="field">
-          <div class="field-label-row"><label for="letter_text">{{t "police_letter.paste_label"}}{{help_tip "police-letter-help" (t "police_letter.paste_help")}}</label></div>
-          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste></textarea>
-        </div>
-        <div class="actions">
-          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{t "police_letter.read_button"}}</button>
-        </div>
-      </details>
       </div>
-      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{t "police_letter.read_failed"}}" data-saved-now="{{t "police_letter.saved_now" "value" "%s"}}"></p>
       {{range .PoliceFindings}}{{if not .Field}}<p class="police-letter-note" data-police-check data-police-check-code="{{.Code}}" role="note">{{.Text}}</p>{{end}}{{end}}
-      <input type="hidden" name="letter_fields" value="" data-letter-fields data-letter-fields-initial="">
       <div class="grid">
         {{template "apartmentdetail.policebox" (kv "name" "uby_idub" "label" (t "setup.label.idub") "value" $a.UbyIDUB "help" (t "apartment.form.ubyport.idub_hint") "optional" false "max" 14 "required" true "findings" .PoliceFindings)}}
       </div>
@@ -461,7 +450,7 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{t "apartment.form.ubyport.no_credentials_link"}}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{t "property_page.police.facility"}}</h2></div>
       <div class="grid">
-        {{template "apartmentdetail.policebox" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" $a.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "findings" .PoliceFindings)}}
+        {{template "apartmentdetail.policebox" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" $a.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "findings" .PoliceFindings "errors" .PoliceErrors "mismatch" (t "apartment.form.ubyport.mark_mismatch"))}}
       </div>
       <div class="grid two">
         {{template "apartmentdetail.policebox" (kv "name" "uby_name" "label" (t "setup.label.facility") "value" $a.UbyName "help" .FacilityHelp "optional" false "max" 35 "required" true "findings" .PoliceFindings)}}
@@ -507,9 +496,6 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
   </details>
 {{template "apartmentdetail.fee" .}}
 
-</form>
-<form id="police-letter-form" method="post" action="{{.Base}}/police-letter" data-discard-warning="{{t "police_letter.discard_warning"}}">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
 </form>
 <details class="prop-sec" id="sec-calendars"{{if index .Open "sec-calendars"}} open{{end}}><summary><span class="dot {{if .CalendarErrors}}r{{else if .FeedsCount}}g{{else}}n{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.calendars.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "calendars" "root" $ "text" .CalendarsState)}}</summary>
   <div class="fields-wrap">

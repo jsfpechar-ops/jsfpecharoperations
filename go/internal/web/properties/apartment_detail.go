@@ -101,7 +101,6 @@ type detailView struct {
 	SetupOpen                     string
 	SectionExplicit               bool
 	SectionDone                   map[string]bool
-	SectionMinutes                map[string]int
 	PoliceReported                bool
 	ReadyQR                       template.URL
 	Open                          map[string]bool // sec_open per section id
@@ -151,7 +150,6 @@ type detailView struct {
 	AddrRow2         []apartmentNewAddr
 	AutomationModes  []string
 	AutomationShown  string
-	LetterFirst      bool
 	BasicsState      string
 	PoliceState      string
 	CalendarsState   string
@@ -162,6 +160,7 @@ type detailView struct {
 	SaveErrors              []detailSaveError
 	SaveFailed              string            // tp('property_page.save_failed', save_errors|length)
 	AddressErrors           map[string]string // field -> message in the host's language
+	PoliceErrors            map[string]string // field -> message in the host's language
 	OperatorError           string            // operator_error: an i18n key or ""
 	OpError                 string            // _property_operator.html op_error
 	ControllerError         bool              // operator_error == 'flash.error.no_such_controller'
@@ -418,7 +417,6 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 	}
 	_, hasSection := r.URL.Query()["section"]
 	v.SectionExplicit = hasSection && !v.ReadyCard && !(v.FirstSetup && queryLast(r, "saved") == "1")
-	v.SectionMinutes = onboarding.SectionMinutes
 	v.SectionDone = map[string]bool{}
 	for key := range onboarding.SectionMinutes {
 		v.SectionDone[key] = onboarding.SectionDone(key, a.setup(), facts, state)
@@ -542,7 +540,6 @@ func (v *detailView) derive(lang string) {
 			v.AutomationShown = m
 		}
 	}
-	v.LetterFirst = v.FirstSetup && !v.SectionDone["police"]
 	missing := func() string { return detailTP(lang, "property_nav.report_missing", v.ReportMissing) }
 	// The one-line state of each section header (sec_state).
 	v.BasicsState = firstText(func() string {
@@ -598,7 +595,6 @@ func (v *detailView) derive(lang string) {
 					v.AutomationShown = m
 				}
 			}
-			v.LetterFirst = v.FirstSetup && !v.SectionDone["police"]
 			missing := func() string { return detailTP(lang, "property_nav.report_missing", v.ReportMissing) }
 			// The one-line state of each section header (sec_state).
 			v.BasicsState = firstText(func() string {
