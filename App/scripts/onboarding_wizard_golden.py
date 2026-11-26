@@ -61,7 +61,7 @@ def _apt(aid, owner, name, entity=None, *, done=False, police=False, pin="123456
     """One apartment row. done: the property details are complete; police: the UbyPort fields too."""
     street, house, zipc, obec = ("Vinohradská", "12", "12000", "Praha") if done else (None, None, None, None)
     idub, mark, uby, user, password = (
-        ("123456789012", "AAKLI", f"BYT {aid}", "UBY-WS_ABCDE", "heslo-golden") if police else (None,) * 5)
+        ("123456789012", "AAKLI", f"BYT {aid}", "UBY-WS_AAKLI", "heslo-golden") if police else (None,) * 5)
     return [aid, owner, name, entity, "Prague" if done else None, street, house, zipc, obec, idub, mark, uby,
             user, password, mode, hours, f"tok{aid}" if token else None, pin, archived, active, lock, cin, cout,
             window, STAMP]

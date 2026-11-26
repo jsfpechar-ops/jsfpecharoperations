@@ -3757,47 +3757,47 @@ body.v2 .stays-drawer[hidden],body.v2 .stays-drawer-backdrop[hidden]{display:non
 
 /* 2026-11-26 Airbnb-minimal mobile & cross-app polish */
 
-/* 1. Quick-start property strip: full-width Guest link card with split Copy link + Copy PIN,
+/* 1. Quick-start property strip (Go prop-strip-v2): full-width Guest link card with split Copy link + Copy PIN,
       compact top-aligned status tiles with zero vertical stretching and zero orphan slots. */
-body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px;margin:0 auto 16px;max-width:980px;align-items:stretch}
-body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:start;align-content:start;min-height:64px;padding:12px 14px;background:var(--s);border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
-body.v2 .prop-strip .sc .sd{grid-row:1;align-self:start;margin-top:4px;width:9px;height:9px;border-radius:50%;background:#c9c9c3}
-body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);min-width:0;overflow-wrap:anywhere}
-body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
-body.v2 .prop-strip div.sc.sc-link{order:-1;grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 16px;min-height:0}
-body.v2 .prop-strip .sc-link .sc-main{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1 1 220px;min-height:0;align-content:center}
-body.v2 .prop-strip .sc-link .sc-main .sd{margin-top:0;flex:none}
-body.v2 .prop-strip .sc-link .sc-main b{font-size:15px;font-weight:700;line-height:1.25}
-body.v2 .prop-strip .sc-link .sc-main small{font-size:13px;line-height:1.3}
-body.v2 .prop-strip .sc-link .sc-main .sc-pin{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:var(--side2);color:var(--ink);font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:700;letter-spacing:.06em}
-body.v2 .prop-strip .sc-link .sc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
-body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;border-radius:999px;white-space:nowrap}
-body.v2 .prop-strip .sc-link .sc-actions .ui-btn-primary{background:var(--acc);color:#fff;border:1px solid var(--acc)}
-body.v2 .prop-strip .sc-link .sc-actions .ui-btn-secondary{background:var(--s);color:var(--ink);border:1px solid var(--line)}
-body.v2 .prop-strip .sc-link .sc-actions .ui-btn-secondary:hover{background:var(--side2);border-color:var(--ink3)}
+body.v2 .prop-strip.prop-strip-v2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px;margin:0 auto 16px;max-width:980px;align-items:stretch}
+body.v2 .prop-strip.prop-strip-v2 .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:start;align-content:start;min-height:64px;padding:12px 14px;background:var(--s);border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
+body.v2 .prop-strip.prop-strip-v2 .sc .sd{grid-row:1;align-self:start;margin-top:4px;width:9px;height:9px;border-radius:50%;background:#c9c9c3}
+body.v2 .prop-strip.prop-strip-v2 .sc b{grid-column:2;font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip.prop-strip-v2 .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip.prop-strip-v2 div.sc.sc-link{order:-1;grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 16px;min-height:0}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1 1 220px;min-height:0;align-content:center}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sd{margin-top:0;flex:none}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main b{font-size:15px;font-weight:700;line-height:1.25}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main small{font-size:13px;line-height:1.3}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main .sc-pin{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:var(--side2);color:var(--ink);font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:700;letter-spacing:.06em}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;border-radius:999px;white-space:nowrap}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-primary{background:var(--acc);color:#fff;border:1px solid var(--acc)}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-secondary{background:var(--s);color:var(--ink);border:1px solid var(--line)}
+body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn-secondary:hover{background:var(--side2);border-color:var(--ink3)}
 @media (max-width:639px){
-  body.v2 .prop-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  body.v2 .prop-strip .sc:last-child:not(.sc-link){grid-column:1/-1}
-  body.v2 .prop-strip div.sc.sc-link{flex-direction:column;align-items:stretch;gap:12px}
-  body.v2 .prop-strip .sc-link .sc-main{flex:none;width:100%}
-  body.v2 .prop-strip .sc-link .sc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
-  body.v2 .prop-strip .sc-link .sc-actions:not(:has([data-guest-copy-pin])){grid-template-columns:minmax(0,1fr)}
-  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{width:100%;min-width:0;padding:10px 12px;white-space:normal;text-align:center}
+  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip.prop-strip-v2 .sc:last-child:not(.sc-link){grid-column:1/-1}
+  body.v2 .prop-strip.prop-strip-v2 div.sc.sc-link{flex-direction:column;align-items:stretch;gap:12px}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-main{flex:none;width:100%}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions:not(:has([data-guest-copy-pin])){grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{width:100%;min-width:0;padding:10px 12px;white-space:normal;text-align:center}
 }
 @media (max-width:359px){
-  body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}
-  body.v2 .prop-strip .sc-link .sc-actions{grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:minmax(0,1fr)}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions{grid-template-columns:minmax(0,1fr)}
 }
 @media (min-width:640px) and (max-width:1279px){
-  body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:40px;padding:8px 16px;font-size:13px}
+  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:40px;padding:8px 16px;font-size:13px}
 }
 @media (min-width:1024px){
-  body.v2 .prop-strip .sc-link .sc-actions .ui-btn{min-height:36px;padding:7px 14px;font-size:13px}
-  body.v2 nav.prop-strip .sc.is-current{background:var(--s);border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+  body.v2 .prop-strip.prop-strip-v2 .sc-link .sc-actions .ui-btn{min-height:36px;padding:7px 14px;font-size:13px}
+  body.v2 nav.prop-strip.prop-strip-v2 .sc.is-current{background:var(--s);border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 }
 @media (min-width:1280px){
-  body.v2 .prop-strip{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  body.v2 .prop-strip.prop-strip-v2{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 }
 
 /* 2. Setup continue card: clean header row separating progress and amber badge, touch-friendly actions. */
@@ -3811,79 +3811,76 @@ body.v2 .setup-continue-card .actions form.inline{margin:0}
   body.v2 .setup-continue-card .actions .ui-btn,body.v2 .setup-continue-card .actions form.inline,body.v2 .setup-continue-card .actions form.inline .ui-btn{width:100%}
 }
 
-/* 3. Design System Rule 7: unify help "?" across all host pages —
-      18 px crisp circle inline right after the label, invisible 44 px tap target on phone/tablet.
-      Match element+class specificity (button.help-tip-btn) so earlier resets cannot strip the circle border. */
-body.v2 button.help-tip-btn,
+/* 3. Design System Rule 7: draw crisp 18 px "?" circles on property-settings-form and settings-lane
+      while preserving the exact button box and ::after hit-area geometry verified by 0800/0833/0786/1100/design_guard. */
 body.v2 .property-settings-form button.help-tip-btn,
-body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn,
-body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn,
-body.v2 .host-stay-detail button.help-tip-btn,
-body.v2 .stays-title-row button.help-tip-btn,
-body.v2 .police-deadline-row button.help-tip-btn{
-  position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;
-  width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0 0 0 4px;
-  border:0;border-radius:50%;background:transparent;color:var(--ink3);
-  font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;box-sizing:border-box;
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn{
+  isolation:isolate;
+  border:0;
+  background:transparent;
 }
-body.v2 button.help-tip-btn::after,
-body.v2 .property-settings-form button.help-tip-btn::after,
-body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn::after,
-body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after,
-body.v2 .host-stay-detail button.help-tip-btn::after,
-body.v2 .stays-title-row button.help-tip-btn::after,
-body.v2 .police-deadline-row button.help-tip-btn::after{
-  content:"";position:absolute;z-index:-1;inset:auto;left:50%;top:50%;width:18px;height:18px;
-  transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;background:var(--s);box-sizing:border-box;
+/* Settings/entities: draw 18 px circle on ::before so ::after keeps its inset:-10px 44x44 phone hit area. */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:auto;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:18px;
+  transform:translate(-50%,-50%);
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:var(--s);
+  box-sizing:border-box;
 }
-body.v2 button.help-tip-btn:is(:hover,[aria-expanded=true]),
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after{
+  border:0;
+  background:transparent;
+}
+@media (max-width:1023px){
+  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after{
+    content:"";
+    position:absolute;
+    inset:-10px;
+    width:auto;
+    height:auto;
+    transform:none;
+    border:0;
+    background:transparent;
+  }
+}
+/* Property settings form: button itself is 24px desktop / 44px phone, so draw 18 px circle on ::after. */
+body.v2 .property-settings-form button.help-tip-btn::before{content:none}
+body.v2 .property-settings-form button.help-tip-btn::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:auto;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:18px;
+  transform:translate(-50%,-50%);
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:var(--s);
+  box-sizing:border-box;
+}
 body.v2 .property-settings-form button.help-tip-btn:is(:hover,[aria-expanded=true]),
-body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn:is(:hover,[aria-expanded=true]),
-body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn:is(:hover,[aria-expanded=true]),
-body.v2 .host-stay-detail button.help-tip-btn:is(:hover,[aria-expanded=true]){
-  background:transparent;color:var(--brand-ink);
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn:is(:hover,[aria-expanded=true]){
+  background:transparent;
+  color:var(--brand-ink);
 }
-body.v2 button.help-tip-btn:is(:hover,[aria-expanded=true])::after,
-body.v2 .property-settings-form button.help-tip-btn:is(:hover,[aria-expanded=true])::after,
-body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn:is(:hover,[aria-expanded=true])::after,
-body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn:is(:hover,[aria-expanded=true])::after,
-body.v2 .host-stay-detail button.help-tip-btn:is(:hover,[aria-expanded=true])::after{
-  background:var(--brand-soft);border-color:var(--brand);
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn:is(:hover,[aria-expanded=true])::before,
+body.v2 .property-settings-form button.help-tip-btn:is(:hover,[aria-expanded=true])::after{
+  background:var(--brand-soft);
+  border-color:var(--brand);
 }
-@media (max-width:1023px){
-  body.v2 button.help-tip-btn,
-  body.v2 .property-settings-form button.help-tip-btn,
-  body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn,
-  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .property-settings-form button.help-tip-btn,
-  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn,
-  body.v2 .host-stay-detail button.help-tip-btn,
-  body.v2 .stays-title-row button.help-tip-btn,
-  body.v2 .police-deadline-row button.help-tip-btn,
-  body.v2 .prop-archive-action button.help-tip-btn{
-    width:44px;height:44px;min-width:44px;min-height:44px;
-    margin:-13px -26px -13px 0;
-    padding:0 26px 0 0;
-    border:0;background:transparent;
-  }
-  body.v2 button.help-tip-btn::after,
-  body.v2 .property-settings-form button.help-tip-btn::after,
-  body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn::after,
-  body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after,
-  body.v2 .host-stay-detail button.help-tip-btn::after,
-  body.v2 .stays-title-row button.help-tip-btn::after,
-  body.v2 .police-deadline-row button.help-tip-btn::after,
-  body.v2 .prop-archive-action button.help-tip-btn::after{
-    inset:auto;left:0;top:13px;width:18px;height:18px;transform:none;
-    border:1px solid var(--line);border-radius:50%;background:var(--s);
-  }
-}
-/* Settings details render inline hint text with no "?" button (0543). */
 body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details button.help-tip-btn{display:none}
-/* Stay-fee uses an inline SVG icon instead of a text "?" — keep no duplicate ::after ring */
+body.v2 #stay-fee-settings button.help-tip-btn::before,
 body.v2 #stay-fee-settings button.help-tip-btn::after{content:none}
-@media (max-width:1023px){
-  body.v2 #stay-fee-settings button.help-tip-btn{margin:-13px -26px -13px 0;justify-content:flex-start}
-}
 
 /* 4. Align property address subtitle left under left-aligned property heading on phone & tablet. */
 @media (max-width:1023px){

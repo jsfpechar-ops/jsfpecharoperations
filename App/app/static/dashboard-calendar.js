@@ -132,8 +132,8 @@
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  // Cleaning calendar defaults to Gantt from 2+ properties on tablet/desktop; stays calendar uses 3+.
-  function ganttMinProps() { return cleaningMode ? 2 : 3; }
+  // 0956: Gantt starts at 3+ properties unless the host template opts in with data-gantt-min (e.g. Go cleaning: 2+).
+  function ganttMinProps() { const n = Number(root.dataset.ganttMin); return n >= 2 ? n : 3; }
   function ganttAllowed() { return !state.property && state.properties.length >= ganttMinProps(); }
   function view() { return phoneDots() || !ganttAllowed() ? "calendar" : autoView(state.mode, state.properties.length, ganttMinProps()); }
   function range() {

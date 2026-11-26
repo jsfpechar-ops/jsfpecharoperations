@@ -129,7 +129,7 @@
   <p class="ui-sub" role="status">{{t "apartment.form.copy_from.notice" "name" .CopiedName}}</p>
 </div>
 {{end}}
-<nav class="prop-strip" aria-label="{{t "property_page.strip.aria"}}">
+<nav class="prop-strip prop-strip-v2" aria-label="{{t "property_page.strip.aria"}}">
   <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{.Cal.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.calendars.title"}}</b><small{{if .Cal.Problem}} class="is-problem"{{end}}>{{if .Cal.Problem}}{{t .Cal.TextKey}}{{else if .CalendarErrors}}{{t "apartment.form.feed.status.error"}}{{else}}{{tp "apartment.form.calendars_count" .FeedsCount}}{{end}}</small></a>
   <div class="sc sc-link" data-strip="guest" data-state="{{.Guest.State}}"><a class="sc-main" href="#sec-messages"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.guest_link.title"}}</b><small{{if .Guest.Problem}} class="is-problem"{{end}}>{{if .Guest.Problem}}{{t .Guest.TextKey}}{{else}}{{t "wizard.guest_link.ready"}}{{end}}</small>{{if .Pin}}<small class="sc-pin" data-guest-pin>PIN {{.Pin}}</small>{{end}}</a><div class="sc-actions">
   <input class="sr-only" type="text" id="overview-guest-url" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true"><button class="ui-btn ui-btn-primary" type="button" data-copy="overview-guest-url" data-copy-label="{{t "wizard.guest_link.copy_link"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-link>{{t "wizard.guest_link.copy_link"}}</button>
