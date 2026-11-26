@@ -924,3 +924,27 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
     background:var(--s);
   }
 }
+
+/* 2026-11-26: Tablet Gantt (768-1023px) — align day columns to 44 px touch targets so cleaning tiles
+   fit cleanly inside their day column with zero bleed, and omit redundant "1" count on single Gantt tiles. */
+.dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-count { display:none; }
+@media (min-width:768px) and (max-width:1023px) {
+  .dashboard-calendar .cal-gantt-timeline { min-width:calc(150px + var(--days) * 44px); }
+  .dashboard-calendar .cal-gantt-header { grid-template-columns:150px repeat(var(--days),minmax(44px,1fr)); }
+  .dashboard-calendar .cal-gantt-days { min-height:calc(12px + var(--lanes,1) * 48px); }
+  .dashboard-calendar .cal-gantt-events { grid-auto-rows:44px; }
+  .dashboard-calendar .cal-event.is-gantt-cleaning,
+  .cleaning-page .dashboard-calendar .cal-event.is-gantt-cleaning,
+  body.v2 .cleaning-page #calendar .cal-event.is-gantt-cleaning {
+    min-width:0;
+    width:auto;
+    height:40px;
+    min-height:40px;
+    max-height:40px;
+    margin:2px 3px;
+    padding:0 4px;
+    box-sizing:border-box;
+    border-radius:8px;
+  }
+}
+.cal-gantt-header > span:last-child, .cal-gantt-slot:last-child { border-right:0; }
