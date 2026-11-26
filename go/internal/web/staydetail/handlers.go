@@ -3,6 +3,7 @@ package staydetail
 import (
 	"context"
 	"errors"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
 )
 
 // pageData is the template context: the View plus what the Jinja template
@@ -26,6 +28,7 @@ type pageData struct {
 	LinkWindow     *linkWindowView
 	Access         identityAccess
 	Now            time.Time
+	JourneyBar     template.HTML
 }
 
 // detailHandler serves GET /reservations/{reservation_id}
@@ -63,7 +66,13 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 			HowKey:     "stay",
 			BodyAlerts: true,
 		}
-		data := pageData{View: v, PaymentsHidden: paymentsHidden(deps.Getenv), Access: newIdentityAccess(host), Now: at}
+		data := pageData{
+			View:           v,
+			PaymentsHidden: paymentsHidden(deps.Getenv),
+			Access:         newIdentityAccess(host),
+			Now:            at,
+			JourneyBar:     stays.RenderJourneyBar(hostweb.Lang(r), v.Journey),
+		}
 		if v.Progress.Status == "failed" {
 			if data.HavelOn, err = havelOn(r.Context(), deps, host.Account.ID); err != nil {
 				serverError(w, err)
@@ -79,7 +88,7 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 				return
 			}
 		}
-		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, pages, "stay_detail", data); err != nil {
+		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, pages, "stay_detail_comfy", data); err != nil {
 			serverError(w, err)
 		}
 	}

@@ -38,6 +38,7 @@ var dashFuncs = template.FuncMap{
 	"stay_range":          stayRange,
 	"dash_not_registered": dashNotRegistered,
 	"dash_is_demo":        dashIsDemo,
+	"journey_strip":       stays.RenderJourneyStrip,
 }
 
 var dashTemplates = layout.MustParseFuncs(dashStrings, dashFuncs, dashFS, "templates/dashboard.tmpl")

@@ -1,4 +1,5 @@
 {{define "stays_list.title"}}{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
@@ -53,8 +54,8 @@
   <span class="in">{{if $who}}<b>{{$who}}</b><small>{{stay_range $root.Lang $res.DateFrom $res.DateTo}} &middot; {{$res.InternalName}}</small>
   {{else}}<b>{{stay_range $root.Lang $res.DateFrom $res.DateTo}}</b><small>{{$res.InternalName}}</small>{{end}}
   {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
-  {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
-  {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}
+  {{else}}{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}}{{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
+  {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}{{end}}
   </span>{{icon "chevron-right" 20 "chev"}}
 </a>{{end}}
 {{define "stays_desk_row"}}{{ $root := .Root }}{{ $row := .Row }}{{ $res := $row.Reservation }}{{ $prog := $row.Progress }}
@@ -79,9 +80,9 @@
   </td>
   <td data-card="badge" data-label="{{t "stays.table.reporting"}}">
     {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
-    {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
+    {{else}}{{if $row.Journey.Steps}}{{journey_strip $root.Lang $row.Journey}} {{end}}{{if $prog.HasCell}}{{template "v2_status_pill" $row}}
       {{if and (ne $prog.Cell.Level "overdue") (ne $prog.Cell.State "filed_on_time") (ne $prog.Cell.State "filed_late")}}<small>{{deadline_badge $prog.Cell}}</small>{{end}}
-    {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}
+    {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}{{end}}
   </td>
   <td class="row-actions" data-card="actions" data-label="">
     {{row_menu_begin}}

@@ -18,6 +18,7 @@ type Row struct {
 	Reservation     Reservation
 	Progress        Progress
 	Controls        Controls
+	Journey         StayJourney
 	ApartmentActive bool
 }
 

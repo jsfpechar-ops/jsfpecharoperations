@@ -27,6 +27,10 @@ func enrichRows(ctx context.Context, pool *pgxpool.Pool, getenv func(string) str
 	if err != nil {
 		return nil, 0, err
 	}
+	signals, err := LoadJourneySignals(ctx, pool, ids, pragueToday(at))
+	if err != nil {
+		return nil, 0, err
+	}
 	ready := 0
 	for i, r := range rows {
 		st := listStay{
@@ -35,6 +39,7 @@ func enrichRows(ctx context.Context, pool *pgxpool.Pool, getenv func(string) str
 		}
 		guests := byStay[r.Reservation.ID]
 		rows[i].Progress = buildProgress(st, guests, at)
+		rows[i].Journey = BuildJourney(r.Reservation, rows[i].Progress, signals[r.Reservation.ID], pragueToday(at))
 		lp := listProgress(st, guests, today)
 		rows[i].Controls = sendControls(r.Reservation, r.Reservation.AutomationMode, lp, guests)
 		if rows[i].Controls.SendEnabled && rows[i].ApartmentActive {

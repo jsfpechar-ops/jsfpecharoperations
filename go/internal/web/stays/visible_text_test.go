@@ -113,6 +113,19 @@ func TestStaysListVisibleTextMatchesPython(t *testing.T) {
 	Register(mux, pool, createGetenv, func() time.Time { return now },
 		func(_ string, h http.HandlerFunc) http.Handler { return h })
 	g := loadStaysVisibleGolden(t)
+	if os.Getenv("STAYS_UPDATE_GOLDEN") == "1" {
+		for idx := range g.Cases {
+			html := staysListGET(t, mux, now, ownerID, g.Cases[idx].Path, g.Cases[idx].Lang)
+			g.Cases[idx].Lines = staysVisibleLines(html)
+		}
+		raw, err := json.MarshalIndent(g, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile("testdata/stays_visible_golden.json", append(raw, '\n'), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, c := range g.Cases {
 		html := staysListGET(t, mux, now, ownerID, c.Path, c.Lang)
 		got := staysVisibleLines(html)

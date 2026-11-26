@@ -1,4 +1,5 @@
 {{define "dashboard.title"}}{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -79,7 +80,7 @@
       <small>{{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</small></td>
     <td>{{property_identity .Row.Reservation.ApartmentID (dash_label .Row.Reservation) true}}</td>
     <td>{{if .Arriving}}{{t "calendar.arrival"}} · {{tp "dashboard.today.nights" .Nights}}{{else}}{{t "calendar.departure"}}{{end}}</td>
-    <td class="dashboard-row-task">{{template "dash.pill" .Row}}</td>
+    <td class="dashboard-row-task">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}} {{end}}{{template "dash.pill" .Row}}</td>
     <td class="dots dashboard-row-actions"></td>
   </tr>
 {{- else}}

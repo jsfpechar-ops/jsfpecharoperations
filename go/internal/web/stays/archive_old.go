@@ -89,9 +89,9 @@ func ArchiveOldUnfilledHandler(d postDeps) http.HandlerFunc {
 				serverError(w, err)
 				return
 			}
-			c.back("/reservations", c.flash("flash.stays.archived_old_unfilled", map[string]any{"count": count}), hostweb.Flash{})
+			c.back("/reservations", c.flash("stays.old_unfilled.archived", map[string]any{"count": count}), hostweb.Flash{})
 			return
 		}
-		c.back("/reservations", c.flash("flash.stays.archived_old_unfilled.none", nil), hostweb.Flash{})
+		c.back("/reservations", c.flash("stays.old_unfilled.none", nil), hostweb.Flash{})
 	}
 }

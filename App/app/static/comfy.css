@@ -1,0 +1,204 @@
+/* Comfy Host UX Refresh styles (Briefs 2087-2090)
+   Token-only CSS: no raw hex colors, light mode only, 4px spacing scale. */
+
+/* === Brief 2088: 4-step Stay Journey Strip & Detail Checklist === */
+.stay-journey {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+}
+
+.stay-journey-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--status-neutral-border);
+  background: var(--canvas-subtle);
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stay-journey-step svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.stay-journey-step[data-tone="waiting"] {
+  background: var(--canvas-subtle);
+  color: var(--ink-muted);
+  border-color: var(--border);
+}
+
+.stay-journey-step[data-tone="progress"] {
+  background: var(--status-action-bg);
+  color: var(--status-action-ink);
+  border-color: var(--status-action-border);
+}
+
+.stay-journey-step[data-tone="done"] {
+  background: var(--status-done-bg);
+  color: var(--status-done-ink);
+  border-color: var(--status-done-border);
+}
+
+.stay-journey-step[data-tone="bad"] {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.stay-journey-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: -0.01em;
+}
+
+.stays-phone .card.stay .stay-journey {
+  margin-top: 6px;
+}
+
+.stays-desk td[data-card="badge"] {
+  white-space: nowrap;
+}
+
+/* Stay Detail horizontal labeled 4-step checklist */
+.stay-journey-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0 0 var(--space-4) 0;
+  padding: 0;
+}
+
+.stay-journey-bar-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.stay-journey-bar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  background: var(--canvas-subtle);
+  color: var(--ink-muted);
+}
+
+.stay-journey-bar-step[data-tone="progress"] .stay-journey-bar-icon {
+  background: var(--status-action-bg);
+  color: var(--status-action-ink);
+}
+
+.stay-journey-bar-step[data-tone="done"] .stay-journey-bar-icon {
+  background: var(--status-done-bg);
+  color: var(--status-done-ink);
+}
+
+.stay-journey-bar-step[data-tone="bad"] {
+  border-color: var(--red);
+  background: var(--red-bg);
+}
+
+.stay-journey-bar-step[data-tone="bad"] .stay-journey-bar-icon {
+  background: var(--surface);
+  color: var(--red);
+}
+
+.stay-journey-bar-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.stay-journey-bar-copy strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.stay-journey-bar-copy small {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  line-height: 1.25;
+}
+
+.stay-journey-bar-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .stay-journey-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* === Brief 2087: Quiet old-unfilled bulk archive strip === */
+.old-unfilled-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.dash-nudge-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: var(--space-3);
+}
+
+.dash-nudge-copy {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.dash-nudge-copy strong {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.dash-nudge-copy small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
+
+.dash-nudge-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
