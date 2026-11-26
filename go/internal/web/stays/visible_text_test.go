@@ -105,25 +105,27 @@ func staysListGET(t *testing.T, mux http.Handler, now time.Time, ownerID int64, 
 	return rec.Body.String()
 }
 
-// applyComfyJourneyDelta adjusts Python's legacy phone-card status strings in
-// stays_visible_golden.json to Go's Brief 2088 4-step journey strip (which
-// replaces the single phone status pill with SVG icons and the filled-guest
-// counter while keeping every other visible line in exact parity with Python).
+// applyComfyJourneyDelta adjusts Python's legacy stays-list lines in
+// stays_visible_golden.json to Go's Comfy UX updates: Brief 2088 replaces the
+// single phone status pill with the 4-step journey strip (filled-guest counter),
+// and the retired "Request payment" menu item is removed from Go rows.
 func applyComfyJourneyDelta(lines []string) []string {
-	out := make([]string, len(lines))
-	copy(out, lines)
+	out := make([]string, 0, len(lines))
 	inPhone := true
-	for i, line := range out {
+	for _, line := range lines {
 		if line == "Guest" {
 			inPhone = false
 		}
-		if !inPhone {
+		if line == "Request payment" {
 			continue
 		}
-		switch line {
-		case "Incomplete", "Waiting for guest", "overdue by 2 days":
-			out[i] = "0"
+		if inPhone {
+			switch line {
+			case "Incomplete", "Waiting for guest", "overdue by 2 days":
+				line = "0"
+			}
 		}
+		out = append(out, line)
 	}
 	return out
 }

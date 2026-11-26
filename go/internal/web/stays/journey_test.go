@@ -59,7 +59,7 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 			{"link", "mail", "done"},
 			{"form", "users", "done"},
 			{"code", "key-round", "done"},
-			{"police", "shield", "done"},
+			{"police", "landmark", "done"},
 		}
 		for i, w := range want {
 			if j.Steps[i].Key != w.key || j.Steps[i].Icon != w.icon || j.Steps[i].Tone != w.tone {
@@ -94,14 +94,11 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 		}
 	})
 
-	t.Run("static entry code available inside check-in window", func(t *testing.T) {
+	t.Run("static entry code without smart lock hides code step", func(t *testing.T) {
 		sig := JourneySignal{ClaimState: "claimed", HasEntryCode: true}
 		j := BuildJourney(baseRes, Progress{Filled: 1}, sig, today)
-		if len(j.Steps) != 3 {
-			t.Fatalf("expected 3 steps, got %d", len(j.Steps))
-		}
-		if j.Steps[2].Tone != "done" || j.Steps[2].StateKey != "available" {
-			t.Errorf("code step = %+v, want done/available", j.Steps[2])
+		if len(j.Steps) != 2 {
+			t.Fatalf("expected 2 steps when smart lock is unused, got %d", len(j.Steps))
 		}
 	})
 
@@ -127,7 +124,7 @@ func TestRenderJourneyStripAndBar(t *testing.T) {
 		{Key: "link", Icon: "mail", Tone: "done", StateKey: "verified"},
 		{Key: "form", Icon: "users", Tone: "progress", Counter: "1/2", StateKey: "partial"},
 		{Key: "code", Icon: "key-round", Tone: "waiting", StateKey: "waiting"},
-		{Key: "police", Icon: "shield", Tone: "bad", StateKey: "action"},
+		{Key: "police", Icon: "landmark", Tone: "bad", StateKey: "action"},
 	}}
 	strip := string(RenderJourneyStrip("cs", j))
 	if !strings.Contains(strip, `class="stay-journey"`) || !strings.Contains(strip, `data-step="police" data-tone="bad"`) {

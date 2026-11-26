@@ -88,7 +88,7 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 				return
 			}
 		}
-		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, pages, "stay_detail_comfy", data); err != nil {
+		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, comfyPages, "stay_detail_comfy", data); err != nil {
 			serverError(w, err)
 		}
 	}

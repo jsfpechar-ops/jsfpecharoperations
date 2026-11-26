@@ -87,7 +87,6 @@
   <td class="row-actions" data-card="actions" data-label="">
     {{row_menu_begin}}
       <a class="row-menu-item" href="{{$href}}" role="menuitem">{{t "common.open"}}</a>
-      {{if and (not $root.ShowArchive) (eq $res.Status "active") (not $root.PaymentsHidden)}}<a class="row-menu-item" href="/payments?reservation_id={{$res.ID}}#new-request" role="menuitem">{{t "stays.row.request_payment"}}</a>{{end}}
       {{if $res.PermalinkToken}}{{copy_inline (printf "stay-link-%d" $res.ID) (printf "%s/l/%s/%d" $root.PublicBase (slug_or $res.PermalinkSlug $res.PermalinkToken) $res.ID) (t "host.copy_guest_form_link") "menuitem"}}{{end}}
       <a class="row-menu-item" href="/reservations/{{$res.ID}}/guests/new" role="menuitem">{{t "stays.row.add_guest"}}</a>
       {{if $res.PermalinkToken}}<a class="row-menu-item" href="/l/{{slug_or $res.PermalinkSlug $res.PermalinkToken}}/{{$res.ID}}" target="_blank" rel="noopener" role="menuitem">{{t "stays.row.open_guest_form"}}</a>{{end}}

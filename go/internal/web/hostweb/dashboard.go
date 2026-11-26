@@ -40,6 +40,7 @@ var dashFuncs = template.FuncMap{
 	"dash_is_demo":        dashIsDemo,
 	"journey_strip":       stays.RenderJourneyStrip,
 	"cal_prop_href":       calPropHref,
+	"cal_prop_id":         calPropID,
 	"dash_short_date":     dashShortDate,
 }
 

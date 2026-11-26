@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2090">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2091">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -78,17 +78,6 @@
 
 <div class="quiet ov-month ph-hide" data-dashboard-month><span>{{t "dashboard.month.label"}}</span> <span class="ov-mi"><b>{{$d.MonthGuests}}</b> {{tp "dashboard.month.guests" $d.MonthGuests}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthNights}}</b> {{tp "dashboard.month.nights" $d.MonthNights}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthReported}}</b> {{tp "dashboard.month.reported" $d.MonthReported}}</span></div>
 
-<h2 class="ov-cal-block">{{t "calendar.calendar"}}</h2>
-<div class="scroll-x ov-cal-block">
-<div class="card cal ov-section">
-  <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
-  {{- range $d.CalRows}}
-  <div class="cgrid crow"><div class="cn" title="{{.Name}}"><a class="cal-row-prop-link" href="{{cal_prop_href $d.Apartments .Name}}">{{.Name}}</a></div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
-  {{- end}}
-</div>
-</div>
-<p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a></p>
-
 <div class="prop-rails ph-only" data-prop-rails>
 {{- range $d.PropertyRails}}
   <section class="prop-rail" data-prop-rail="{{.ID}}" aria-label="{{.Name}}">
@@ -145,6 +134,17 @@
   <tr><td colspan="5">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7_empty"}}{{else}}{{t "dashboard.today.empty"}}{{end}}</td></tr>
 {{- end}}
 </tbody></table></div>
+
+<h2 class="ov-cal-block ov-cal-heading">{{t "calendar.calendar"}}</h2>
+<div class="scroll-x ov-cal-block">
+<div class="card cal ov-section">
+  <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
+  {{- range $d.CalRows}}
+  <div class="cgrid crow"><div class="cn" title="{{.Name}}"><a class="cal-row-prop-link" href="{{cal_prop_href $d.Apartments .Name}}">{{property_identity (cal_prop_id $d.Apartments .Name) .Name true}}</a></div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
+  {{- end}}
+</div>
+</div>
+<p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a></p>
 {{- end}}
 {{end}}
 {{end}}

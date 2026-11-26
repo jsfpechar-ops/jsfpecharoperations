@@ -12,14 +12,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 // JourneyStep is one icon step in the 4-step stay journey strip:
-// Link (mail) -> Form (users) -> Code (key-round) -> Police (shield).
+// Link (mail) -> Form (users) -> Code (key-round) -> Police (landmark).
 type JourneyStep struct {
 	Key      string // "link" | "form" | "code" | "police"
-	Icon     string // "mail" | "users" | "key-round" | "shield"
+	Icon     string // "mail" | "users" | "key-round" | "landmark"
 	Tone     string // "waiting" | "progress" | "done" | "bad"
 	Counter  string // e.g. "1/2" for form step
 	StateKey string // i18n suffix: "unclaimed", "sent", "verified", "empty", "partial", "complete", "waiting", "issuing", "ready", "available", "failed", "pending", "filed", "action"
@@ -129,27 +128,19 @@ func BuildJourney(res Reservation, prog Progress, sig JourneySignal, today time.
 		Key: "form", Icon: "users", Tone: formTone, Counter: counter, StateKey: formState,
 	})
 
-	// 3. Code (only when the property has a smart lock or saved entry code)
-	if sig.HasTTLock || sig.HasEntryCode {
+	// 3. Code (only when the property uses the smart lock feature)
+	if sig.HasTTLock {
 		codeTone, codeState := "waiting", "waiting"
-		if sig.HasTTLock {
-			switch sig.DoorCodeState {
-			case "failed":
-				codeTone, codeState = "bad", "failed"
-			case "delayed", "retrying", "issuing":
-				codeTone, codeState = "progress", "issuing"
-			case "issued":
-				if strings.TrimSpace(sig.DoorCodeNotifiedAt) != "" || strings.TrimSpace(sig.CompletionNotifiedAt) != "" {
-					codeTone, codeState = "done", "sent"
-				} else {
-					codeTone, codeState = "progress", "ready"
-				}
-			}
-		} else {
-			if strings.TrimSpace(sig.CompletionNotifiedAt) != "" {
+		switch sig.DoorCodeState {
+		case "failed":
+			codeTone, codeState = "bad", "failed"
+		case "delayed", "retrying", "issuing":
+			codeTone, codeState = "progress", "issuing"
+		case "issued":
+			if strings.TrimSpace(sig.DoorCodeNotifiedAt) != "" || strings.TrimSpace(sig.CompletionNotifiedAt) != "" {
 				codeTone, codeState = "done", "sent"
-			} else if sig.ClaimState == "claimed" && inEntryCodeWindow(res.DateFrom, res.DateTo, today) {
-				codeTone, codeState = "done", "available"
+			} else {
+				codeTone, codeState = "progress", "ready"
 			}
 		}
 		steps = append(steps, JourneyStep{
@@ -169,21 +160,11 @@ func BuildJourney(res Reservation, prog Progress, sig JourneySignal, today time.
 			polTone, polState = "progress", "pending"
 		}
 		steps = append(steps, JourneyStep{
-			Key: "police", Icon: "shield", Tone: polTone, StateKey: polState,
+			Key: "police", Icon: "landmark", Tone: polTone, StateKey: polState,
 		})
 	}
 
 	return StayJourney{Steps: steps}
-}
-
-func inEntryCodeWindow(dateFrom, dateTo string, today time.Time) bool {
-	from, ok1 := validation.ParseISODate(dateFrom)
-	to, ok2 := validation.ParseISODate(dateTo)
-	if !ok1 || !ok2 {
-		return false
-	}
-	t := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
-	return !t.Before(from.AddDate(0, 0, -1)) && !t.After(to)
 }
 
 // BuildJourneyFromCounts constructs a StayJourney when only aggregate guest

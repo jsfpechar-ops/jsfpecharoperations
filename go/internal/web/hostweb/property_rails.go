@@ -223,3 +223,12 @@ func buildDesktopWindow(rows []stays.Row, todayRows []todayRow, rawWindow string
 	})
 	return window, out
 }
+
+func calPropID(apts []apartmentRow, name string) int64 {
+	for _, a := range apts {
+		if a.Name == name && a.Active {
+			return a.ID
+		}
+	}
+	return 0
+}

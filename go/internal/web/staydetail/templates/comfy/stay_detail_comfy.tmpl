@@ -1,0 +1,123 @@
+{{define "stay_detail_comfy.title"}}{{end}}
+{{define "stay_detail_comfy.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2091">{{end}}
+{{define "stay_detail_comfy"}}{{host_alerts}}
+<input class="sr-only" type="text" id="stay-link" readonly value="{{.GuestLink}}" tabindex="-1" aria-hidden="true">
+
+<div class="host-stay-detail stay-layout{{if .Reservation.ArchivedAt}} stay-archived{{end}}">
+{{- $inactive := or (ne .Reservation.Status "active") (ne .Reservation.ArchivedAt "")}}
+{{- $cell := deadline_cell .Progress .CheckIn}}
+{{- $hasCta := or .SendControls.SendEnabled (eq .Progress.Status "failed") (and (eq .Progress.Status "reported") .Submissions)}}
+{{- $title := or (leadName .GuestRows) .Reservation.InternalName}}
+{{- $id := .Reservation.ID}}
+{{- $fixHref := fix_href .GuestRows .Reservation.ID}}
+{{- $guestTotal := len .Progress.Guests}}{{if .Progress.Expected}}{{$guestTotal = deref_int .Progress.Expected}}{{end}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="{{.ReturnTo}}" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title"><span class="ph-only">{{$title}}</span><span class="ph-hide">{{displayName $title}}</span></h1>
+{{page_help "stay"}}
+</div>
+<div class="sub sub-phone">{{.Reservation.InternalName}} · {{source_label lang .Reservation.Source}}</div>
+<div class="sub-phone stay-pill-line ph-hide">{{template "staydetail.state_pill" .}}</div>
+<div class="card facts stay-dates">
+  <div><small>{{t "stays.table.arrival"}}</small><b><span class="wd">{{weekday .Reservation.DateFrom}}</span> {{date_short .Reservation.DateFrom $.Now}}</b></div>
+  <div><small>{{t "stays.table.departure"}}</small><b><span class="wd">{{weekday .Reservation.DateTo}}</span> {{date_short .Reservation.DateTo $.Now}}</b></div>
+  <div class="tot">{{tp "stay.detail.facts.guests" $guestTotal}} · {{tp "stays.table.nights" (nights .Reservation.DateFrom .Reservation.DateTo)}}</div>
+</div>
+<div class="head" id="now"><div>
+  <div class="crumb"><a href="{{.ReturnTo}}">{{t "stays.title"}}</a> {{icon "chevron-right" 14}} {{displayName $title}}</div>
+  <p class="sub">{{template "staydetail.state_pill" .}}<span class="stay-sep"><a href="/apartments/{{.Reservation.ApartmentID}}">{{.Reservation.InternalName}}</a> · {{date_cz .Reservation.DateFrom}} – {{date_cz .Reservation.DateTo}}</span></p>
+</div>
+<div class="stay-head-actions">
+  <div class="stay-head-cta">
+  {{if .SendControls.SendEnabled}}
+    {{if eq .Progress.Status "failed"}}
+      <a class="btn" href="{{$fixHref}}" data-fix-rejection>{{t "stay.detail.cta.fix"}}</a>
+    {{else}}
+      <form method="post" action="/reservations/{{$id}}/submit" class="inline">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <input type="hidden" name="return_to" value="/reservations/{{$id}}">
+        <button class="btn" type="submit" title="{{t .SendControls.SendHintKey}}">{{t "stay.detail.cta.send"}}</button>
+      </form>
+    {{end}}
+  {{else if eq .Progress.Status "failed"}}
+    <a class="btn" href="{{$fixHref}}" data-fix-rejection>{{t "stay.detail.cta.fix"}}</a>
+  {{else if and (eq .Progress.Status "reported") .Submissions}}
+    {{if any_receipt .Submissions}}
+      <a data-turbo="false" class="btn" href="/reservations/{{$id}}/dorucenka.zip">{{t "reports.detail.download_receipt"}}</a>
+      <a class="btn ghost" href="#reports">{{t "stay.detail.cta.view_reports"}}</a>
+    {{else}}
+      <a class="btn" href="#reports">{{t "stay.detail.cta.view_reports"}}</a>
+    {{end}}
+  {{end}}
+  {{if and .Reservation.PermalinkToken (not $inactive)}}<button class="btn ph-hide{{if $hasCta}} ghost{{end}}" type="button" data-copy="stay-link" data-copied-label="{{t "stay.detail.link_copied"}}" data-stay-header-copy>{{t "host.copy_guest_form_link"}}</button>{{end}}</div>
+  {{if .StayInvoice}}<a class="btn ghost ph-hide" href="/invoices/{{.StayInvoice.ID}}">{{t "invoice.stay.open" "number" .StayInvoice.Number}}</a>{{else}}<a class="btn ghost ph-hide" href="/invoices/new?reservation_id={{$id}}">{{t "invoice.new"}}</a>{{end}}
+  {{if .Reservation.ArchivedAt}}<form method="post" action="/reservations/{{$id}}/unarchive" class="inline ph-hide stay-restore"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn" type="submit">{{t "stay.detail.menu.restore"}}</button></form>{{end}}
+  {{if .ClaimResend}}<form method="post" action="/reservations/{{$id}}/resend-claim" class="inline ph-hide"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost" type="submit" data-resend-claim title="{{t "stay.claim.resend_help"}}">{{t "stay.claim.resend"}}</button></form>{{end}}
+      {{row_menu_begin}}
+        {{if and .Reservation.PermalinkToken (not $inactive)}}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{t "stay.detail.link_copied"}}">{{t "host.copy_guest_form_link"}}</button>{{end}}
+        {{if .ClaimResend}}<form method="post" action="/reservations/{{$id}}/resend-claim" class="row-menu-form ph-only"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="row-menu-item" type="submit" role="menuitem">{{t "stay.claim.resend"}}</button></form>{{end}}
+        <a class="row-menu-item" href="/reservations/{{$id}}/guests/new" role="menuitem">{{t "stay.detail.cta.add_guest"}}</a>
+        {{if .StayInvoice}}<a class="row-menu-item ph-only" href="/invoices/{{.StayInvoice.ID}}" role="menuitem">{{t "invoice.stay.open" "number" .StayInvoice.Number}}</a>{{else}}<a class="row-menu-item ph-only" href="/invoices/new?reservation_id={{$id}}" role="menuitem">{{t "invoice.new"}}</a>{{end}}
+        {{if .Reservation.PermalinkToken}}
+        <a class="row-menu-item" href="{{.GuestLink}}" target="_blank" rel="noopener" role="menuitem">{{t "stay.detail.menu.open_guest_form"}}</a>
+        {{end}}
+        {{if .Reservation.ArchivedAt}}
+          <form method="post" action="/reservations/{{$id}}/unarchive" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "stay.detail.menu.restore"}}</button>
+          </form>
+        {{else}}
+          <form method="post" action="/reservations/{{$id}}/archive" class="row-menu-form"
+                data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <input type="hidden" name="return_to" value="/reservations/{{$id}}?return_to={{urlencode .ReturnTo}}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
+          </form>
+        {{end}}
+        <a class="row-menu-item ph-hide" href="/guide#guests" role="menuitem">{{t "how.toggle"}}</a>
+        <a class="row-menu-item" href="/apartments/{{.Reservation.ApartmentID}}?view=settings&amp;section=guests#communication" role="menuitem">{{t "stay.detail.menu.guest_links"}}</a>
+        {{if and .SendControls.SendEnabled (eq .Progress.Status "failed")}}
+          <form method="post" action="/reservations/{{$id}}/submit" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <input type="hidden" name="return_to" value="/reservations/{{$id}}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "stay.detail.cta.send_again"}}</button>
+          </form>
+        {{end}}
+        {{if .StayClaim.GuestAccessLockedAt}}
+          <form method="post" action="/reservations/{{$id}}/reopen-guest" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "stay.claim.reopen"}}</button>
+          </form>
+        {{end}}
+      {{row_menu_end}}
+</div></div>
+{{if eq .Reservation.Status "cancelled"}}
+<div class="ui-banner ui-banner-attention">
+  <div class="grow">{{t "stay.detail.banner.cancelled"}}</div>
+</div>
+{{else if eq .Reservation.Status "ignored"}}
+<div class="ui-banner ui-banner-neutral">
+  <div class="grow">{{t "stay.detail.banner.ignored"}}</div>
+</div>
+{{end}}
+{{if .Reservation.ArchivedAt}}
+<div class="ui-banner ui-banner-attention stay-archived-banner">
+  <div class="grow">{{t "stay.detail.banner.archived"}}</div>
+</div>
+{{end}}
+{{if .IsDemoStay}}<div class="ui-banner ui-banner-neutral stay-demo-banner" id="demo-stay">
+  <div class="grow">{{t "stay.detail.banner.demo"}}</div>
+  <form method="post" action="/reservations/{{$id}}/delete-demo" class="inline"
+        data-confirm data-confirm-message="{{t "confirm.delete_demo_stay"}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "setup_guide.try.delete"}}</button>
+  </form>
+</div>
+{{end}}
+
+{{if .JourneyBar}}<div class="stay-journey-wrap">{{.JourneyBar}}</div>{{end}}
+
+{{template "stay_detail_comfy_guests" .}}
+{{template "stay_detail_comfy_lower" .}}
+</div>
+{{end}}

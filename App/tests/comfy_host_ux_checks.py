@@ -203,7 +203,12 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         assert stays_phone["docOverflow"] <= 0, stays_phone
         assert stays_phone["hasOldUnfilledStrip"]
         assert not stays_phone["leaksSecret"]
-        assert {len(j) for j in stays_phone["journeys"]} >= {3, 4}, stays_phone["journeys"]
+        assert {len(j) for j in stays_phone["journeys"]} >= {2, 4}, stays_phone["journeys"]
+        assert all(
+            all(s["step"] != "code" for s in j)
+            for j in stays_phone["journeys"]
+            if len(j) == 2
+        ), "properties without a smart lock must hide the code icon"
 
         # 1e. Phone Stay Detail 4-step Checklist (Brief 2088)
         resp = page.goto(f"{base}/reservations/{comfy_world['stay_urgent']}")
@@ -211,14 +216,25 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         page.wait_for_load_state("networkidle")
         settle_motion(page)
         detail_phone = page.evaluate(
-            """() => ({
-            docOverflow: document.documentElement.scrollWidth - window.innerWidth,
-            steps: [...document.querySelectorAll('.stay-journey-bar-step')].map(el => ({
-                step: el.getAttribute('data-step'), tone: el.getAttribute('data-tone'),
-            })),
-        })"""
+            """() => {
+            const back = document.querySelector('.airbnb-header');
+            const bar = document.querySelector('.stay-journey-bar');
+            const polIcon = document.querySelector('.stay-journey-bar-step[data-step="police"] svg');
+            return {
+                docOverflow: document.documentElement.scrollWidth - window.innerWidth,
+                barBelowHeader: !!(back && bar && bar.getBoundingClientRect().top >= back.getBoundingClientRect().bottom - 2),
+                policeIcon: polIcon ? polIcon.getAttribute('data-icon') : '',
+                hasRequestPayment: !!document.querySelector('a[href*="/payments?reservation_id"]'),
+                steps: [...document.querySelectorAll('.stay-journey-bar-step')].map(el => ({
+                    step: el.getAttribute('data-step'), tone: el.getAttribute('data-tone'),
+                })),
+            };
+        }"""
         )
         assert detail_phone["docOverflow"] <= 0, detail_phone
+        assert detail_phone["barBelowHeader"], "journey checklist must sit below the back button/header"
+        assert detail_phone["policeIcon"] == "landmark", detail_phone
+        assert not detail_phone["hasRequestPayment"], "retired Request payment link must be removed"
         assert [s["step"] for s in detail_phone["steps"]] == ["link", "form", "code", "police"]
         assert [s["tone"] for s in detail_phone["steps"]] == ["progress", "progress", "bad", "bad"]
         ctx.close()
@@ -268,6 +284,9 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
             const rails = document.querySelector('[data-prop-rails]');
             const sw = document.querySelector('[data-window-switch]');
             const fab = document.querySelector('.havel-fab, .help-fab, button[data-havel-open]');
+            const workHead = document.querySelector('.ov-work-head');
+            const calHead = document.querySelector('.ov-cal-heading');
+            const bar = document.querySelector('.cal .crow .bar');
             const swRect = sw ? sw.getBoundingClientRect() : null;
             const fabRect = fab ? fab.getBoundingClientRect() : null;
             const overlapsFab = !!(swRect && fabRect && !(
@@ -279,6 +298,8 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
                 railsHidden: !rails || getComputedStyle(rails).display === 'none',
                 switchVisible: !!sw && getComputedStyle(sw).display !== 'none',
                 overlapsFab,
+                todayAboveCalendar: !!(workHead && calHead && workHead.getBoundingClientRect().top < calHead.getBoundingClientRect().top),
+                barJustify: bar ? getComputedStyle(bar).justifyContent : '',
                 ganttLinks: [...document.querySelectorAll('.cal-row-prop-link')].map(a => a.getAttribute('href')),
                 tableJourneys: document.querySelectorAll('.ov-table .stay-journey').length,
             };
@@ -286,6 +307,8 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         )
         assert desk_dash["docOverflow"] <= 0 and desk_dash["railsHidden"] and desk_dash["switchVisible"], desk_dash
         assert not desk_dash["overlapsFab"], "window switcher must not collide with floating help button"
+        assert desk_dash["todayAboveCalendar"], "Today section must sit above Calendar on desktop"
+        assert desk_dash["barJustify"] == "center", f"Gantt stay bars should center their label: {desk_dash}"
         assert any("cal_property=" in h for h in desk_dash["ganttLinks"]), desk_dash["ganttLinks"]
         assert desk_dash["tableJourneys"] >= 1, desk_dash
 
@@ -302,9 +325,11 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
             docOverflow: document.documentElement.scrollWidth - window.innerWidth,
             rowHeights: [...document.querySelectorAll('.stays-desk tbody tr')].map(r => Math.round(r.getBoundingClientRect().height)),
             journeyCount: document.querySelectorAll('.stays-desk .stay-journey').length,
+            hasRequestPayment: !!document.querySelector('a[href*="/payments?reservation_id"]'),
         })"""
         )
         assert stays_desk["docOverflow"] <= 0 and stays_desk["journeyCount"] >= 4, stays_desk
+        assert not stays_desk["hasRequestPayment"], "retired Request payment menu item must be removed"
         assert max(stays_desk["rowHeights"]) <= 84, stays_desk["rowHeights"]
 
         resp = dpage.goto(f"{base}/reservations/{comfy_world['stay_urgent']}")
@@ -312,14 +337,23 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(
         dpage.wait_for_load_state("networkidle")
         detail_desk = dpage.evaluate(
             """() => {
+            const head = document.querySelector('#now');
+            const bar = document.querySelector('.stay-journey-bar');
             const steps = [...document.querySelectorAll('.stay-journey-bar-step')];
+            const issuesDetails = document.querySelector('details.guest-issues');
             return {
                 docOverflow: document.documentElement.scrollWidth - window.innerWidth,
                 stepCount: steps.length,
                 rowCount: new Set(steps.map(s => Math.round(s.getBoundingClientRect().top))).size,
+                barBelowHead: !!(head && bar && bar.getBoundingClientRect().top >= head.getBoundingClientRect().bottom - 2),
+                hasCollapsibleIssues: !!issuesDetails && !issuesDetails.open,
+                hasRequestPayment: !!document.querySelector('a[href*="/payments?reservation_id"]'),
             };
         }"""
         )
         assert detail_desk["docOverflow"] <= 0 and detail_desk["stepCount"] == 4 and detail_desk["rowCount"] == 1, detail_desk
+        assert detail_desk["barBelowHead"], "journey checklist must sit below the #now header on desktop"
+        assert detail_desk["hasCollapsibleIssues"], "multi-field missing details must collapse into a clean disclosure pill"
+        assert not detail_desk["hasRequestPayment"], "retired Request payment link must be removed"
         dctx.close()
         browser.close()
