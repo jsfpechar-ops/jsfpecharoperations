@@ -108,16 +108,41 @@ func staysListGET(t *testing.T, mux http.Handler, now time.Time, ownerID int64, 
 // applyComfyJourneyDelta adjusts Python's legacy stays-list lines in
 // stays_visible_golden.json to Go's Comfy UX updates: Brief 2088 replaces the
 // single phone status pill with the 4-step journey strip (filled-guest counter),
-// and the retired "Request payment" menu item is removed from Go rows.
+// removes retired "Request payment", moves the duplicate header "Download house
+// book" into the collapsed "Reports & exports" footer, and places "Filters"
+// before "Add stay".
 func applyComfyJourneyDelta(lines []string) []string {
-	out := make([]string, 0, len(lines))
+	out := make([]string, 0, len(lines)+2)
 	inPhone := true
-	for _, line := range lines {
+	removedHeaderHB := false
+	swappedHeader := false
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
 		if line == "Guest" {
 			inPhone = false
 		}
 		if line == "Request payment" {
 			continue
+		}
+		if !removedHeaderHB && (line == "Download house book" || line == "Stáhnout domovní knihu" || line == "Tải sổ khách") {
+			removedHeaderHB = true
+			continue
+		}
+		if !swappedHeader && i+1 < len(lines) &&
+			((line == "Add stay" && lines[i+1] == "Filters") ||
+				(line == "Přidat pobyt" && lines[i+1] == "Filtry") ||
+				(line == "Thêm lượt lưu trú" && lines[i+1] == "Bộ lọc")) {
+			out = append(out, lines[i+1], line)
+			i++
+			swappedHeader = true
+			continue
+		}
+		if line == "Police reports" {
+			out = append(out, "Reports & exports", "Police reports, guest register, CSV & house book")
+		} else if line == "Hlášení policii" {
+			out = append(out, "Hlášení a exporty", "Hlášení policii, domovní kniha a CSV")
+		} else if line == "Báo cáo công an" {
+			out = append(out, "Báo cáo & xuất dữ liệu", "Báo cáo công an, sổ khách & CSV")
 		}
 		if inPhone {
 			switch line {

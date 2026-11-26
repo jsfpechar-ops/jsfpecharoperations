@@ -1,5 +1,5 @@
 {{define "stays_list.title"}}{{end}}
-{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2093">{{end}}
+{{define "stays_list.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2094">{{end}}
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
@@ -109,9 +109,8 @@
 <div class="stays-head-actions">
   {{if .View.ManualSend}}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{.ReturnTo}}">
     <button class="btn ghost send-all" type="submit"{{if not .View.ReadySendCount}} disabled{{end}} title="{{t "send.all_ready_hint"}}">{{icon "send" 16}}<span>{{t "send.all_ready"}}{{if .View.ReadySendCount}} ({{.View.ReadySendCount}}){{end}}</span></button></form>{{end}}
-  <a data-turbo="false" class="btn ghost" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook>{{t "stays.housebook_download"}}</a>
-  <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{t "stays.add_stay"}}</button>
   <button class="btn ghost ph-hide" type="button" data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden>{{t "host.filter.filters"}}</button>
+  <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{t "stays.add_stay"}}</button>
 </div>{{end}}</div>
 {{template "stays_onboarding_banner" .}}
 {{if and (not .ShowArchive) (gt .OldUnfilledCount 0)}}<aside class="onboarding-banner old-unfilled-strip" data-old-unfilled-strip>
@@ -203,10 +202,16 @@
   <form method="post" action="/demo" class="empty-state-extra"><input type="hidden" name="_csrf" value="{{csrf}}">
     <button class="ui-btn ui-btn-secondary" type="submit">{{t "demo.load"}}</button><p class="sub">{{t "demo.load_detail"}}</p></form></div>
 {{else}}{{empty_state "" (t "stays.empty.no_apartments") "/apartments/new" (t "stays.empty.add_first")}}{{end}}
-<div class="stays-index-card stays-links ph-hide">
-  <a class="airbnb-index-row ph-hide" href="/submissions"><span class="airbnb-icon">{{icon "shield" 24}}</span><span class="airbnb-label">{{t "tabs.stays.reports"}}</span>{{icon "chevron-right" 16}}</a>
-  <a class="airbnb-index-row ph-hide" href="/housebook"><span class="airbnb-icon">{{icon "book-open" 24}}</span><span class="airbnb-label">{{t "tabs.stays.register"}}</span>{{icon "chevron-right" 16}}</a>
-  <a data-turbo="false" class="airbnb-index-row ph-hide" href="/reservations.csv?{{.CSVExportParams}}" data-csv-export="/reservations.csv" data-csv-params="{{.CSVExportParams}}" data-csv-scope-label="{{.StayProperty}}"><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 20}}</a>
-  <a data-turbo="false" class="airbnb-index-row stays-phone-only" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook-phone><span class="airbnb-icon">{{icon "download" 24}}</span><span class="airbnb-label">{{t "stays.housebook_download"}}<small>{{t "stays.housebook_hint"}}</small></span>{{icon "chevron-right" 20}}</a>
-</div>
+<details class="stays-index-card stays-links stays-tools ph-hide">
+  <summary class="stays-tools-summary">
+    <span class="stays-tools-copy"><strong>{{t "stays.tools.title"}}</strong><span class="stays-tools-hint">{{t "stays.tools.hint"}}</span></span>
+    {{icon "chevron-down" 16}}
+  </summary>
+  <div class="stays-tools-list">
+    <a class="airbnb-index-row ph-hide" href="/submissions"><span class="airbnb-icon">{{icon "police" 20}}</span><span class="airbnb-label">{{t "tabs.stays.reports"}}</span>{{icon "chevron-right" 16}}</a>
+    <a class="airbnb-index-row ph-hide" href="/housebook"><span class="airbnb-icon">{{icon "book-open" 20}}</span><span class="airbnb-label">{{t "tabs.stays.register"}}</span>{{icon "chevron-right" 16}}</a>
+    <a data-turbo="false" class="airbnb-index-row ph-hide" href="/reservations.csv?{{.CSVExportParams}}" data-csv-export="/reservations.csv" data-csv-params="{{.CSVExportParams}}" data-csv-scope-label="{{.StayProperty}}"><span class="airbnb-icon">{{icon "download" 20}}</span><span class="airbnb-label">{{t "csv.export_stays"}}</span>{{icon "chevron-right" 16}}</a>
+    <a data-turbo="false" class="airbnb-index-row ph-hide" href="/housebook.csv?{{.CSVExportParams}}" data-stays-housebook><span class="airbnb-icon">{{icon "download" 20}}</span><span class="airbnb-label">{{t "stays.housebook_download"}}<small>{{t "stays.housebook_hint"}}</small></span>{{icon "chevron-right" 16}}</a>
+  </div>
+</details>
 {{end}}

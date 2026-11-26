@@ -26,7 +26,9 @@
     "stays.journey.state.police.waiting": "čeká",
     "stays.journey.state.police.pending": "k odeslání",
     "stays.journey.state.police.filed": "odesláno",
-    "stays.journey.state.police.action": "vyžaduje akci"
+    "stays.journey.state.police.action": "vyžaduje akci",
+    "stays.tools.title": "Hlášení a exporty",
+    "stays.tools.hint": "Hlášení policii, domovní kniha a CSV"
   },
   "en": {
     "stays.old_unfilled.label.one": "1 older unfilled calendar stay.",
@@ -55,7 +57,9 @@
     "stays.journey.state.police.waiting": "waiting",
     "stays.journey.state.police.pending": "ready to file",
     "stays.journey.state.police.filed": "filed",
-    "stays.journey.state.police.action": "needs action"
+    "stays.journey.state.police.action": "needs action",
+    "stays.tools.title": "Reports & exports",
+    "stays.tools.hint": "Police reports, guest register, CSV & house book"
   },
   "vi": {
     "stays.old_unfilled.label.one": "1 lượt lưu trú cũ chưa điền từ lịch.",
@@ -84,6 +88,8 @@
     "stays.journey.state.police.waiting": "đang chờ",
     "stays.journey.state.police.pending": "chờ gửi",
     "stays.journey.state.police.filed": "đã khai báo",
-    "stays.journey.state.police.action": "cần xử lý"
+    "stays.journey.state.police.action": "cần xử lý",
+    "stays.tools.title": "Báo cáo & xuất dữ liệu",
+    "stays.tools.hint": "Báo cáo công an, sổ khách & CSV"
   }
 }

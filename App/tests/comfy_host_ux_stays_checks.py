@@ -59,6 +59,14 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
         const polIcons = [...document.querySelectorAll('.stays-desk .stay-journey-step[data-step="police"] svg')].map(
             s => s.getAttribute('data-icon')
         );
+        const dateAlignDiffs = [...document.querySelectorAll('.stays-desk tbody tr')].map(tr => {
+            const tds = tr.querySelectorAll('td');
+            const arrRect = tds[2]?.getBoundingClientRect();
+            const depRect = tds[3]?.getBoundingClientRect();
+            return arrRect && depRect ? Math.abs(Math.round(arrRect.top - depRect.top)) : 99;
+        });
+        const headBtnCount = document.querySelectorAll('.stays-head-actions > button, .stays-head-actions > a').length;
+        const toolsDetails = document.querySelector('details.stays-tools');
         return {
             docOverflow: document.documentElement.scrollWidth - window.innerWidth,
             journeyCount: document.querySelectorAll('.stays-desk .stay-journey').length,
@@ -66,6 +74,10 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
             statusXs,
             okPills,
             polIcons,
+            dateAlignDiffs,
+            headBtnCount,
+            toolsCollapsed: !!toolsDetails && !toolsDetails.open,
+            toolsLinks: toolsDetails ? toolsDetails.querySelectorAll('a.airbnb-index-row').length : 0,
         };
     }"""
     )
@@ -76,6 +88,9 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
     )
     assert stays_desk["okPills"] and all(p["text"] == "Reported" for p in stays_desk["okPills"]), stays_desk
     assert all(ic == "police" for ic in stays_desk["polIcons"]) and stays_desk["polIcons"], stays_desk
+    assert all(d <= 1 for d in stays_desk["dateAlignDiffs"]), stays_desk
+    assert stays_desk["headBtnCount"] <= 2, f"Stays header should only show Filters + Add stay: {stays_desk}"
+    assert stays_desk["toolsCollapsed"] and stays_desk["toolsLinks"] == 4, stays_desk
 
     page.goto(f"{base}/reservations/{stay_red}", wait_until="networkidle")
     detail_desk = page.evaluate(
