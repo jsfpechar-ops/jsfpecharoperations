@@ -1,6 +1,6 @@
 # 2088: 4-step Stay Journey Status Strip (Link, Form, Code, Police)
 
-Status: todo
+Status: done
 Depends on: 2087 | Base commit: 43f2d0182 | Branch: task/2088-go-stay-journey-status-strip
 Executor: medium | Fits one session: 30 tool calls, 60k tokens
 

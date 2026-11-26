@@ -1,6 +1,6 @@
 # 2087: Calm dashboard notifications, iCal backfill cutoff, and bulk archive old unfilled stays
 
-Status: todo
+Status: done
 Depends on: none | Base commit: 43f2d0182 | Branch: task/2087-go-dashboard-calm-notifications
 Executor: medium | Fits one session: 30 tool calls, 60k tokens
 

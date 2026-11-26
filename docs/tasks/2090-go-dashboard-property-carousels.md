@@ -1,6 +1,6 @@
 # 2090: Comfy Dashboard Refresh — phone per-property stay carousels and desktop 7-day tab
 
-Status: todo
+Status: done
 Depends on: 2087, 2088, 2089 | Base commit: 43f2d0182 | Branch: task/2090-go-dashboard-property-carousels
 Executor: medium | Fits one session: 30 tool calls, 60k tokens
 

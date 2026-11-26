@@ -1,4 +1,31 @@
-/* Responsive visibility and viewport refinements for Briefs 2089-2090. */
+/* Responsive visibility, property identity dot, and layout polish (Briefs 2088-2090). */
+.property-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ui-pdot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+  background: var(--teal);
+}
+
+.ui-pdot[data-property="1"] { background: var(--teal); }
+.ui-pdot[data-property="2"] { background: var(--blue); }
+.ui-pdot[data-property="3"] { background: var(--purple); }
+.ui-pdot[data-property="4"] { background: var(--orange); }
+
+/* Place Today / Next 7 days switcher cleanly beside the heading (never near the floating help FAB). */
+.ov-work-head {
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+
 @media (min-width: 768px) {
   .cal-mobile-only {
     display: none !important;

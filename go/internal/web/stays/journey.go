@@ -120,7 +120,7 @@ func BuildJourney(res Reservation, prog Progress, sig JourneySignal, today time.
 		counter = fmt.Sprintf("%d/%d", prog.Filled, *prog.Expected)
 	}
 	formTone, formState := "done", "complete"
-	if prog.Filled == 0 {
+	if prog.Filled == 0 && prog.Incomplete == 0 {
 		formTone, formState = "waiting", "empty"
 	} else if prog.Incomplete > 0 || (prog.Expected != nil && prog.Filled < *prog.Expected) {
 		formTone, formState = "progress", "partial"

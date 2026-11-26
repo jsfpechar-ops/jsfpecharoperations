@@ -1,6 +1,6 @@
 # 2089: Mobile Calendar Property Index and Single-Property Month View
 
-Status: todo
+Status: done
 Depends on: 2088 | Base commit: 43f2d0182 | Branch: task/2089-go-mobile-calendar-property-index
 Executor: medium | Fits one session: 30 tool calls, 60k tokens
 

@@ -113,6 +113,13 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 			t.Fatalf("expected 2 steps for demo stay (police hidden), got %d", len(j.Steps))
 		}
 	})
+
+	t.Run("incomplete guest with zero complete guests is amber progress", func(t *testing.T) {
+		j := BuildJourney(baseRes, Progress{Filled: 0, Incomplete: 1, Expected: ptrInt(2)}, JourneySignal{}, today)
+		if j.Steps[1].Tone != "progress" || j.Steps[1].StateKey != "partial" {
+			t.Errorf("form step = %+v, want progress/partial", j.Steps[1])
+		}
+	})
 }
 
 func TestRenderJourneyStripAndBar(t *testing.T) {
