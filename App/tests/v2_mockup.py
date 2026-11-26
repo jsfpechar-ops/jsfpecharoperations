@@ -67,10 +67,13 @@ WIDE_OVERRIDES = {
                                      # owner decision 2026-11-08 (brief 1030, 6 pills as switcher): the wide card header has a light divider
                                      "border-bottom-color": "rgb(235, 235, 231)"},
     "property:.prop-sec summary b": {"font-weight": "700"},
+    # owner decision 2026-11-25: thinner Stays desktop rows (~54-63 px)
+    "stays:main table th": {"padding-top": "6px", "padding-right": "10px", "padding-bottom": "8px", "padding-left": "10px"},
+    "stays:main table td": {"padding-top": "10px", "padding-right": "10px", "padding-bottom": "10px", "padding-left": "10px"},
 }
 # owner decision 2026-11-08 (brief 1030, 6 pills as switcher): at >=768 the editor card header is the title only and the
 # phone "Settings" eyebrow is hidden, so these phone-mockup parts are absent there.
-WIDE_MISSING_OK = {"property:h2.sec", "property:.sec-state", "property:.dot"}
+WIDE_MISSING_OK = {"property:h2.sec", "property:.sec-state", "property:.dot", "stays:main td small"}
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
 # calendar bars are 28 px tall: a dense 14-day timeline; WCAG 2.5.8 needs 24 px, and every stay is also a full-size row in the Dnes table and the stays list

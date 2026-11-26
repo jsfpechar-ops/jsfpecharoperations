@@ -43,33 +43,38 @@ def test_dashboard_and_stays_share_compact_row_menu(
     dashboard_rich_host, base, stay_actions_host, stay_actions_base,
 ):
     stay_cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
-    heights = {}
     with sync_api.sync_playwright() as playwright:
         browser = _browser(playwright)
         for locale in ("en", "cs"):
             for width in WIDTHS:
-                for name, url, cookie, selector in (
-                    ("stays", stay_actions_base, stay_cookie, ".stays-desk tbody tr"),
-                ):
-                    context = browser.new_context(viewport={"width": width, "height": 900})
-                    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": url + "/"}])
-                    page = context.new_page()
-                    path = "/?" if name == "dashboard" else "/reservations?range=all&"
-                    page.goto(f"{url}{path}lang={locale}")
-                    page.wait_for_load_state("networkidle")
-                    later = page.locator("#security-prompt [data-security-prompt-later]")
-                    if later.is_visible():
-                        later.click()
-                    label = f"{name}/{locale}/{width}"
-                    assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1, label
-                    pairs = page.evaluate(PAIRS, selector)
-                    _check_pairs(pairs, label, locale)
-                    heights.setdefault((locale, width), {})[name] = round(pairs[0]["more"]["h"])
-                    if CAPTURE and width in (360, 390, 1280, 1440):
-                        EVIDENCE.mkdir(parents=True, exist_ok=True)
-                        page.evaluate("window.scrollTo(0, 0)")
-                        page.screenshot(path=str(EVIDENCE / f"{name}-{width}-{locale}.png"), full_page=True)
-                    context.close()
+                context = browser.new_context(viewport={"width": width, "height": 900})
+                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": stay_cookie, "url": stay_actions_base + "/"}])
+                page = context.new_page()
+                page.goto(f"{stay_actions_base}/reservations?range=all&lang={locale}")
+                page.wait_for_load_state("networkidle")
+                later = page.locator("#security-prompt [data-security-prompt-later]")
+                if later.is_visible():
+                    later.click()
+                label = f"stays/{locale}/{width}"
+                assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1, label
+                # Wolt-minimal Stays layout: no per-row ⋮ clutter; whole row opens the stay drawer on desktop.
+                assert page.locator(".stays-desk td.row-actions").count() == 0, label
+                if width >= 1024:
+                    rows = page.locator(".stays-desk tbody tr.clickable-row")
+                    assert rows.count() >= 3, label
+                    assert page.locator(".stays-head-menu-btn").is_visible(), label
+                    rows.first.click()
+                    drawer = page.locator("#stays-drawer")
+                    drawer.wait_for(state="visible", timeout=5000)
+                    page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                    assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1, label + "+drawer"
+                    drawer.locator("[data-stays-drawer-close]").click()
+                    assert drawer.is_hidden(), label
+                if CAPTURE and width in (360, 390, 1280, 1440):
+                    EVIDENCE.mkdir(parents=True, exist_ok=True)
+                    page.evaluate("window.scrollTo(0, 0)")
+                    page.screenshot(path=str(EVIDENCE / f"stays-{width}-{locale}.png"), full_page=True)
+                context.close()
         browser.close()
 
 

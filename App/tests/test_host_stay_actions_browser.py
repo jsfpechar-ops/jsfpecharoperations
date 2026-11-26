@@ -194,53 +194,44 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                     assert status_pill.count() == 1
                     tone = status_pill.get_attribute("class")
                     assert expected_tones[key] in tone.split() or ("p-bad" in tone.split()), (key, expected_statuses[key], tone)
-                    copy = row.locator('button[data-copy]')
-                    assert copy.count() == 1, f"Copy missing on {key} ({expected_statuses[key]}) {locale}/{width}"
-                    source_id = copy.get_attribute("data-copy")
-                    source_value = page.locator(f"#{source_id}").input_value()
-                    guest_link = row.locator(f'a[href^="/l/"][target="_blank"]')
-                    assert guest_link.count() == 1
-                    assert source_value.endswith(guest_link.get_attribute("href")) or guest_link.get_attribute("href") in source_value
+                    # Open the slide-over Stay detail drawer and verify Copy guest link is available for every status.
+                    row.click()
+                    drawer = page.locator("#stays-drawer")
+                    drawer.wait_for(state="visible", timeout=5000)
+                    page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                    copy = drawer.locator('button[data-copy="stay-link"]')
+                    assert copy.count() >= 1, f"Copy missing in drawer on {key} ({expected_statuses[key]}) {locale}/{width}"
+                    source_value = drawer.locator("#stay-link").input_value()
                     assert "/l/" in source_value and source_value.endswith(f"/{reservation_id}")
+                    drawer.locator("[data-stays-drawer-close]").click()
                 no_token = _stay_row(page, stay_actions_base, locale, stay_actions_host["ids"]["missing-token"])
                 assert no_token.count() == 1
-                assert no_token.locator('button[data-copy]').count() == 0
-                assert no_token.locator('a[href^="/l/"][target="_blank"]').count() == 0
+                if width >= 1024:
+                    no_token.click()
+                    drawer = page.locator("#stays-drawer")
+                    drawer.wait_for(state="visible", timeout=5000)
+                    page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                    assert drawer.locator('button[data-copy="stay-link"]').count() == 0
+                    drawer.locator("[data-stays-drawer-close]").click()
 
                 if width < 1024:
                     continue
                 ready_row = _stay_row(page, stay_actions_base, locale, stay_actions_host["ids"]["ready"])
-                assert ready_row.locator(".row-action-send").count() == 0  # 0137: rows have the menu only
-                copy = ready_row.locator('button[data-copy]')
-                trigger = ready_row.locator(".row-menu-trigger")
-                assert copy.is_hidden()
-                assert ready_row.locator("td a.stay-identity-link").count() == 1  # v2: the guest name opens the stay (no separate Open cue in the mockup)
-                boxes = [trigger.bounding_box()]
-                expected_height = 24  # v2 desk "···" menu: WCAG 2.5.8 minimum
-                assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
-                assert all(abs(box["height"] - expected_height) <= 1 for box in boxes), boxes
-                # 0091: actions wrap as whole controls when the lane is narrow, so
-                # they share a row or sit on distinct rows; they never overlap.
-                for i, a in enumerate(boxes):
-                    for b in boxes[i + 1:]:
-                        separate = (a["x"] + a["width"] <= b["x"] + 1 or b["x"] + b["width"] <= a["x"] + 1
-                                    or a["y"] + a["height"] <= b["y"] + 1 or b["y"] + b["height"] <= a["y"] + 1)
-                        assert separate, boxes
-                assert all(box["x"] >= -1 and box["x"] + box["width"] <= width + 1 for box in boxes), boxes
+                assert ready_row.locator(".row-action-send").count() == 0
+                assert ready_row.locator("td.row-actions").count() == 0
+                assert ready_row.locator("td a.stay-identity-link").count() == 1
                 if locale == "en" and width == 1280:
-                    ready_source = page.locator(f"#{copy.get_attribute('data-copy')}")
-                    ready_link = ready_row.locator('a[href^="/l/"][target="_blank"]').get_attribute("href")
-                    page.evaluate("window.scrollTo(0, 0)")
-                    expected_copy = ready_source.input_value()
-                    trigger.click()
+                    ready_row.click()
+                    drawer = page.locator("#stays-drawer")
+                    drawer.wait_for(state="visible", timeout=5000)
+                    page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                    expected_copy = drawer.locator("#stay-link").input_value()
+                    menu_trigger = drawer.locator(".stays-drawer-actions .row-menu-trigger")
+                    menu_trigger.click()
                     menu = page.locator(".row-menu-panel.is-open")
-                    menu.locator("button[data-copy]").click()
+                    menu.locator('button[data-copy="stay-link"]').click()
                     page.wait_for_function("window.__copyWrites.length === 1")
                     assert page.evaluate("window.__copyWrites[0]") == expected_copy
-                    assert page.evaluate("window.__copyWrites[0]").endswith(ready_link)
-                    page.locator("body").click(position={"x": 20, "y": 20})
-
-                if capture:
-                    ready_row.locator("td.row-actions").screenshot(path=str(shots / f"stays-actions-{locale}-{width}.png"))
+                    drawer.locator("[data-stays-drawer-close]").click()
         context.close()
         browser.close()

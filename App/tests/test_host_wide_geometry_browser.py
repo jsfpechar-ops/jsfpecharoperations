@@ -608,41 +608,19 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                         if width >= 1024:  # v2: the desk table is the computer layout; phones get the grouped row list
                             stay_rows = page.locator(".stays-desk tbody tr")
                             assert stay_rows.count() >= 4
+                            assert page.locator(".stays-desk td.row-actions").count() == 0
+                            assert page.locator("button.stays-head-menu-btn").is_visible()
                             for row_index in range(stay_rows.count()):
                                 row = stay_rows.nth(row_index)
                                 date_link = row.locator("td a.stay-identity-link")
                                 assert date_link.is_visible()
                                 assert date_link.get_attribute("href").startswith("/reservations/")
-                                more = row.locator("button.row-menu-trigger")
-                                assert more.is_visible() and more.get_attribute("aria-label")
-                                assert more.get_attribute("aria-expanded") == "false"
-
-                            visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                            more_controls = [item for item in visible_actions if item["isMenu"]]
-                            assert len(more_controls) == stay_rows.count(), (
-                                f"More controls do not match rendered stays at {lang}/{width}: {geometry['rowActions']}"
-                            )
-                            assert len(visible_actions) >= stay_rows.count(), geometry["rowActions"]
-                            if width >= 1280:
-                                hidden = [item for item in visible_actions if not item["fullyVisible"]]
-                                assert not hidden, (
-                                    f"stay row actions clipped by visible list panel at {lang}/{width}: {hidden}"
-                                )
-                            expected_action_height = 44 if width in MOBILE_WIDTHS else 40
-                            for group in {item["rowGroup"] for item in visible_actions}:
-                                grouped = [item for item in visible_actions if item["rowGroup"] == group]
-                                menus = [item for item in grouped if item["isMenu"]]
-                                assert menus, f"stay row has no visible More control: {grouped}"
-                                more = menus[0]
-                                for control in grouped:
-                                    same_row = abs(control["top"] - more["top"]) <= 2
-                                    wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
-                                    assert same_row or wrapped, (control, more)
-                                    assert control["height"] >= (24 if width >= 1024 else expected_action_height - 1), (control, more)  # v2 desk "···" menu: WCAG 2.5.8 minimum
-                                    if not control["isCopy"] and width < 1024:
-                                        assert abs(control["height"] - expected_action_height) <= 1, (control, more)
-                            _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
-                            _assert_stay_menu_copy_geometry(page, width, 1, lang)
+                            stay_rows.first.click()
+                            drawer = page.locator("#stays-drawer")
+                            drawer.wait_for(state="visible", timeout=5000)
+                            page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                            assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1
+                            drawer.locator("[data-stays-drawer-close]").click()
                         else:
                             phone_rows = page.locator(".stays-phone a.card.stay")
                             assert phone_rows.count() >= 4
@@ -698,11 +676,8 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert geometry["viewport"]["scrollWidth"] <= width, (geometry["viewport"], offenders)
                 rows = page.locator(".stays-desk tbody tr")
                 assert rows.count() >= 4
-                visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                more_controls = [item for item in visible_actions if item["isMenu"]]
-                assert len(more_controls) == rows.count(), geometry["rowActions"]
-                assert len(visible_actions) >= rows.count(), geometry["rowActions"]
-                assert all(item["fullyVisible"] for item in visible_actions), geometry["rowActions"]
+                assert page.locator(".stays-desk td.row-actions").count() == 0
+                assert page.locator("button.stays-head-menu-btn").is_visible()
                 assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
                 assert page.locator(".stays-desk .stay-portal-link").count() == 0
                 for row_index in range(rows.count()):
@@ -710,19 +685,12 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                     date_link = row.locator("td a.stay-identity-link")
                     assert date_link.is_visible()
                     assert date_link.get_attribute("href").startswith("/reservations/")
-                    more = row.locator("button.row-menu-trigger")
-                    assert more.is_visible() and more.get_attribute("aria-label")
-                for group in {item["rowGroup"] for item in visible_actions}:
-                    grouped = [item for item in visible_actions if item["rowGroup"] == group]
-                    more = next(item for item in grouped if item["isMenu"])
-                    for control in grouped:
-                        same_row = abs(control["top"] - more["top"]) <= 2
-                        wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
-                        assert same_row or wrapped, (control, more)
-                        # v2 desk rows (approved mockup) use a quiet "···" menu: WCAG 2.5.8 minimum target (24 px) at computer widths
-                        assert control["height"] >= 24, (control, more)
-                _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
-                _assert_stay_menu_copy_geometry(page, width, 1, lang)
+                rows.first.click()
+                drawer = page.locator("#stays-drawer")
+                drawer.wait_for(state="visible", timeout=5000)
+                page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1
+                drawer.locator("[data-stays-drawer-close]").click()
                 overflow_cells = [cell for cell in geometry["compactCells"]
                                   if cell["scrollWidth"] > cell["clientWidth"] + 1]
                 assert not overflow_cells, overflow_cells
