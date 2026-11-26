@@ -93,7 +93,7 @@ type apartmentRefusal struct {
 	addressOrder    []string          // its key order
 	policeErrors    map[string]string // uby_mark / police field validation errors
 	policeOrder     []string
-	sharedTimeError string            // an i18n key set by this file, never from the form
+	sharedTimeError string // an i18n key set by this file, never from the form
 	lockTimesError  bool
 	feeAccountError bool // refuse_fee_save: the council account did not normalise
 }
