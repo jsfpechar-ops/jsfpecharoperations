@@ -26,16 +26,19 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 		}
 	})
 
-	t.Run("no lock and no ubyport shows 2 steps", func(t *testing.T) {
+	t.Run("no lock and no ubyport shows 3 steps with red police", func(t *testing.T) {
 		j := BuildJourney(baseRes, Progress{Filled: 0, Expected: ptrInt(2)}, JourneySignal{}, today)
-		if len(j.Steps) != 2 {
-			t.Fatalf("expected 2 steps, got %d", len(j.Steps))
+		if len(j.Steps) != 3 {
+			t.Fatalf("expected 3 steps, got %d", len(j.Steps))
 		}
 		if j.Steps[0].Key != "link" || j.Steps[0].Tone != "waiting" {
 			t.Errorf("step 0 = %+v, want link/waiting", j.Steps[0])
 		}
 		if j.Steps[1].Key != "form" || j.Steps[1].Tone != "waiting" || j.Steps[1].Counter != "0/2" {
 			t.Errorf("step 1 = %+v, want form/waiting/0/2", j.Steps[1])
+		}
+		if j.Steps[2].Key != "police" || j.Steps[2].Tone != "bad" || j.Steps[2].StateKey != "not_connected" {
+			t.Errorf("step 2 = %+v, want police/bad/not_connected", j.Steps[2])
 		}
 	})
 
@@ -97,8 +100,8 @@ func TestBuildJourney_AllStatesAndHiding(t *testing.T) {
 	t.Run("static entry code without smart lock hides code step", func(t *testing.T) {
 		sig := JourneySignal{ClaimState: "claimed", HasEntryCode: true}
 		j := BuildJourney(baseRes, Progress{Filled: 1}, sig, today)
-		if len(j.Steps) != 2 {
-			t.Fatalf("expected 2 steps when smart lock is unused, got %d", len(j.Steps))
+		if len(j.Steps) != 3 || j.Steps[2].Key != "police" {
+			t.Fatalf("expected 3 steps (link, form, police) when smart lock is unused, got %+v", j.Steps)
 		}
 	})
 
