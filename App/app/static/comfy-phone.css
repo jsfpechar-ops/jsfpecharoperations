@@ -1,0 +1,59 @@
+/* Phone per-property carousel cards: warm centered Airbnb style, compact for easy scroll. */
+@media (max-width: 1023px) {
+  body.v2 .prop-rail-card {
+    flex: 0 0 228px;
+    padding: 14px 14px 16px;
+    gap: 8px;
+    align-items: center;
+    text-align: center;
+    border-radius: var(--radius-lg);
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag {
+    background: transparent;
+    padding: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink3);
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="today"],
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="in_house"] {
+    color: var(--ok);
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="tomorrow"],
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="leaves"] {
+    color: var(--blue);
+  }
+
+  body.v2 .prop-rail-av {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    background: var(--bads);
+    color: var(--brand);
+    font-size: 17px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-name {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-meta {
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-foot {
+    justify-content: center;
+    margin-top: 2px;
+  }
+}

@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2094">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261126-2095"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2095">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -89,10 +89,9 @@
     <div class="prop-rail-track" data-prop-rail-track>
       {{- range .Cards}}
       <a class="card prop-rail-card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
-        <div class="prop-rail-top">
-          <span class="prop-rail-name">{{.Label}}</span>
-          <span class="prop-rail-tag" data-kind="{{.Kind}}">{{if eq .Kind "today"}}{{t "calendar.arrival"}}{{else if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "in_house"}}{{t "dashboard.rail.in_house"}}{{else}}{{t "dashboard.rail.upcoming"}}{{end}}</span>
-        </div>
+        <span class="prop-rail-tag" data-kind="{{.Kind}}">{{if eq .Kind "today"}}{{t "calendar.arrival"}}{{else if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "in_house"}}{{t "dashboard.rail.in_house"}}{{else}}{{t "dashboard.rail.upcoming"}}{{end}}</span>
+        <span class="prop-rail-av" aria-hidden="true">{{dash_first .Label}}</span>
+        <span class="prop-rail-name">{{.Label}}</span>
         <div class="prop-rail-meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}}{{if gt (dash_guests .Row.Progress) 0}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}{{end}}</div>
         <div class="prop-rail-foot">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}}{{else}}{{template "dash.pill" .Row}}{{end}}</div>
       </a>

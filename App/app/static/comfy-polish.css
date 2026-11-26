@@ -200,46 +200,41 @@ body.v2 .stays-desk tbody td.row-actions {
   line-height: 1.3;
 }
 
-/* Calm underline tabs on Stays page (replaces bulky pill bubbles). */
-body.v2 .stays-pills .settings-pills {
-  gap: 4px;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 0;
-  margin-bottom: var(--space-3);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
+/* Calm underline tabs on desktop/tablet Stays; keep thumb-friendly pills on phone. */
+@media (min-width: 768px) {
+  body.v2 .stays-pills .settings-pills {
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+    margin-bottom: var(--space-3);
+  }
 
-body.v2 .stays-pills .settings-pills::-webkit-scrollbar {
-  display: none;
-}
+  body.v2 .stays-pills .settings-pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 8px 12px 10px;
+    min-height: 36px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink3);
+    margin-bottom: -1px;
+  }
 
-body.v2 .stays-pills .settings-pill {
-  flex-shrink: 0;
-  white-space: nowrap;
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  padding: 8px 12px 10px;
-  min-height: 36px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink3);
-  margin-bottom: -1px;
-}
+  body.v2 .stays-pills .settings-pill:hover {
+    background: transparent;
+    color: var(--ink);
+  }
 
-body.v2 .stays-pills .settings-pill:hover {
-  background: transparent;
-  color: var(--ink);
-}
-
-body.v2 .stays-pills .settings-pill.is-current {
-  background: transparent;
-  color: var(--ink);
-  font-weight: 600;
-  border-bottom-color: var(--ink);
+  body.v2 .stays-pills .settings-pill.is-current {
+    background: transparent;
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--ink);
+  }
 }
 
 /* Quiet collapsed "Reports & exports" disclosure below Stays pagination. */
