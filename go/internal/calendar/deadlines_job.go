@@ -16,25 +16,27 @@ import (
 
 // DeadlinesSummary holds the counts of one deadlines run, as _log_run logs them.
 type DeadlinesSummary struct {
-	Alerts        int
-	RequestsDue   int
-	CheckInAlarms int
-	Duplicates    int
-	Watchdog      WatchdogResult
-	Stalled       int
+	Alerts         int
+	RequestsDue    int
+	CheckInAlarms  int
+	GuestReminders int
+	Duplicates     int
+	Watchdog       WatchdogResult
+	Stalled        int
 }
 
 // deadlinesSteps are the parts of one run; tests replace them.
 type deadlinesSteps struct {
-	check       func() (int, error)
-	dsrDue      func() (int, error)
-	checkIn     func() (int, error) // nil in tests that do not need it
-	dupCheck    func() (int, error) // nil in tests that do not need it
-	watchdog    func() (WatchdogResult, error)
-	stalled     func() (int, error) // nil in tests that do not need it
-	raiseFailed func() error
-	ping        func(url string)
-	getenv      func(string) string
+	check          func() (int, error)
+	dsrDue         func() (int, error)
+	checkIn        func() (int, error) // nil in tests that do not need it
+	guestReminders func() (int, error) // nil in tests that do not need it
+	dupCheck       func() (int, error) // nil in tests that do not need it
+	watchdog       func() (WatchdogResult, error)
+	stalled        func() (int, error) // nil in tests that do not need it
+	raiseFailed    func() error
+	ping           func(url string)
+	getenv         func(string) string
 }
 
 // RunDeadlinesJob is the deadlines job (the former Python _job_deadlines, removed in 1290). at is the instant of
@@ -50,14 +52,15 @@ func RunDeadlinesJob(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(str
 	return runDeadlines(deadlinesSteps{
 		check: func() (int, error) { return CheckDeadlines(ctx, pool, getenv, at, nil) },
 		// Python's date.today() is the server's local date (TZ unset: UTC).
-		dsrDue:      func() (int, error) { return RaiseDSRDueAlerts(ctx, pool, at.Local()) },
-		checkIn:     func() (int, error) { return RunCheckInIncompleteAlarm(ctx, pool, getenv, at) },
-		dupCheck:    func() (int, error) { return RunDuplicateGuestCheck(ctx, pool, getenv, at) },
-		watchdog:    func() (WatchdogResult, error) { return RunFilingWatchdog(ctx, pool, lookupEnv, at) },
-		stalled:     func() (int, error) { r, err := RunFilingStalled(ctx, pool, getenv, at); return r.Stalled, err },
-		raiseFailed: func() error { return jobs.RaiseFailed(ctx, pool, "deadlines") },
-		ping:        ping,
-		getenv:      getenv,
+		dsrDue:         func() (int, error) { return RaiseDSRDueAlerts(ctx, pool, at.Local()) },
+		checkIn:        func() (int, error) { return RunCheckInIncompleteAlarm(ctx, pool, getenv, at) },
+		guestReminders: func() (int, error) { return RunGuestReminders(ctx, pool, getenv, at) },
+		dupCheck:       func() (int, error) { return RunDuplicateGuestCheck(ctx, pool, getenv, at) },
+		watchdog:       func() (WatchdogResult, error) { return RunFilingWatchdog(ctx, pool, lookupEnv, at) },
+		stalled:        func() (int, error) { r, err := RunFilingStalled(ctx, pool, getenv, at); return r.Stalled, err },
+		raiseFailed:    func() error { return jobs.RaiseFailed(ctx, pool, "deadlines") },
+		ping:           ping,
+		getenv:         getenv,
 	})
 }
 
@@ -87,6 +90,13 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 			slog.Error("checkin incomplete alarm failed", "error", fmt.Sprintf("%T", err))
 		} else {
 			sum.CheckInAlarms = n
+		}
+	}
+	if s.guestReminders != nil {
+		if n, err := s.guestReminders(); err != nil {
+			slog.Error("guest reminders failed", "error", fmt.Sprintf("%T", err))
+		} else {
+			sum.GuestReminders = n
 		}
 	}
 	if s.dupCheck != nil {
