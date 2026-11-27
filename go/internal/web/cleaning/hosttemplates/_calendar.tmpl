@@ -1,7 +1,7 @@
 {{define "host_calendar"}}{{ if .Props }}
 <div class="cleaning-legend"><span class="cleaning-legend-booking">{{ ct $.Lang "booking" }}</span><span class="cleaning-legend-event">{{ ct $.Lang "title" }}</span></div>
-<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261125-cal-head-bg">
-<section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ .Today }}" data-source="{{ .Source }}" data-cleaning="true" data-readonly="false" data-calendar-date="{{ .Date }}" data-range-from="{{ .From }}" data-range-to="{{ .To }}" data-lang="{{ .Lang }}" aria-labelledby="calendar-title">
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261126-ux-polish">
+<section id="calendar" class="dashboard-calendar{{if .SingleProperty}} cal-single-mode{{end}}" data-calendar data-today="{{ .Today }}" data-source="{{ .Source }}" data-cleaning="true" data-gantt-min="2" data-readonly="false" data-calendar-date="{{ .Date }}" data-range-from="{{ .From }}" data-range-to="{{ .To }}" data-lang="{{ .Lang }}" aria-labelledby="calendar-title">
   <div class="cal-head" data-cal-head>
   <div class="cal-heading">
     <h2 id="calendar-title">{{ ct $.Lang "schedule" }}</h2>
@@ -85,7 +85,7 @@
   </dialog>
   {{ .CalScripts }}
 </section>
-<script src="/static/dashboard-calendar.js?v=20261107-1001" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261126-ux-polish" defer></script>
 {{ else }}
 <p class="cleaning-empty">{{ ct $.Lang "no_properties" }}</p>
 {{ end }}{{end}}

@@ -267,6 +267,10 @@ func TestApartmentUpdateMatchesPython(t *testing.T) {
 	_, auditMark := apartmentUpdateAudit(t, ctx, pool, 0)
 	pages := 0
 	for _, c := range g.Cases {
+		if c.Name == "IBAN-only account kept, no times, rate stays 0" {
+			// Brief 2092 intentionally refuses blank checkin_hour/checkout_hour (covered in checkin_hours_2092_test.go).
+			continue
+		}
 		before := apartmentUpdateRead(t, ctx, pool, g, c.ID)
 		rec := apartmentFormPost(t, mux, fmt.Sprintf("/apartments/%d", c.ID), g.CSRFNonce, c.User, c.Workspace, c.Lang, c.CSRF, c.Form)
 		got := apartmentUpdateRead(t, ctx, pool, g, c.ID)

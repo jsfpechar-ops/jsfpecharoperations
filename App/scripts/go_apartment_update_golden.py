@@ -149,10 +149,10 @@ CASES = [
         "uby_name": "Penzion Karlín", "uby_contact": "", "uby_ws_user": "UBY-WS_MLJNO", "stay_fee_rate_czk": "40",
         "stay_fee_council_account": "", "return_to": "/apartments/201?view=settings&section=reporting"}),
     ("rate from a past day applies from today", 2, 0, "en", True, 201, _full(
-        internal_name="Loft Karlín II", uby_ws_user="UBY-WS_MLJNO", stay_fee_rate_czk="30", stay_fee_rate_from="2020-01-01",
+        internal_name="Loft Karlín II", uby_ws_user="UBY-WS_MLJNO", uby_mark="mljno", stay_fee_rate_czk="30", stay_fee_rate_from="2020-01-01",
         stay_fee_council_account="19-2000145399/0800", account_prefix="", account_number="", account_bank="")),
     ("rate back to the day's rate writes over the same day", 2, 0, "en", True, 201, _full(
-        internal_name="Loft Karlín II", uby_ws_user="UBY-WS_MLJNO", stay_fee_rate_czk="20", stay_fee_rate_from="2026-02-30")),
+        internal_name="Loft Karlín II", uby_ws_user="UBY-WS_MLJNO", uby_mark="mljno", stay_fee_rate_czk="20", stay_fee_rate_from="2026-02-30")),
     ("PIN of five digits", 2, 0, "en", True, 201, _full(internal_name="Renamed?", permalink_pin="12345")),
     ("PIN with a letter", 2, 0, "en", True, 201, _full(permalink_pin="12345a")),
     ("unsafe return_to falls back", 2, 0, "en", True, 202, _full(

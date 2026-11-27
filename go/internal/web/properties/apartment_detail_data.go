@@ -976,17 +976,27 @@ var detailBundledPurposes = []detailPurpose{
 	{"93", "ADS visa (Chinese nationals)"}, {"99", "Other"},
 }
 
-// detailPurposes is purpose_options("en"): the fetched police list when the
-// codelist table holds one (labels from the bundled English list first), else
-// the bundled list.
-func (s *Pages) detailPurposes(ctx context.Context) ([]detailPurpose, error) {
+// detailBundledPurposesCS is validation.PURPOSES localized to Czech.
+var detailBundledPurposesCS = []detailPurpose{
+	{"00", "Zdravotní"}, {"01", "Obchodní"}, {"02", "Kulturní"}, {"03", "Návštěva rodiny nebo přátel"}, {"04", "Pozvání"},
+	{"05", "Oficiální (politický)"}, {"06", "Podnikání"}, {"07", "Sportovní"}, {"10", "Turistika"},
+	{"11", "Studium (stáž, školení)"}, {"12", "Tranzit"}, {"13", "Letištní tranzit"}, {"27", "Zaměstnání"},
+	{"93", "Vízum ADS (občané Číny)"}, {"99", "Jiný"},
+}
+
+// detailPurposes returns localized purpose-of-stay options (Czech when lang == "cs", English otherwise).
+func (s *Pages) detailPurposes(ctx context.Context, lang string) ([]detailPurpose, error) {
 	rows, err := s.pool.Query(ctx, `SELECT code, COALESCE(extra, ''), COALESCE(text_cs, ''), COALESCE(text_en, '') FROM codelist WHERE kind = 'ucely' ORDER BY code`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	list := detailBundledPurposes
+	if lang == "cs" {
+		list = detailBundledPurposesCS
+	}
 	bundled := map[string]string{}
-	for _, p := range detailBundledPurposes {
+	for _, p := range list {
 		bundled[p.Code] = p.Label
 	}
 	var out []detailPurpose
@@ -998,13 +1008,17 @@ func (s *Pages) detailPurposes(ctx context.Context) ([]detailPurpose, error) {
 		if extra != "" {
 			code = extra
 		}
-		out = append(out, detailPurpose{Code: code, Label: firstText(bundled[code], en, cs, code)})
+		label := firstText(bundled[code], en, cs, code)
+		if lang == "cs" {
+			label = firstText(bundled[code], cs, en, code)
+		}
+		out = append(out, detailPurpose{Code: code, Label: label})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	if len(out) == 0 {
-		return detailBundledPurposes, nil
+		return list, nil
 	}
 	return out, nil
 }

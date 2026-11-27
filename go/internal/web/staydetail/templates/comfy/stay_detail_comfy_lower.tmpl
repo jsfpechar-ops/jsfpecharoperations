@@ -1,0 +1,120 @@
+{{define "stay_detail_comfy_lower"}}
+{{- $inactive := or (ne .Reservation.Status "active") (ne .Reservation.ArchivedAt "")}}
+{{- $cell := deadline_cell .Progress .CheckIn}}
+{{- $id := .Reservation.ID}}
+<section class="stay-reports" id="reports">
+  <h2 class="sec">{{t "host.reporting"}}</h2>
+  <div id="police-card" class="card police-card{{if eq .Progress.Status "failed"}} police-failed{{end}}">
+    <b>{{if eq .Progress.Status "failed"}}{{t "hint.failed"}}{{else if .SendControls.SendEnabled}}{{tp "stay.detail.ready_count" .SendControls.PendingCount}}{{else if ne (deref_int .Progress.NotRegistered) 0}}{{tp "host.missing" (deref_int .Progress.NotRegistered)}}{{else}}{{t .SendControls.SendHintKey "filled" .Progress.Filled "expected" (py_int .Progress.Expected)}}{{end}}</b>
+    {{if and (eq .Progress.Status "failed") $.HavelOn}}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{t "nav.ask_havel"}}</a></p>{{end}}
+    {{if and (not $inactive) (ne $cell.State "none")}}
+    <span class="police-deadline-row"><small class="police-deadline">{{t "stay.detail.metric.deadline"}} {{deadline_badge $cell}}</small>{{if .Deadline}}{{help_tip "police-deadline-help" (t "stay.detail.metric.deadline_note" "when" (format_time_iso .Deadline "02.01.2006 15:04"))}}{{end}}</span>
+    {{end}}
+    {{if .ScheduledSendAt}}<span class="police-deadline-row" data-scheduled-send-at><small class="police-deadline">{{t "stay.scheduled_send_at" "when" .ScheduledSendAt}}</small></span>{{end}}
+  {{if and .HandFiling.Candidates (not $inactive)}}
+  <details class="card stay-filing ph-hide" id="file-by-hand">
+    <summary><span class="stay-row-ic" aria-hidden="true">{{icon "check" 18}}</span><span class="stay-row-t"><b>{{t "stay.hand_filing.open"}}</b></span></summary>
+    <p class="ui-sub">{{t "stay.hand_filing.lede"}} <a href="/guide#manual-filing">{{t "guide.reporting.manual_filing_title"}}</a></p>
+    <form method="post" action="/reservations/{{$id}}/filed-by-hand" class="settings-grid">
+      <div class="ui-field">
+        <label for="hand_filed_at">{{t "stay.hand_filing.filed_at"}}</label>
+        <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{.HandFiling.DefaultFiledAt}}" max="{{.HandFiling.DefaultFiledAt}}" required>
+      </div>
+      <div class="ui-field">
+        {{field_label "hand_reference" (t "stay.hand_filing.reference") (t "stay.hand_filing.reference_hint")}}
+        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off" aria-describedby="hand_reference-help">
+      </div>
+      <p class="ui-sub">{{t "stay.hand_filing.covers" "count" .HandFiling.Candidates}}</p>
+      <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{t "stay.hand_filing.confirm"}}</button></div>
+    </form>
+  </details>
+  {{end}}
+  </div>
+  {{if .HandFiling.Count}}
+  <div class="card stay-filing ph-hide" id="filed-by-hand">
+    <p><strong>{{t "stay.hand_filing.done" "when" (format_time_iso .HandFiling.FiledAt "02.01.2006 15:04")}}</strong></p>
+    {{if .HandFiling.Reference}}<p class="ui-sub">{{t "stay.hand_filing.done_reference" "reference" .HandFiling.Reference}}</p>{{end}}
+    {{if .HandFiling.CanUndo}}
+    <form method="post" action="/reservations/{{$id}}/filed-by-hand/undo" class="inline"
+          data-confirm data-confirm-message="{{t "stay.hand_filing.undo_confirm"}}">
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "stay.hand_filing.undo"}}</button>
+      <span class="ui-sub">{{t "stay.hand_filing.undo_until" "when" (format_time_iso .HandFiling.UndoUntil "02.01. 15:04")}}</span>
+    </form>
+    {{end}}
+  </div>
+  {{end}}
+  {{if .Submissions}}
+  <div class="card ph-hide"><div class="panel tight scroll-x">
+    <table class="ui-table ui-table-stack">
+      <thead><tr><th>{{t "stay.detail.reports.when"}}</th><th>{{t "stay.detail.reports.outcome"}}</th><th>{{t "stay.detail.reports.stamp"}}</th><th></th></tr></thead>
+      <tbody>
+      {{range .Submissions}}
+        <tr class="clickable-row" data-href="/submissions/{{.ID}}" tabindex="0" role="link">
+          <td class="ui-cell-first nowrap" data-card="primary">{{datetime_local .CreatedAt}}</td>
+          <td data-card="badge">{{submission_pill .State}}</td>
+          <td class="ui-mono ui-sub" data-card="meta">{{or .PseudoStamp "—"}}</td>
+          <td class="ui-cell-acts row-actions" data-card="actions">{{row_open (printf "/submissions/%d" .ID)}}
+            {{row_menu_begin}}
+              <a class="row-menu-item" href="/submissions/{{.ID}}" role="menuitem">{{t "stay.detail.reports.open"}}</a>
+              {{if .HasReceipt}}
+                <a data-turbo="false" class="row-menu-item" href="/submissions/{{.ID}}/receipt.pdf" role="menuitem">{{t "reports.receipt"}}</a>
+              {{end}}
+            {{row_menu_end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div></div>
+{{end}}
+</section>
+
+{{with .DoorCode}}<section id="door-code"><h2 class="sec">{{t "stay.detail.door_code.title"}}</h2>
+<div class="card stay-door-card">
+  <div class="ic acc" aria-hidden="true">{{icon "key-round" 22}}</div>
+<div>
+  {{if eq .State "issued"}}<div class="code">{{.PIN}}</div><small id="door-code-line">{{.WorksFrom}} – {{.WorksUntil}}</small>
+  {{else}}<p id="door-code-line">{{if eq .State "failed"}}{{t "stay.detail.door_code.failed"}}{{else if eq .State "delayed"}}{{t "stay.detail.door_code.delayed"}}{{else if eq .State "preparing"}}{{t "stay.detail.door_code.preparing"}}{{else}}{{t "stay.detail.door_code.waiting"}}{{end}}</p>{{end}}
+</div>
+</div></section>{{end}}
+<section class="stay-rows-group ph-hide">
+<h2 class="sec">{{t "stays.table.stay"}}</h2>
+<div class="card stay-rows">
+<details class="card stay-settings ph-hide" id="stay-quick-edit">
+  <summary><span class="stay-row-ic" aria-hidden="true">{{icon "pencil" 18}}</span><span class="stay-row-t"><b>{{t "stay.detail.settings.title"}}</b></span></summary>
+  <p class="ui-sub">{{t "stay.detail.settings.lede"}} <a href="/apartments/{{.Reservation.ApartmentID}}?view=settings&amp;section=guests#communication">{{t "stay.detail.settings.guest_links"}}</a>.</p>
+  <h3 class="inline-edit-title">{{t "stay.detail.inline.title"}}</h3>
+  <form method="post" action="/reservations/{{$id}}" class="settings-grid">
+    <div class="ui-field">
+      <label for="quick-summary">{{t "stay.detail.inline.label"}}</label>
+      <input id="quick-summary" type="text" name="summary" value="{{.Reservation.Summary}}" maxlength="160">
+    </div>
+    <div class="ui-field">
+      <label for="quick-guests">{{t "stay.detail.inline.guests"}}</label>
+      <input id="quick-guests" type="number" name="expected_guests_override" value="{{if ne (deref_int .Progress.Expected) 0}}{{deref_int .Progress.Expected}}{{end}}" min="{{max 1 (len .Progress.Guests)}}" max="60">
+    </div>
+    <div class="ui-field">
+      <div class="field-label-row">
+        <label for="guest_email">{{t "stay.detail.settings.email"}} <span class="opt">{{t "stay.detail.settings.host_only"}}</span></label>
+        {{help_tip "guest_email-help" (t "stay.detail.settings.email_hint")}}
+      </div>
+      <input type="email" id="guest_email" name="guest_email" value="{{.Reservation.GuestEmail}}" aria-describedby="guest_email-help">
+    </div>
+    <div class="ui-field">
+      {{field_label "status" (t "stay.detail.settings.state") (t "stay.detail.settings.state_hint")}}
+      <select id="status" name="status" aria-describedby="status-help">
+        <option value="active" {{if eq .Reservation.Status "active"}}selected{{end}}>{{t "stay.detail.settings.state.active"}}</option>
+        <option value="cancelled" {{if eq .Reservation.Status "cancelled"}}selected{{end}}>{{t "stay.detail.settings.state.cancelled"}}</option>
+        <option value="ignored" {{if eq .Reservation.Status "ignored"}}selected{{end}}>{{t "stay.detail.settings.state.ignored"}}</option>
+      </select>
+    </div>
+    <div class="ui-field">
+      <label for="host_note">{{t "stay.detail.settings.note"}}</label>
+      <textarea id="host_note" name="host_note">{{.Reservation.HostNote}}</textarea>
+    </div>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{t "common.save"}}</button></div>
+  </form>
+</details>
+</div>
+</section>
+{{end}}

@@ -199,7 +199,8 @@ func TestRemindersHostCheckinAlertRaisedThenResolved(t *testing.T) {
 	ctx := context.Background()
 	key := "guest_incomplete_checkin:20"
 
-	sum, err := SweepReminders(ctx, pool, remindNow)
+	checkInTime := time.Date(2026, 11, 15, 14, 5, 0, 0, time.UTC) // 15:05 Prague (default checkin_hour 15)
+	sum, err := SweepReminders(ctx, pool, checkInTime)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +208,7 @@ func TestRemindersHostCheckinAlertRaisedThenResolved(t *testing.T) {
 		t.Fatalf("host summary: %v", sum)
 	}
 	out := remindOutbox(t, pool)
-	if len(out) != 1 || !strings.HasPrefix(out[0], "reminder_host:20:2026-11-15 host@example.test ") {
+	if len(out) != 1 || !strings.HasPrefix(out[0], "reminder_host:checkin:20:2026-11-15 host@example.test ") {
 		t.Fatalf("host mail: %v", out)
 	}
 	if open, _ := remindAlertOpen(t, pool, key); open != 1 {
@@ -218,7 +219,7 @@ func TestRemindersHostCheckinAlertRaisedThenResolved(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE reservation SET date_from = '2026-11-14', date_to = '2026-11-14' WHERE id = 20`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := SweepReminders(ctx, pool, remindNow); err != nil {
+	if _, err := SweepReminders(ctx, pool, checkInTime); err != nil {
 		t.Fatal(err)
 	}
 	if open, resolved := remindAlertOpen(t, pool, key); open != 0 || resolved != 1 {
@@ -240,11 +241,24 @@ func TestRemindersHostEarlyVariantSkipsAlert(t *testing.T) {
 		t.Fatalf("early summary: %v", sum)
 	}
 	out := remindOutbox(t, pool)
-	if len(out) != 1 || !strings.HasPrefix(out[0], "reminder_host:30:2026-11-16 host@example.test ") {
+	if len(out) != 1 || !strings.HasPrefix(out[0], "reminder_host:day_before:30:2026-11-16 host@example.test ") {
 		t.Fatalf("early host mail: %v", out)
 	}
 	if open, _ := remindAlertOpen(t, pool, "guest_incomplete_checkin:30"); open != 0 {
 		t.Fatal("early variant must not raise the check-in alert")
+	}
+
+	// On check-in day at checkin_hour (15:00 Prague), a SECOND email with distinct checkin key queues.
+	nextDayCheckIn := time.Date(2026, 11, 16, 14, 5, 0, 0, time.UTC) // 15:05 Prague
+	sum2, err := SweepReminders(context.Background(), pool, nextDayCheckIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum2["host"] != 1 {
+		t.Fatalf("check-in summary after day-before: %v", sum2)
+	}
+	if out2 := remindOutbox(t, pool); len(out2) != 2 {
+		t.Fatalf("expected 2 distinct host emails (day_before + checkin), got %d: %v", len(out2), out2)
 	}
 }
 
@@ -344,6 +358,8 @@ func TestRemindersPayloadMatchesBuilders(t *testing.T) {
 		Host:         &mailnotify.Host{Name: "Example Host s.r.o.", Email: "host@example.test"},
 		Filled:       0,
 		Expected:     ptr(2),
+		Stage:        mailnotify.GuestReminderDayBefore,
+		CheckInHour:  15,
 	})
 	remindAssertContent(t, "guest", guest.subject, guest.payload, wantGuest)
 	if guest.payload["lang"] != "en" || guest.payload["reply_to"] != "host@example.test" {
@@ -367,5 +383,39 @@ func TestRemindersPayloadMatchesBuilders(t *testing.T) {
 	}
 	if _, has := host.payload["reply_to"]; has {
 		t.Errorf("host payload must not carry reply_to: %v", host.payload)
+	}
+}
+
+func TestRemindersGuestCheckInDayQueuedBeforeHostAlarm(t *testing.T) {
+	t.Setenv("UBYHOST_MAIL_BACKEND", "console")
+	pool := remindTestPool(t)
+	remindFixture(t, pool)
+	remindStay(t, pool, 15, "2026-11-16", "ical", claimStateClaimed)
+	ctx := context.Background()
+
+	// Day before at 10:00 Prague: queues day-before reminder.
+	first, err := SweepReminders(ctx, pool, remindNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first["guest"] != 1 {
+		t.Fatalf("day-before guest summary: %v", first)
+	}
+
+	// Check-in day at 12:05 Prague (3h before default 15:00 check-in): queues final check-in-day reminder, no host alarm yet.
+	checkInNoon := time.Date(2026, 11, 16, 11, 5, 0, 0, time.UTC) // 12:05 Prague (CET)
+	second, err := SweepReminders(ctx, pool, checkInNoon)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second["guest"] != 1 || second["host"] != 0 {
+		t.Fatalf("check-in-day guest summary: %v", second)
+	}
+	out := remindOutbox(t, pool)
+	if len(out) != 2 {
+		t.Fatalf("want 2 guest outbox rows (day_before + checkin), got %d: %v", len(out), out)
+	}
+	if !strings.HasPrefix(out[1], "reminder_guest:checkin:15:2026-11-16 guest@example.test ") {
+		t.Fatalf("unexpected checkin key: %s", out[1])
 	}
 }

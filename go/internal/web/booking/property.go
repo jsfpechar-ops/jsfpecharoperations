@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 )
 
 const scopeProperty = "property_page"
@@ -118,7 +119,7 @@ func (d Deps) RenderPage(w http.ResponseWriter, r *http.Request, set *template.T
 		return
 	}
 	if pg == nil {
-		http.NotFound(w, r)
+		writePropertyNotFound(w, r)
 		return
 	}
 	lang := pageLang(r)
@@ -178,9 +179,17 @@ func PropertyPageHandler(pool *pgxpool.Pool, getenv func(string) string, now fun
 		case "live":
 			d.RenderPage(w, r, set, slug, res.ApartmentID, queryParam(r), "", FormValues{}, http.StatusOK, nil)
 		default:
-			http.NotFound(w, r)
+			writePropertyNotFound(w, r)
 		}
 	}
+}
+
+func writePropertyNotFound(w http.ResponseWriter, r *http.Request) {
+	if hostweb.WantsHTML(r) {
+		hostweb.NotFoundHTML(w, r, http.StatusNotFound)
+		return
+	}
+	http.NotFound(w, r)
 }
 
 // BookErrorRedirect is _book_error: 303 back to the page with ?book=<kind>.
@@ -220,7 +229,7 @@ func BookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			return
 		}
 		if !ok {
-			http.NotFound(w, r)
+			writePropertyNotFound(w, r)
 			return
 		}
 		form := readForm(w, r)
@@ -244,7 +253,7 @@ func BookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 				serverError(w, "book page", err)
 				return
 			}
-			http.NotFound(w, r)
+			writePropertyNotFound(w, r)
 			return
 		}
 		// Python renders this page with lang "en" and a page dict without

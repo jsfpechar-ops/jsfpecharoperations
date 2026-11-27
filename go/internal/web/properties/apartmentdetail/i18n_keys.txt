@@ -31,6 +31,7 @@ apartment.form.copy_from.title
 apartment.form.door_code.checkin
 apartment.form.door_code.checkout
 apartment.form.door_code.choose
+apartment.form.times_fallback_hint
 apartment.form.entity.hint
 apartment.form.entity.label
 apartment.form.feed.last_sync
@@ -80,6 +81,7 @@ apartment.form.ubyport.idub_hint
 apartment.form.ubyport.idub_label
 apartment.form.ubyport.login_hint
 apartment.form.ubyport.mark_hint
+apartment.form.ubyport.mark_mismatch
 apartment.form.ubyport.mark_label
 apartment.form.ubyport.name_example
 apartment.form.ubyport.name_hint
@@ -173,7 +175,15 @@ property_page.sec.lock.title
 property_page.sec.messages.title
 property_page.sec.police.title
 property_page.strip.aria
+property_page.strip.business_missing
+property_page.strip.calendar_error
+property_page.strip.calendar_none
+property_page.strip.door_offline
+property_page.strip.door_times
+property_page.strip.guest_unused
 property_page.strip.operator_missing
+property_page.strip.police_login
+property_page.strip.police_missing
 setup.label.facility
 setup.label.idub
 setup.label.login
@@ -184,7 +194,6 @@ setup.ready.text
 setup.ready.text_no_pin
 setup.ready.title
 setup.sec.done
-setup.sec.minutes
 setup.sec.optional
 setup.sec.police_untested
 setup.sec.recommended
@@ -300,6 +309,7 @@ apartment.form.operator.required
 flash.error.door_code_hours
 flash.error.no_such_controller
 flash.error.times_required
+flash.properties.timing_hours
 flash.stay_fees.link_invalid
 flash.stay_fees.operator_account_required
 property_page.save_failed

@@ -1,0 +1,107 @@
+{{define "stay_detail_comfy_guests"}}
+{{- $id := .Reservation.ID}}
+<section class="stay-guests" id="guests">
+<div class="stay-guests-h"><h2 class="sec">{{t "stay.detail.guests.title"}}<span class="sub ph-hide">{{if .Progress.Expected}}{{.Progress.Filled}} / {{deref_int .Progress.Expected}}{{else if .Progress.Guests}}{{len .Progress.Guests}}{{else}}–{{end}}</span></h2>
+  <div class="stay-guests-actions ph-hide"><a class="btn ghost" href="#stay-quick-edit" data-open-details>{{t "host.edit_count"}}</a><a class="btn ghost" href="/reservations/{{$id}}/guests/new">+ {{t "stay.detail.cta.add_guest"}}</a></div>
+</div>
+{{with .LinkWindow}}<p class="sub link-window-line ph-hide" data-link-window="{{.State}}"><span class="link-window{{if eq .State "from"}} is-later{{end}}">{{if eq .State "now"}}{{t "workflow.link.now"}}{{else}}{{t "workflow.link.from" "date" (date_cz .Opens)}}{{end}}</span>{{if eq .State "from"}}{{help_tip "link-window-help" (t "workflow.link.why")}} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{t "workflow.link.copy_own"}}" data-copied-label="{{t "stay.detail.link_copied"}}" data-copy-own-link>{{t "workflow.link.copy_own"}}</button>{{end}}</p>{{end}}
+
+{{if and .StayClaim.State (or (ne .StayClaim.State "unclaimed") .StayClaim.GuestAccessLockedAt)}}
+<div class="card stay-claim-line ph-hide" data-stay-claim>
+  <div class="stay-claim-label">{{t "stay.claim.title"}}{{if ne .StayClaim.State "unclaimed"}}{{help_tip "release-claim-help" (t "stay.claim.release_help")}}{{end}}</div>
+  <p>
+    {{if .StayClaim.GuestAccessLockedAt}}
+      {{t "stay.claim.locked"}}
+    {{else if eq .StayClaim.State "claimed"}}
+      {{t "stay.claim.claimed" "email" .StayClaim.EmailMasked}}
+    {{else if eq .StayClaim.State "provisional"}}
+      {{t "stay.claim.provisional" "email" .StayClaim.EmailMasked}}
+    {{else}}
+      {{t "stay.claim.unclaimed"}}
+    {{end}}
+  </p>
+  {{if ne .StayClaim.State "unclaimed"}}
+  <div class="stay-command-actions">
+    <form method="post" action="/reservations/{{$id}}/release-claim" class="inline"
+          data-confirm data-confirm-message="{{t "stay.claim.release_confirm"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button class="btn ghost" type="submit" data-release-claim>{{t "stay.claim.release"}}</button>
+    </form>
+  </div>
+  {{end}}
+</div>
+{{end}}
+{{if or .GuestRows (ne (deref_int .Progress.NotRegistered) 0)}}
+<div class="card guest-table">
+<table>
+  <thead><tr><th>{{t "stays.table.guest"}}</th><th>{{t "stay.detail.guests.document"}}</th><th>{{t "stays.table.reporting"}}</th><th></th></tr></thead>
+  <tbody>
+  {{range .GuestRows}}
+    <tr>
+      <td>
+        <b><a class="guest-name-link" href="/guests/{{.Guest.ID}}?return_to=/reservations/{{$id}}">{{.Guest.Row.FirstName}} {{or .Guest.Row.Surname "—"}}</a></b>{{if .Guest.IsLead}} <span class="pill">{{t "stay.detail.guests.lead"}}</span>{{end}}
+        {{template "staydetail.id_line" (guest_line . $.Access)}}
+        {{if .Guest.Row.Note}}<small>{{t "stay.detail.guests.note" "text" .Guest.Row.Note}}</small>{{end}}
+        {{if .Guest.EnteredBy}}<small>{{t "stay.detail.guests.entered_by"}}: <span>{{entered_by_label lang .Guest.EnteredBy}}</span></small>{{end}}
+        {{if .Issues}}
+          <details class="guest-issues" data-tone="{{guest_issues_tone .Issues}}">
+            <summary class="guest-issues-summary"><span class="guest-issues-dot" aria-hidden="true"></span><span>{{missing_details_summary lang .Issues}}</span>{{icon "chevron-down" 14}}</summary>
+            <ul class="guest-issues-list">
+              {{range .Issues}}<li class="{{if eq .Severity "error"}}is-err{{else}}is-warn{{end}}">{{validation_message .Message lang}}</li>{{end}}
+            </ul>
+          </details>
+        {{end}}
+        {{if .Guest.LastErrors}}
+          <div class="guest-issue-one" data-tone="bad"><span class="guest-issues-dot" aria-hidden="true"></span><span>{{if eq .Guest.SubmitState "blocked"}}{{t "stay.detail.guest_blocked" "reason" .Guest.LastErrors}}{{else if eq .Guest.SubmitState "error"}}{{t "stay.detail.guest_refused" "reason" .Guest.LastErrors}}{{else}}{{.Guest.LastErrors}}{{end}}</span></div>
+        {{end}}
+      </td>
+      <td class="guest-doc">{{if .Guest.DocType}}{{t (printf "guest.doc_type.%s" .Guest.DocType)}}{{else}}—{{end}}</td>
+      <td>{{template "staydetail.guest_state" .}}</td>
+      <td>
+        {{row_menu_begin}}
+          <a class="row-menu-item" href="/guests/{{.Guest.ID}}?return_to=/reservations/{{$id}}" role="menuitem">{{t "stay.detail.guests.edit"}}</a>
+          <a data-turbo="false" class="row-menu-item" href="/guests/{{.Guest.ID}}/form.pdf" role="menuitem">{{t "stay.detail.guests.pdf"}}</a>
+          <form method="post" action="/guests/{{.Guest.ID}}/archive" class="row-menu-form"
+                data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">
+            <input type="hidden" name="return_to" value="/reservations/{{$id}}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
+          </form>
+        {{row_menu_end}}
+      </td>
+    </tr>
+  {{end}}
+  {{range seq_range (add (len .Progress.Guests) 1) (add (deref_int .Progress.Expected) 1)}}
+    <tr class="placeholder">
+      <td><b>{{t "stay.detail.guests.placeholder" "n" .}}</b></td>
+      <td>—</td>
+      <td></td>
+      <td><a href="/reservations/{{$id}}/guests/new">{{t "stay.detail.guests.add_by_hand"}}</a></td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+<div class="list guests guest-list">
+  {{range .GuestRows}}
+    {{- $ok := or (eq .Guest.SubmitState "sent") (eq .Guest.SubmitState "not_required") (and .Complete (ne .Guest.SubmitState "error") (ne .Guest.SubmitState "blocked"))}}
+    <a class="row" href="/guests/{{.Guest.ID}}?return_to=/reservations/{{$id}}">
+      <div class="ic {{if $ok}}ok{{else}}warn{{end}}">{{if $ok}}{{icon "check" 22}}{{else}}?{{end}}</div>
+      <div class="t"><b>{{.Guest.Row.FirstName}} {{or .Guest.Row.Surname "—"}}</b>{{template "staydetail.id_line" (guest_line . $.Access)}}<small>{{if .Guest.DocType}}{{t (printf "guest.doc_type.%s" .Guest.DocType)}} · {{end}}{{template "staydetail.guest_state_text" .}}</small></div>
+    </a>
+  {{end}}
+  {{range seq_range (add (len .Progress.Guests) 1) (add (deref_int .Progress.Expected) 1)}}
+    <a class="row" href="/reservations/{{$id}}/guests/new">
+      <div class="ic warn">?</div>
+      <div class="t"><b>{{t "stay.detail.guests.placeholder" "n" .}}</b><small>{{t "stay.detail.guests.add_by_hand"}}</small></div>
+    </a>
+  {{end}}
+</div>
+{{else}}
+<div class="card">
+  <p>{{t "stay.detail.guests.empty"}}</p>
+  <p class="sub">{{t "stay.detail.guests.empty_hint"}}</p>
+  <a class="btn" href="/reservations/{{$id}}/guests/new">{{t "stay.detail.cta.add_guest"}}</a>
+</div>
+{{end}}
+</section>
+{{end}}

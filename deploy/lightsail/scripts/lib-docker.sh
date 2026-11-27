@@ -53,12 +53,30 @@ ubyhost_app_healthz_ok() {
   fi
 }
 
-# Print the compose service of the running app container: the Go slot that is
-# up (ubyhost-go = slot A, ubyhost-go-b = slot B), else the Python ubyhost
-# service on a split stack. Exit 1 when none is running.
+# Live Go blue/green slot service from .go-slot (defaults to slot A = ubyhost-go).
+ubyhost_live_go_service() {
+  local s
+  s="$(cat .go-slot 2>/dev/null || echo a)"
+  if [ "${s}" = "b" ]; then
+    printf '%s\n' ubyhost-go-b
+  else
+    printf '%s\n' ubyhost-go
+  fi
+}
+
+# Print the compose service of the running app container: prefer the live Go
+# slot from .go-slot when both slots are up (e.g. during blue/green overlap),
+# then fall back to the other Go slot, else the Python ubyhost service.
+# Exit 1 when none is running.
 ubyhost_app_service() {
-  local svc
-  for svc in ubyhost-go ubyhost-go-b; do
+  local live other svc
+  live="$(ubyhost_live_go_service)"
+  if [ "${live}" = ubyhost-go-b ]; then
+    other=ubyhost-go
+  else
+    other=ubyhost-go-b
+  fi
+  for svc in "${live}" "${other}"; do
     if docker compose --profile go ps -q --status running "${svc}" 2>/dev/null | grep . >/dev/null; then
       printf '%s\n' "${svc}"
       return 0

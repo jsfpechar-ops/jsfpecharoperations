@@ -34,3 +34,17 @@ body form.list-filter.list-filter--compact .list-filter-more-toggle{width:auto;b
 body form.list-filter.list-filter--compact .list-filter-more-toggle::after{content:none}
 /* 1052: SVG chevrons from the icon macro (shared month picker; this file loads on both shells) */
 .month-chev,.month-trigger-chev{flex:0 0 auto;display:block}
+/* 2093: check-in-anchored automation choice cards, tooltip stacking, and mandatory check-in/out markers */
+body.v2 .ui-choice-card:has(.help-tip:is(.is-open,:focus-within)),.ui-choice-card:has(.help-tip:is(.is-open,:focus-within)){position:relative;z-index:80}
+body.v2 .ui-choice-card .help-tip:is(.is-open,:focus-within),.help-tip:is(.is-open,:focus-within){z-index:80}
+body.v2 .property-section>.ui-choice-cards{grid-column:1/-1}
+body.v2 .property-settings-form #automation_mode.ui-choice-cards{display:flex;flex-direction:column;gap:12px;padding-inline:0;margin:0 0 12px}
+body.v2 .property-settings-form .ui-choice-card{position:relative;display:flex;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s,#fff);cursor:pointer;box-sizing:border-box}
+body.v2 .property-settings-form .ui-choice-card:has(input:checked){border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+body.v2 .property-settings-form .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0;flex:0 1 auto;min-width:0;cursor:pointer}
+body.v2 .property-settings-form .ui-choice-card-label>strong{font-weight:600;line-height:1.35}
+body.v2 .property-settings-form .ui-choice-card input[type="radio"]{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:var(--acc)}
+body.v2 .property-settings-form .ui-choice-card-extra{flex:1 1 100%;margin-top:8px;padding-left:30px;box-sizing:border-box}
+body.v2 .property-settings-form .ui-choice-card-extra input{max-width:280px}
+body.v2 .property-settings-form .ui-choice-card>.help-tip .help-tip-btn{margin:0}
+body.v2 .property-settings-form label[for="checkin_hour"]::after,body.v2 .property-settings-form label[for="checkout_hour"]::after{content:" *";color:var(--err,#b91c1c);font-weight:700}

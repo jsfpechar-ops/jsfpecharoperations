@@ -253,6 +253,9 @@ func TestBookingWebhookMatchesPython(t *testing.T) {
 	stripe, srv := newFakeStripe(t)
 	now := func() time.Time { return testNow }
 	bw := NewBookingWebhook(pool, bookingEnv(g, nil), now)
+	// booking_webhook_golden.py stubs booking_invoice.ensure to a no-op;
+	// TestBookingWebhookIssuesInvoice tests the live invoice path.
+	bw.EnsureInvoice = nil
 	bw.Stripe.APIBase = srv.URL
 	for i, raw := range g.Events {
 		var ev stripeEvent

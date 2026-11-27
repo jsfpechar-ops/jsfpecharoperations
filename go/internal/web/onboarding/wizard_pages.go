@@ -24,22 +24,26 @@ func (v *wizardView) FacilityHelp() template.HTML {
 		`</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>`)
 }
 
-// AutoMode is auto_mode of police.html: the posted or stored mode, manual
+// AutoMode is auto_mode of police.html: the posted or stored mode, scheduled
 // when it is none of the three.
 func (v *wizardView) AutoMode() string {
 	switch v.Values.AutomationMode {
 	case "manual", "scheduled", "immediate":
 		return v.Values.AutomationMode
 	}
-	return "manual"
+	return "scheduled"
 }
 
 // HoursField is the caller block of the scheduled choice card.
 func (v *wizardView) HoursField() template.HTML {
+	val := v.Values.SubmitAfterHours
+	if val == "" {
+		val = "24"
+	}
 	return template.HTML(`<div class="field inline-hours"><label for="submit_after_hours">` +
 		html.EscapeString(wizardText.T(v.Lang, "automation.hours", nil)) +
-		`</label><input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="48" value="` +
-		html.EscapeString(v.Values.SubmitAfterHours) + `"></div>`)
+		`</label><input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="24" value="` +
+		html.EscapeString(val) + `"></div>`)
 }
 
 // WaitHelpKey is the wait note's key; it reads the stored mode, not the draft.

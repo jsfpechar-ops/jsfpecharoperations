@@ -29,14 +29,14 @@ Append-only.
 - 2026-11-09 [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [filing] File by deadline cap (deadline - 6 h); no extra grace past cap; co-guests file while another form invalid (reverses reporting.py:1093) | owner, 1070
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
-- 2026-11-10 [guest] Under-15s skip the signature; an adult on the booking signs, ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult is filed "no signature required" (owner).
-- 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with stay fee: new fee, "new bill e-mailed", confirm. Lead: "Check your changes". Host digest: field names only, stay link; changes only. Small Go change OK. Early door-code risk accepted (owner).
-- 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
-- 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
-- 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
+- 2026-11-10 [guest] Under-15s skip signature; adult signs with role (parent/guardian or responsible adult); solo child filed "no signature required" | owner
+- 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" | owner
+- 2026-11-10 [head-count] Lower count + stay fee: new fee, e-mail, confirm; host digest = field names + stay link; early door-code risk accepted | owner
+- 2026-11-10 [workflow] Plan: plans/head-count-change.md (off-repo); Fable reviews each complete plan before build | owner
+- 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (reverses 1097, 1085) | owner
+- 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo | owner | 1092
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
-- 2026-11-20 [billing] zero-amount invoices (100% discount, 0 apartments) are never dunned and never mark the account overdue; the daily run settles accounts whose overdue invoices are all zero | owner | 1867
+- 2026-11-20 [billing] Zero-amount invoices never dunned/overdue; daily run settles all-zero overdue accounts | owner | 1867
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator tiers A/B/C; Haiku executes; parallel threads | owner | [workflow](workflow.md#roles-and-models)
 - 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
@@ -72,3 +72,5 @@ Append-only.
 - 2026-11-22 [product] 2029 `UBYHOST_PAYMENTS_RETIRED`; D1-D4 in brief; no delete (A6 later) | owner
 - 2026-11-24 [product] Go = Python (Option 1); deploy after `parity_gate.sh` PASS; autopurge off week 1. 2040–2085 | owner
 - 2026-11-25 [workflow] Gemini 4 Neon briefs + medium executor for 2072–2076, 2085; closed superseded #1310, #1260 | owner
+- 2026-11-26 [ux] Comfy Go refresh: 4-step strip, phone prop cal index + per-prop rails, calm alerts (2087–2090) | owner
+- 2026-11-27 [ux] Stay journey upgraded to Option B 5-step funnel (Email SES, Link opened, Form+domovní kniha, TTLock-only Code, Police with calm-blue scheduled + manual-action overrides; zero DB migration) | owner | 2097

@@ -22,8 +22,10 @@ var errStayNotFound = errors.New("doorwire: reservation not found")
 // errUnreadableGuest is returned where reservation_progress would raise DecryptionError.
 var errUnreadableGuest = errors.New("doorwire: a guest field of the stay will not decrypt")
 
-// LiveBilling implements doorcodes.Billing from the database. It is the live counterpart of
-// the placeholder Billing in services.go, which stays as it is:
+// errNilPool is returned when a DB-backed service is invoked without a pool.
+var errNilPool = errors.New("doorwire: database pool is nil")
+
+// LiveBilling implements doorcodes.Billing from the database (also aliased as Billing):
 //   - ReservationProgress is reporting.reservation_progress, through calendar.AlertProgresses.
 //   - CompletionFee is claim._completion_fee, through stayfee.LoadCompletionFee.
 type LiveBilling struct {
@@ -77,6 +79,9 @@ func (b LiveBilling) loadAlertStay(ctx context.Context, reservationID int64) (ca
 // ReservationProgress is reporting.reservation_progress: filled and expected (nil when the
 // expected count is unknown) for the stay.
 func (b LiveBilling) ReservationProgress(ctx context.Context, reservationID int64) (int, *int, error) {
+	if b.Pool == nil {
+		return 0, nil, errNilPool
+	}
 	stay, found, err := b.loadAlertStay(ctx, reservationID)
 	if err != nil {
 		return 0, nil, err
@@ -101,6 +106,9 @@ func (b LiveBilling) ReservationProgress(ctx context.Context, reservationID int6
 // completionFee is claim._completion_fee as the typed stayfee value; nil when the guest pays
 // no fee here. Any error is returned, and the caller drops the fee block.
 func (b LiveBilling) completionFee(ctx context.Context, apartmentID, reservationID int64) (*stayfee.CompletionFee, error) {
+	if b.Pool == nil {
+		return nil, errNilPool
+	}
 	ap, err := stayfee.LoadApartment(ctx, b.Pool, apartmentID)
 	if err != nil || ap == nil {
 		return nil, err

@@ -74,12 +74,12 @@ func SubmitCompletedStay(
 		return false, err
 	}
 
-	var status, completedAt string
+	var status, completedAt, dateFrom string
 	var archived bool
 	err = pool.QueryRow(ctx,
-		`SELECT COALESCE(status, ''), archived_at IS NOT NULL, COALESCE(registration_completed_at, '')
+		`SELECT COALESCE(status, ''), archived_at IS NOT NULL, COALESCE(registration_completed_at, ''), COALESCE(date_from, '')
 		   FROM reservation WHERE id = $1 AND apartment_id = $2`,
-		reservationID, apartmentID).Scan(&status, &archived, &completedAt)
+		reservationID, apartmentID).Scan(&status, &archived, &completedAt, &dateFrom)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -91,17 +91,27 @@ func SubmitCompletedStay(
 	}
 
 	rows, err := pool.Query(ctx,
-		`SELECT id FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY id`,
+		`SELECT id, COALESCE(stay_from, ''), COALESCE(NULLIF(filled_at,''), NULLIF(updated_at,''), NULLIF(created_at,''), '')
+		   FROM guest WHERE reservation_id = $1 AND archived_at IS NULL ORDER BY id`,
 		reservationID)
 	if err != nil {
 		return false, err
 	}
+	nowTime := now()
 	var guestIDs []int64
 	for rows.Next() {
 		var id int64
-		if err := rows.Scan(&id); err != nil {
+		var stayFrom, submittedRef string
+		if err := rows.Scan(&id, &stayFrom, &submittedRef); err != nil {
 			rows.Close()
 			return false, err
+		}
+		if submittedRef == "" {
+			submittedRef = completedAt
+		}
+		anchor := guestDeadlineAnchor(stayFrom, dateFrom)
+		if !DueForAutomaticSend("immediate", apt.SubmitAfterHours, apt.CheckinHour, submittedRef, anchor, nowTime) {
+			continue
 		}
 		guestIDs = append(guestIDs, id)
 	}
@@ -110,7 +120,7 @@ func SubmitCompletedStay(
 		return false, err
 	}
 	// Never pass an empty OnlyGuestIDs to SubmitForApartment: LoadGuests treats
-	// an empty slice as apartment-wide scope.
+	// an empty slice as apartment-wide scope. Also skips pre-check-in stays.
 	if len(guestIDs) == 0 {
 		return false, nil
 	}
@@ -160,10 +170,10 @@ func runImmediateStaySubmit(
 	if opts != nil && opts.NewSender != nil {
 		d.NewSender = opts.NewSender
 	}
-	yes := true
+	no := false
 	collectOpts := CollectOptions{
 		OnlyGuestIDs:   guestIDs,
-		IgnoreSchedule: &yes,
+		IgnoreSchedule: &no,
 		Now:            now,
 	}
 	submitFn := SubmitForApartment

@@ -17,6 +17,7 @@ type progGuest struct {
 	submitState        string
 	manualFiledAt      string
 	submittedAt        string
+	submittedRef       string
 	identityVerifiedAt string
 	firstName, surname string
 	isLead             bool
@@ -52,7 +53,9 @@ func loadProgGuests(ctx context.Context, pool *pgxpool.Pool, ids []int64, getenv
 	fields := &guestFields{getenv: getenv}
 	rows, err := pool.Query(ctx,
 		`SELECT g.id, g.reservation_id, COALESCE(g.nationality,''), COALESCE(g.submit_state,''),
-		COALESCE(g.manual_filed_at,''), COALESCE(g.submitted_at,''), COALESCE(g.identity_verified_at,''),
+		COALESCE(g.manual_filed_at,''), COALESCE(g.submitted_at,''),
+		COALESCE(NULLIF(g.filled_at,''), NULLIF(g.updated_at,''), NULLIF(g.created_at,''), ''),
+		COALESCE(g.identity_verified_at,''),
 		COALESCE(g.stay_from,''), COALESCE(g.stay_to,''),
 		COALESCE(g.surname,''), COALESCE(g.first_name,''), COALESCE(g.is_lead,0) != 0,
 		COALESCE(g.res_country,''), COALESCE(g.purpose,''), COALESCE(g.note,''),
@@ -75,7 +78,7 @@ func loadProgGuests(ctx context.Context, pool *pgxpool.Pool, ids []int64, getenv
 		var stayFrom, stayTo, resCountry, purpose, note string
 		var docP, docE, visaP, visaE, birthP, birthE, streetP, streetE, cityP, cityE, sigP, sigE string
 		if err := rows.Scan(&g.id, &resID, &g.nationality, &g.submitState, &g.manualFiledAt,
-			&g.submittedAt, &g.identityVerifiedAt, &stayFrom, &stayTo,
+			&g.submittedAt, &g.submittedRef, &g.identityVerifiedAt, &stayFrom, &stayTo,
 			&g.surname, &g.firstName, &g.isLead,
 			&resCountry, &purpose, &note,
 			&docP, &docE, &visaP, &visaE, &birthP, &birthE, &streetP, &streetE, &cityP, &cityE,

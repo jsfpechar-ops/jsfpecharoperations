@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -58,7 +59,13 @@ func jobHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				Resolver:     net.DefaultResolver,
 				AllowPrivate: ical.AllowPrivate(os.Getenv),
 			})
+			if err == nil && totals.Feeds > 0 && totals.Errors == totals.Feeds {
+				err = fmt.Errorf("ical sync: all %d active feeds failed", totals.Feeds)
+			}
 			if err == nil {
+				if totals.Errors > 0 {
+					slog.Warn("ical_sync_partial_errors", "feeds", totals.Feeds, "errors", totals.Errors)
+				}
 				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_ICAL_URL"), "ical")
 			}
 			return totals.Feeds, err

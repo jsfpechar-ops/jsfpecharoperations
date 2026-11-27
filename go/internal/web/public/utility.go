@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	pwaIconKey    = "20261021-0203"
+	pwaIconKey    = "20261125-logo"
 	privateCache  = "no-store, private"
 	manifestCache = "public, max-age=86400"
 	swCache       = "no-cache"

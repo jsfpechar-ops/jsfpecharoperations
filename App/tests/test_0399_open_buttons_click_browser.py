@@ -62,7 +62,15 @@ def _click_open(page, found):
     start = page.url
     target = urljoin(start, found["href"])
     # a real pointer click: a covering overlay that takes the click elsewhere must still land on the same href
-    page.locator("a.row-open, a.host-property-card-open, a.card.prop, tr.clickable-row a.row-primary-link, a.stay-identity-link, .stays-phone a.card.stay").nth(found["index"]).click(force=True)
+    btn = page.locator("a.row-open, a.host-property-card-open, a.card.prop, tr.clickable-row a.row-primary-link, a.stay-identity-link, .stays-phone a.card.stay").nth(found["index"])
+    btn.click(force=True)
+    # On desktop Stays, clicking a stay identity link opens the slide-over Stay detail drawer first;
+    # its Open full page button navigates to the exact same target href.
+    drawer = page.locator("#stays-drawer")
+    if drawer.count() and page.evaluate("window.innerWidth >= 1024") and "/reservations/" in target:
+        drawer.wait_for(state="visible", timeout=10000)
+        page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=10000)
+        drawer.locator("a.stays-drawer-icon-btn").click()
     page.wait_for_url(lambda url: url == target, timeout=10000)
     assert page.url == target, (start, target)
     assert page.url != start, (start, target)

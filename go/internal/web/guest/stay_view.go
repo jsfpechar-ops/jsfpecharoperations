@@ -31,6 +31,9 @@ type stayView struct {
 	Expected         int
 	Filled           int
 	HasRemaining     bool
+	Confirmed        bool
+	NeedsConfirm     bool
+	ConfirmURL       string
 	FeePanel         *feePanel
 	DoorCode         *doorCodeCard
 	Remaining        int
@@ -203,6 +206,7 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 		LangQ:            langQ,
 		PartyURL:         base + "/party" + langQ,
 		AnotherURL:       base + "/another" + langQ,
+		ConfirmURL:       base + "/confirm-registration" + langQ,
 		NewURL:           base + "/new" + langQ,
 		People:           people,
 	}
@@ -211,6 +215,7 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 	view.JustRemoved = q.Get("removed") == "1"
 	view.JustSaved = q.Get("saved") == "1"
 	anySent := false
+	allSent := len(people) > 0
 	for _, p := range people {
 		if p.Mine {
 			view.Mine = append(view.Mine, p)
@@ -218,9 +223,12 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 		} else {
 			view.Others = append(view.Others, p)
 		}
+		if !p.Sent {
+			allSent = false
+		}
 	}
 	view.JustReported = view.JustSaved && anySent
-	view.DoorCode = doorCodeCardFrom(door)
+	view.Confirmed = stay.registrationCompletedAt != "" || allSent
 	if exp := headcount.Expected(stay.override, stay.declared, stay.leadReduced); exp != nil {
 		view.HasExpected = true
 		view.Expected = int(*exp)
@@ -231,7 +239,9 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 			view.Percent = (200*filled + view.Expected) / (2 * view.Expected)
 		}
 	}
-	if view.HasRemaining && view.Remaining <= 0 {
+	view.NeedsConfirm = view.HasRemaining && view.Remaining <= 0 && !view.Confirmed
+	if view.HasRemaining && view.Remaining <= 0 && view.Confirmed {
+		view.DoorCode = doorCodeCardFrom(door)
 		view.FeePanel = d.loadFeePanel(ctx, stay.id, stay.apartmentID, page.T("fee_cash_default"))
 	}
 	if apt != nil {

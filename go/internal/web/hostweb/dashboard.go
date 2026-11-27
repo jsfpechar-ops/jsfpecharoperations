@@ -23,7 +23,7 @@ import (
 //go:embed i18n.json
 var dashJSON []byte
 
-//go:embed templates/dashboard.tmpl
+//go:embed templates/*.tmpl
 var dashFS embed.FS
 
 var dashStrings = hw.Load(dashJSON)
@@ -32,18 +32,94 @@ var dashStrings = hw.Load(dashJSON)
 // stay (label, guest count, date range, demo and missing-guest state).
 var dashFuncs = template.FuncMap{
 	"dash_label":          dashLabel,
+	"dash_guest_label":    rowGuestLabel,
 	"dash_guests":         dashGuests,
 	"dash_first":          dashFirst,
 	"dash_range":          fmtDateRange,
 	"stay_range":          stayRange,
 	"dash_not_registered": dashNotRegistered,
 	"dash_is_demo":        dashIsDemo,
+	"journey_strip":       stays.RenderJourneyStrip,
+	"journey_summary":     stays.RenderJourneySummary,
+	"cal_prop_href":       calPropHref,
+	"cal_prop_id":         calPropID,
+	"bar_meta":            barMeta,
+	"bar_display_label":   barDisplayLabel,
+	"dash_short_date":     dashShortDate,
 }
 
-var dashTemplates = layout.MustParseFuncs(dashStrings, dashFuncs, dashFS, "templates/dashboard.tmpl")
+var dashTemplates = layout.MustParseFuncs(dashStrings, dashFuncs, dashFS, "templates/*.tmpl")
+
+// dashboardPage wraps DashboardData with view state for Briefs 2089-2090.
+type dashboardPage struct {
+	DashboardData
+	Cal              calPageView
+	DesktopWindow    string
+	DesktopRows      []desktopStayRow
+	PropertyRails    []propertyRail
+	TotalActiveProps int
+}
+
+func dashShortDate(lang, iso string) string {
+	t, ok := pyDay(iso)
+	if !ok {
+		return iso
+	}
+	return stayRange(lang, t.Format("2006-01-02"), t.Format("2006-01-02"))
+}
+
+func calPropHref(apts []apartmentRow, name string) string {
+	for _, a := range apts {
+		if a.Name == name && a.Active {
+			return "/?cal_view=calendar&cal_property=" + fmtInt64(a.ID)
+		}
+	}
+	return "/?cal_view=calendar"
+}
+
+func fmtInt64(v int64) string {
+	if v == 0 {
+		return "0"
+	}
+	var buf [20]byte
+	i := len(buf)
+	for v > 0 {
+		i--
+		buf[i] = byte('0' + v%10)
+		v /= 10
+	}
+	return string(buf[i:])
+}
 
 // dashLabel is the stay's name as the list prints it.
 func dashLabel(r stays.Reservation) string { return stayLabel(r) }
+
+// rowGuestLabel returns the guest-facing label for a dashboard row or rail card,
+// preferring the lead guest's name or reservation summary so we never duplicate
+// the property name right next to the Property column.
+func rowGuestLabel(r stays.Row) string {
+	for _, g := range r.Progress.Guests {
+		name := strings.TrimSpace(strings.TrimSpace(g.FirstName) + " " + strings.TrimSpace(g.Surname))
+		if name != "" {
+			return name
+		}
+	}
+	if s := strings.TrimSpace(r.Reservation.Summary); s != "" && !blockedLabel(s) {
+		return s
+	}
+	switch strings.ToLower(strings.TrimSpace(r.Reservation.Source)) {
+	case "airbnb":
+		return "Airbnb"
+	case "booking":
+		return "Booking.com"
+	case "vrbo":
+		return "Vrbo"
+	case "expedia":
+		return "Expedia"
+	default:
+		return stayLabel(r.Reservation)
+	}
+}
 
 // dashGuests is progress.expected when set, otherwise the guests on the stay.
 func dashGuests(p stays.Progress) int {
@@ -118,6 +194,10 @@ func DashboardHandler(pool *pgxpool.Pool, getenv func(string) string, lookupEnv 
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+		if err := applyCalmNeedsYou(r.Context(), pool, host.Workspace.ID, today, &data); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 		page := layout.Page{
 			Title:    dashStrings.T(hw.Lang(r), "dashboard.title", nil),
 			Nav:      "dashboard",
@@ -125,7 +205,16 @@ func DashboardHandler(pool *pgxpool.Pool, getenv func(string) string, lookupEnv 
 			V2:       true,
 			HowKey:   "dashboard",
 		}
-		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, dashTemplates, "dashboard", data); err != nil {
+		pd := dashboardPage{DashboardData: data}
+		if calView {
+			page.Nav = "calendar"
+			page.Title = dashStrings.T(hw.Lang(r), "nav.calendar", nil)
+			pd.Cal = buildCalendarView(data, r.URL.Query().Get("cal_property"), today)
+		} else {
+			pd.PropertyRails, pd.TotalActiveProps = buildPropertyRails(data.Apartments, data.Rows, today)
+			pd.DesktopWindow, pd.DesktopRows = buildDesktopWindow(data.Rows, data.TodayRows, r.URL.Query().Get("window"), today)
+		}
+		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, dashTemplates, "dashboard", pd); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	}

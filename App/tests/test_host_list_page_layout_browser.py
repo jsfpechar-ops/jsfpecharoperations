@@ -244,6 +244,17 @@ def test_every_row_opens_on_click_and_enter_and_inner_controls_do_not(acc, base)
             href = spot["href"]
             if spot["x"] is None:
                 failures.append((name, "no plain spot in the row"))
+            elif name == "stays":
+                # Desktop Stays rows open the slide-over Stay detail drawer on click/Enter;
+                # its Open full page link targets the exact row href.
+                page.mouse.click(spot["x"], spot["y"])
+                drawer = page.locator("#stays-drawer")
+                drawer.wait_for(state="visible", timeout=5000)
+                page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                open_href = drawer.locator("a.stays-drawer-icon-btn").get_attribute("href")
+                if open_href != href:
+                    failures.append((name, "drawer opened wrong href", open_href, href))
+                drawer.locator("[data-stays-drawer-close]").click()
             else:
                 with page.expect_navigation():
                     page.mouse.click(spot["x"], spot["y"])
@@ -260,10 +271,20 @@ def test_every_row_opens_on_click_and_enter_and_inner_controls_do_not(acc, base)
             )
             if outline.startswith("none") or outline.endswith(" 0px"):
                 failures.append((name, "no focus ring", outline))
-            with page.expect_navigation():
+            if name == "stays":
                 page.keyboard.press("Enter")
-            if not page.url.endswith(href):
-                failures.append((name, "Enter opened", page.url, href))
+                drawer = page.locator("#stays-drawer")
+                drawer.wait_for(state="visible", timeout=5000)
+                page.wait_for_selector("#stays-drawer .stays-drawer-title", timeout=5000)
+                open_href = drawer.locator("a.stays-drawer-icon-btn").get_attribute("href")
+                if open_href != href:
+                    failures.append((name, "Enter drawer wrong href", open_href, href))
+                drawer.locator("[data-stays-drawer-close]").click()
+            else:
+                with page.expect_navigation():
+                    page.keyboard.press("Enter")
+                if not page.url.endswith(href):
+                    failures.append((name, "Enter opened", page.url, href))
             # A control inside the row keeps its own action.
             page.goto(base + _with_lang(path, "en"))
             _settle(page)
@@ -276,7 +297,7 @@ def test_every_row_opens_on_click_and_enter_and_inner_controls_do_not(acc, base)
                 if page.url != before:
                     failures.append((name, "inner control navigated", page.url))
                 page.keyboard.press("Escape")
-            elif name not in ("invoices", "fees"):
+            elif name not in ("invoices", "fees", "stays"):
                 failures.append((name, "no inner control found"))
             if CAPTURE and name in ("dashboard",):
                 for lang in ("en", "cs"):

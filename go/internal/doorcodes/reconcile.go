@@ -244,6 +244,11 @@ func (r *Reconciler) issueDue(ctx context.Context, nowISO string) (issueCounts, 
 			out.created++
 		}
 	}
+	// EnsureRow stamps next_attempt_at with s.Clock.Now(); refresh the cutoff so a
+	// second-boundary tick between Reconcile start and EnsureRow never defers a new row.
+	if after := iso(s.Clock.Now()); after > nowISO {
+		nowISO = after
+	}
 
 	args := []any{StatePending, StateRetrying, nowISO}
 	marks := make([]string, 0, len(releaseReasons))

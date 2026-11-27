@@ -55,8 +55,8 @@ def test_paste_with_javascript_names_the_printed_short_name(live, width):
     with page.expect_response(lambda r: r.url.endswith("/police-letter")) as reply:
         page.dispatch_event("#letter_text", "paste")
     assert reply.value.status == 200
-    page.wait_for_function("document.querySelector('[data-letter-status]').textContent.includes('Filled from your letter')", timeout=5000)
-    page.wait_for_function("document.querySelectorAll('[data-letter-warning]').length === 1", timeout=5000)
+    page.wait_for_function("() => document.querySelector('[data-letter-status]').textContent.includes('Filled from your letter')", timeout=5000)
+    page.wait_for_function("() => document.querySelectorAll('[data-letter-warning]').length === 1", timeout=5000)
     assert "A33" in page.locator("[data-letter-warning]").inner_text()
     assert "No report accepted yet" not in page.locator("[data-letter-status]").inner_text()
     assert page.locator("body").inner_text().count("No report accepted yet") == 1

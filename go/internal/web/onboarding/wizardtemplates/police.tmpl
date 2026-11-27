@@ -8,7 +8,7 @@
 {{define "wizard_police_box"}}
   <div class="field">
     {{field_label .name .label .help .optional "" .required}}
-    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}>
+    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}{{if .mismatch}} data-mark-mismatch="{{.mismatch}}"{{end}}>
   </div>
 {{end}}
 {{define "wizard_content"}}
@@ -28,23 +28,11 @@
   <input type="hidden" name="default_purpose" value="{{or .Values.DefaultPurpose "10"}}">
   <input type="hidden" name="step" value="police">
       <div class="police-letter-helpers">
-      <details class="police-letter-find" open>
+      <details class="police-letter-find">
         <summary>{{t "police_letter.find_title"}}</summary>
         {{template "wizard_letter_figure" .}}
       </details>
-      <details class="police-letter-paste" id="police-letter-paste" open>
-        <summary>{{t "police_letter.paste_title"}}</summary>
-        <div class="field">
-          <div class="field-label-row"><label for="letter_text">{{t "police_letter.paste_label"}}{{help_tip "police-letter-help" (t "police_letter.paste_help")}}</label></div>
-          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste></textarea>
-        </div>
-        <div class="actions">
-          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{t "police_letter.read_button"}}</button>
-        </div>
-      </details>
       </div>
-      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{t "police_letter.read_failed"}}" data-saved-now="{{t "police_letter.saved_now" "value" "%s"}}"></p>
-      <input type="hidden" name="letter_fields" value="" data-letter-fields data-letter-fields-initial="">
       <div class="grid">
         {{template "wizard_police_box" (kv "name" "uby_idub" "label" (t "setup.label.idub") "value" .Values.UbyIDUB "help" (t "apartment.form.ubyport.idub_hint") "optional" false "max" 14 "required" true)}}
       </div>
@@ -67,7 +55,7 @@
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{t "apartment.form.ubyport.no_credentials_link"}}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{t "property_page.police.facility"}}</h2></div>
       <div class="grid">
-        {{template "wizard_police_box" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" .Values.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true)}}
+        {{template "wizard_police_box" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" .Values.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "mismatch" (t "apartment.form.ubyport.mark_mismatch"))}}
       </div>
       <div class="grid two">
         {{template "wizard_police_box" (kv "name" "uby_name" "label" (t "setup.label.facility") "value" .Values.UbyName "help" .FacilityHelp "optional" false "max" 35 "required" true)}}
@@ -75,14 +63,10 @@
       </div>
   <h3 class="property-section-title">{{t "wizard.question.automation"}}{{help_tip "wiz-why-automation" (t "why.automation")}}</h3>
   <div class="ui-choice-cards">
-    {{choice_card "automation_mode" "manual" (t "automation.mode.manual") (eq .AutoMode "manual") "wizard-manual-help" (t "wizard.automation.manual_detail")}}
     {{choice_card "automation_mode" "scheduled" (t "automation.mode.scheduled") (eq .AutoMode "scheduled") "wizard-scheduled-help" (t "wizard.automation.scheduled_detail") (kv "caller" .HoursField)}}
     {{choice_card "automation_mode" "immediate" (t "automation.mode.immediate") (eq .AutoMode "immediate") "wizard-immediate-help" (t "wizard.automation.immediate_detail")}}
+    {{choice_card "automation_mode" "manual" (t "automation.mode.manual") (eq .AutoMode "manual") "wizard-manual-help" (t "wizard.automation.manual_detail")}}
   </div>
-</form>
-<form id="police-letter-form" method="post" action="/apartments/{{.Apt.ID}}/police-letter" data-discard-warning="{{t "police_letter.discard_warning"}}">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
-  <input type="hidden" name="setup_step" value="police">
 </form>
 {{end}}
 {{define "wizard_actions"}}

@@ -76,32 +76,10 @@ func (p Push) QueueDoorCode(ctx context.Context, ownerUserID int64, key, url str
 	return ubyport.QueuePush(ctx, p.Pool, p.Getenv, ownerUserID, "door_code", key, url, params)
 }
 
-// Billing covers the fee block of the code mail. Not ported: reporting.reservation_progress
-// and claim._completion_fee. The flow drops the fee block on error (contentWithFee), so the
-// code mail still goes out without it.
-type Billing struct{}
+// Billing implements doorcodes.Billing from the database (reporting.reservation_progress
+// and claim._completion_fee). Alias for LiveBilling.
+type Billing = LiveBilling
 
-var _ doorcodes.Billing = Billing{}
-
-// ReservationProgress is reporting.reservation_progress. Not ported.
-func (Billing) ReservationProgress(ctx context.Context, reservationID int64) (int, *int, error) {
-	return 0, nil, ErrNotPorted
-}
-
-// CompletionFee is claim._completion_fee. Not ported.
-func (Billing) CompletionFee(ctx context.Context, apartmentID, reservationID int64) (map[string]any, error) {
-	return nil, ErrNotPorted
-}
-
-// Confirmations covers claim.maybe_notify_completion. Not ported: the registration
-// confirmation is large (claim.py) and is out of this phase. While it is not ported, a code
-// mail for a stay whose confirmation has not gone is not sent (sendCodeMail returns the
-// error and the flow logs it), and the held-confirmation safety net fails loudly.
-type Confirmations struct{}
-
-var _ doorcodes.Confirmations = Confirmations{}
-
-// MaybeNotifyCompletion is claim.maybe_notify_completion. Not ported.
-func (Confirmations) MaybeNotifyCompletion(ctx context.Context, reservationID, apartmentID int64, force bool) error {
-	return ErrNotPorted
-}
+// Confirmations implements doorcodes.Confirmations from the database
+// (claim.maybe_notify_completion). Alias for LiveConfirmations.
+type Confirmations = LiveConfirmations

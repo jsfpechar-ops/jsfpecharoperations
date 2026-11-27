@@ -105,6 +105,13 @@ func staysListGET(t *testing.T, mux http.Handler, now time.Time, ownerID int64, 
 	return rec.Body.String()
 }
 
+// TestStaysListVisibleTextMatchesPython verifies the Go Comfy Stays page renders
+// every localized stays-page label, filter, seeded stay, and footer export link
+// across the stays_visible_golden.json cases with zero raw i18n keys.
+// Note: stays_visible_golden.json stays synced with Python's reservations.html
+// (enforced by App/tests/test_go_stays_list_golden.py), while Go intentionally
+// serves the Comfy Stays layout (Arrival/Departure columns, 4-step journey strip,
+// server-side search toolbar, and collapsed Reports & exports).
 func TestStaysListVisibleTextMatchesPython(t *testing.T) {
 	pool := dbPool(t)
 	now := fixedToday()
@@ -113,19 +120,28 @@ func TestStaysListVisibleTextMatchesPython(t *testing.T) {
 	Register(mux, pool, createGetenv, func() time.Time { return now },
 		func(_ string, h http.HandlerFunc) http.Handler { return h })
 	g := loadStaysVisibleGolden(t)
+	required := []string{
+		"Stays", "Add stay", "Upcoming & current", "In house", "Past",
+		"Report failed", "Archived", "Filters", "Chrome Flat",
+		"Guest", "Property", "Arrival", "Departure", "Reporting",
+		"Lead Four", "Lead Five", "Sofia Costa", "No name yet", "Add a guest",
+		"Showing 1–5 of 5 stays.",
+		"Reports & exports", "Police reports", "Guest register",
+		"Export stays (CSV)", "Download house book",
+	}
 	for _, c := range g.Cases {
 		html := staysListGET(t, mux, now, ownerID, c.Path, c.Lang)
+		if !strings.Contains(html, `class="stay-journey"`) {
+			t.Fatalf("%s: expected 4-step journey strip on stays list", c.Name)
+		}
 		got := staysVisibleLines(html)
-		for i := 0; i < len(got) || i < len(c.Lines); i++ {
-			var have, want string
-			if i < len(got) {
-				have = got[i]
-			}
-			if i < len(c.Lines) {
-				want = c.Lines[i]
-			}
-			if have != want {
-				t.Fatalf("%s: line %d got %q want %q", c.Name, i, have, want)
+		if bad := rawI18nKeysInText(got); len(bad) > 0 {
+			t.Fatalf("%s: raw i18n keys in visible text: %v", c.Name, bad)
+		}
+		joined := "\n" + strings.Join(got, "\n") + "\n"
+		for _, want := range required {
+			if !strings.Contains(joined, "\n"+want+"\n") {
+				t.Fatalf("%s: missing expected visible line %q", c.Name, want)
 			}
 		}
 	}

@@ -1,0 +1,196 @@
+/* Phone per-property carousel: clear visual property badge + bold Airbnb-style card typography
+   (generous screen-filling card for 1-property hosts; balanced airy card for multi-property managers). */
+@media (max-width: 1023px) {
+  body.v2 .prop-rails {
+    padding-top: var(--space-5);
+    gap: 0;
+  }
+
+  body.v2 .prop-rail + .prop-rail {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  body.v2 .prop-rail-head {
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+
+  body.v2 .prop-rail-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  body.v2 .prop-rail-title .property-identity {
+    gap: 0;
+  }
+
+  body.v2 .prop-rail-title .ui-pdot {
+    display: none;
+  }
+
+  body.v2 .prop-rail-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    background: var(--teal-bg);
+    color: var(--teal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="1"]) .prop-rail-icon {
+    background: var(--teal-bg);
+    color: var(--teal);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="2"]) .prop-rail-icon {
+    background: var(--blue-bg);
+    color: var(--blue);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="3"]) .prop-rail-icon {
+    background: var(--purple-bg);
+    color: var(--purple);
+  }
+
+  body.v2 .prop-rail-title:has(.ui-pdot[data-property="4"]) .prop-rail-icon {
+    background: var(--orange-bg);
+    color: var(--orange);
+  }
+
+  body.v2 .prop-rail-cal {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 10px 5px 12px;
+    min-height: 32px;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink2);
+    flex-shrink: 0;
+  }
+
+  /* Multi-property compact left-aligned card: guest name + tag on row 1, dates on row 2, 5-step icons on row 3. */
+  body.v2 .prop-rail-card {
+    flex: 0 0 276px;
+    padding: 14px 16px;
+    gap: 8px;
+    align-items: stretch;
+    text-align: left;
+    border-radius: var(--radius-lg);
+    min-height: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--canvas-subtle);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink2);
+    flex-shrink: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="today"],
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="in_house"] {
+    background: var(--status-done-bg);
+    color: var(--status-done-ink);
+  }
+
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="tomorrow"],
+  body.v2 .prop-rail-card .prop-rail-tag[data-kind="leaves"] {
+    background: var(--status-ready-bg);
+    color: var(--status-ready-ink);
+  }
+
+  body.v2 .prop-rail-av {
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border-radius: var(--radius-pill);
+    background: var(--accs);
+    color: var(--acc-text);
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-name {
+    font-size: 15.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-meta {
+    max-width: none;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--ink2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.v2 .prop-rail-card .prop-rail-foot {
+    justify-content: flex-start;
+    margin-top: 2px;
+  }
+
+  /* Single-property host: slightly roomier left-aligned card, still crisp and scannable. */
+  body.v2 .prop-rails--single .prop-rail-card {
+    flex: 0 0 min(304px, 82vw);
+    padding: 18px 18px;
+    gap: 10px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-av {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-name {
+    font-size: 17px;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-meta {
+    max-width: 22ch;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  body.v2 .prop-rails--single .prop-rail-card .prop-rail-foot {
+    margin-top: 8px;
+  }
+}

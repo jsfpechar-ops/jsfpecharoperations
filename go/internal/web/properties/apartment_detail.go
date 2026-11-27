@@ -14,11 +14,8 @@ package properties
 // the Reporting settings. The forms post to the Python routes as they do
 // today (POST /apartments/{id}, .../feeds, .../archive, .../regenerate-pin).
 //
-// What this port answers 501 for, with the Caddy fallback header (notPorted),
-// so Python serves it: a path id that is not a number, a property that is not
-// the workspace's (both are Python's branded 404 page), and a copy_from value
-// this port does not judge. Nothing routes here until the owner adds the path
-// to UBYHOST_GO_PATHS (brief 1705).
+// Invalid path IDs, properties outside the workspace, and unrecognized
+// copy_from values answer with the branded host 404 page.
 
 import (
 	"context"
@@ -101,7 +98,6 @@ type detailView struct {
 	SetupOpen                     string
 	SectionExplicit               bool
 	SectionDone                   map[string]bool
-	SectionMinutes                map[string]int
 	PoliceReported                bool
 	ReadyQR                       template.URL
 	Open                          map[string]bool // sec_open per section id
@@ -151,7 +147,6 @@ type detailView struct {
 	AddrRow2         []apartmentNewAddr
 	AutomationModes  []string
 	AutomationShown  string
-	LetterFirst      bool
 	BasicsState      string
 	PoliceState      string
 	CalendarsState   string
@@ -162,10 +157,12 @@ type detailView struct {
 	SaveErrors              []detailSaveError
 	SaveFailed              string            // tp('property_page.save_failed', save_errors|length)
 	AddressErrors           map[string]string // field -> message in the host's language
+	PoliceErrors            map[string]string // field -> message in the host's language
 	OperatorError           string            // operator_error: an i18n key or ""
 	OpError                 string            // _property_operator.html op_error
 	ControllerError         bool              // operator_error == 'flash.error.no_such_controller'
 	SharedTimeError         string            // shared_time_error: an i18n key or ""
+	TimingError             string            // automation timing hours error i18n key or ""
 	LockTimesError          bool
 	FeeAccountError         bool
 	FeeLinkError            bool
@@ -418,7 +415,6 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 	}
 	_, hasSection := r.URL.Query()["section"]
 	v.SectionExplicit = hasSection && !v.ReadyCard && !(v.FirstSetup && queryLast(r, "saved") == "1")
-	v.SectionMinutes = onboarding.SectionMinutes
 	v.SectionDone = map[string]bool{}
 	for key := range onboarding.SectionMinutes {
 		v.SectionDone[key] = onboarding.SectionDone(key, a.setup(), facts, state)
@@ -448,7 +444,7 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 	if v.LinkNext, err = s.detailNextStay(ctx, a, now); err != nil {
 		return err
 	}
-	if v.Purposes, err = s.detailPurposes(ctx); err != nil {
+	if v.Purposes, err = s.detailPurposes(ctx, lang); err != nil {
 		return err
 	}
 	if v.LeonCard, err = s.detailLeonCard(ctx, a); err != nil {
@@ -491,9 +487,21 @@ func (v *detailView) derive(lang string) {
 	a := v.A
 	v.Address = strings.Join(nonEmpty(pyStrip(a.AddrStreet+" "+a.AddrHouseNo), a.AddrObec), ", ")
 	v.AddressSub = pyStrip(v.Address) != ""
+	stripShort := map[string]string{
+		"health.calendar.none":     "property_page.strip.calendar_none",
+		"health.calendar.error":    "property_page.strip.calendar_error",
+		"health.guest_link.unused": "property_page.strip.guest_unused",
+		"health.police.missing":    "property_page.strip.police_missing",
+		"health.police.login":      "property_page.strip.police_login",
+		"health.business.missing":  "property_page.strip.business_missing",
+	}
 	pill := func(key string) detailStrip {
 		row := v.Health[key]
-		return detailStrip{State: row.State, Problem: row.State == "bad" || row.State == "warn", TextKey: row.TextKey}
+		textKey := row.TextKey
+		if shortKey, ok := stripShort[textKey]; ok {
+			textKey = shortKey
+		}
+		return detailStrip{State: row.State, Problem: row.State == "bad" || row.State == "warn", TextKey: textKey}
 	}
 	v.Cal, v.Guest, v.Police, v.Biz = pill("calendar"), pill("guest_link"), pill("police"), pill("business")
 	v.PoliceOK = v.Health["police"].State == "ok"
@@ -535,14 +543,13 @@ func (v *detailView) derive(lang string) {
 		"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
 	boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 	v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
-	v.AutomationModes = []string{"manual", "scheduled", "immediate"}
-	v.AutomationShown = "manual"
+	v.AutomationModes = []string{"scheduled", "immediate", "manual"}
+	v.AutomationShown = "scheduled"
 	for _, m := range v.AutomationModes {
 		if a.AutomationMode == m {
 			v.AutomationShown = m
 		}
 	}
-	v.LetterFirst = v.FirstSetup && !v.SectionDone["police"]
 	missing := func() string { return detailTP(lang, "property_nav.report_missing", v.ReportMissing) }
 	// The one-line state of each section header (sec_state).
 	v.BasicsState = firstText(func() string {
@@ -591,14 +598,13 @@ func (v *detailView) derive(lang string) {
 				"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
 			boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 			v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
-			v.AutomationModes = []string{"manual", "scheduled", "immediate"}
-			v.AutomationShown = "manual"
+			v.AutomationModes = []string{"scheduled", "immediate", "manual"}
+			v.AutomationShown = "scheduled"
 			for _, m := range v.AutomationModes {
 				if a.AutomationMode == m {
 					v.AutomationShown = m
 				}
 			}
-			v.LetterFirst = v.FirstSetup && !v.SectionDone["police"]
 			missing := func() string { return detailTP(lang, "property_nav.report_missing", v.ReportMissing) }
 			// The one-line state of each section header (sec_state).
 			v.BasicsState = firstText(func() string {
@@ -711,6 +717,23 @@ func (v *detailView) HourSelected(name string, h int) bool {
 		hour = v.A.CheckoutHour
 	}
 	return hour != nil && *hour == int64(h)
+}
+
+// AutomationHoursField renders the inline delay input nested inside the
+// "scheduled" choice card on Property settings (Task 2093).
+func (v *detailView) AutomationHoursField() template.HTML {
+	val := strconv.FormatInt(v.A.SubmitAfterHours, 10)
+	if v.A.SubmitAfterHours < 1 || v.A.SubmitAfterHours > 24 {
+		val = "24"
+	}
+	extra := ""
+	if v.TimingError != "" {
+		extra = ` aria-invalid="true" aria-describedby="submit_after_hours-error"`
+	}
+	return template.HTML(`<div class="field inline-hours"><label for="submit_after_hours">` +
+		html.EscapeString(detailT(v.Lang, "automation.hours_delay")) +
+		`</label><input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="24" value="` +
+		html.EscapeString(val) + `"` + extra + `></div>`)
 }
 
 // FacilityHelp is facility_help of _police_fields.html: the hint and the

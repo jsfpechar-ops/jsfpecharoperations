@@ -282,8 +282,6 @@ func entityFormValues(r *http.Request, base *entityFull) map[string]string {
 	return vals
 }
 
-func init() { fillFromRegister = fillFromRegisterAnswer }
-
 // fillFromRegisterAnswer is _entities_ares_rerender: look the typed IČO up in
 // ARES, fill the blank name, seat and DIČ, and render the page again (200)
 // with the typed values.

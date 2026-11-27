@@ -260,6 +260,7 @@
     {{if and (not $inactive) (ne $cell.State "none")}}
     <span class="police-deadline-row"><small class="police-deadline">{{t "stay.detail.metric.deadline"}} {{deadline_badge $cell}}</small>{{if .Deadline}}{{help_tip "police-deadline-help" (t "stay.detail.metric.deadline_note" "when" (format_time_iso .Deadline "02.01.2006 15:04"))}}{{end}}</span>
     {{end}}
+    {{if .ScheduledSendAt}}<span class="police-deadline-row" data-scheduled-send-at><small class="police-deadline">{{t "stay.scheduled_send_at" "when" .ScheduledSendAt}}</small></span>{{end}}
   {{if and .HandFiling.Candidates (not $inactive)}}
   <details class="card stay-filing ph-hide" id="file-by-hand">
     <summary><span class="stay-row-ic" aria-hidden="true">{{icon "check" 18}}</span><span class="stay-row-t"><b>{{t "stay.hand_filing.open"}}</b></span></summary>

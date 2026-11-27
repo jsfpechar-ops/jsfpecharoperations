@@ -34,7 +34,7 @@ func levelRank(level string) int {
 // computedKinds is alerts._COMPUTED_ALERT_KINDS, feedKinds _FEED_ALERT_KINDS.
 var computedKinds = map[string]bool{
 	"deadline": true, "guest_incomplete_checkin": true, "headcount_mismatch": true,
-	"dates_changed_resign": true, "moved_after_report": true, "submission_stuck": true,
+	"dates_changed_resign": true, "moved_after_report": true, "submission_stuck": true, "duplicate_guest_in_stay": true,
 	"job_failed": true, "feed_incomplete": true, "feed_duplicate_uid": true, "feed_recurring_event": true,
 }
 
@@ -42,7 +42,7 @@ var feedKinds = map[string]bool{"feed_incomplete": true, "feed_duplicate_uid": t
 
 // reasonKinds is alerts._REASON_KINDS: the only kinds whose card shows a reason
 // line. Every one of them is computed, so a stored detail is never shown here.
-var reasonKinds = map[string]bool{"deadline": true, "guest_incomplete_checkin": true, "headcount_mismatch": true}
+var reasonKinds = map[string]bool{"deadline": true, "guest_incomplete_checkin": true, "headcount_mismatch": true, "duplicate_guest_in_stay": true}
 
 // systemAlertKinds is alerts.SYSTEM_ALERT_KINDS (shown to every workspace).
 const systemAlertKinds = `'turnstile_unavailable', 'ttlock_budget'`
@@ -58,21 +58,22 @@ const shellAlertLimit = 12
 
 // actions is alerts._ACTIONS: label key and href pattern.
 var actions = map[string][2]string{
-	"ubyport_auth_failed":  {"notification.action.police_login", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
-	"apartment_setup":      {"notification.action.police_setup", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
-	"controller_missing":   {"notification.action.business", "/apartments/{apartment}?view=settings&section=property#operator-picker"},
-	"feed_error":           {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_incomplete":      {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_duplicate_uid":   {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_recurring_event": {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"guest_pin_rotated":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_abuse":      {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_locked_out": {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_challenged": {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"submission_stuck":     {"notification.action.guests", "/reservations/{reservation}#guests"},
-	"guest_question":       {"notification.action.guest_questions", "/apartments/{apartment}/guide/questions"},
-	"stay_fee_no_pay_way":  {"notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"},
-	"filing_stalled":       {"notification.action.unreported_stays", "/apartments/{apartment}?view=bookings"},
+	"ubyport_auth_failed":     {"notification.action.police_login", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
+	"apartment_setup":         {"notification.action.police_setup", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
+	"controller_missing":      {"notification.action.business", "/apartments/{apartment}?view=settings&section=property#operator-picker"},
+	"feed_error":              {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_incomplete":         {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_duplicate_uid":      {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_recurring_event":    {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"guest_pin_rotated":       {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_abuse":         {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_locked_out":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_challenged":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"submission_stuck":        {"notification.action.guests", "/reservations/{reservation}#guests"},
+	"duplicate_guest_in_stay": {"notification.action.guests", "/reservations/{reservation}#guests"},
+	"guest_question":          {"notification.action.guest_questions", "/apartments/{apartment}/guide/questions"},
+	"stay_fee_no_pay_way":     {"notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"},
+	"filing_stalled":          {"notification.action.unreported_stays", "/apartments/{apartment}?view=bookings"},
 }
 
 // foldableKinds is foldable_kinds in _host_alerts.html.
@@ -387,7 +388,7 @@ func presentComputed(a alertRow, progress map[int64]calendar.AlertProgress, x al
 	s := a.Stay
 	title := x.t("notification.stay_title", map[string]any{"property": s.Property, "dates": fmtDateRange(s.DateFrom, s.DateTo)})
 	switch a.Kind {
-	case "dates_changed_resign", "moved_after_report", "submission_stuck":
+	case "dates_changed_resign", "moved_after_report", "submission_stuck", "duplicate_guest_in_stay":
 		return title, x.t("notification.reason."+a.Kind, nil)
 	case "guest_incomplete_checkin":
 		return title, x.checkinIncompleteReason(s.DateFrom)

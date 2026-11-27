@@ -20,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/invoices"
 )
 
 const (
@@ -261,12 +262,11 @@ func invoicePDFBytes(ctx context.Context, db DB, id int64) ([]byte, string, erro
 	return blob, number, nil
 }
 
-func ensureGuestInvoiceID(ctx context.Context, db DB, b SiteBooking) (int64, bool, error) {
+func ensureGuestInvoiceID(ctx context.Context, pool *pgxpool.Pool, b SiteBooking, at time.Time) (int64, bool, error) {
 	if b.InvoiceID != nil && *b.InvoiceID != 0 {
 		return *b.InvoiceID, true, nil
 	}
-	// Full issue path is brief 1711 stayinvoice; until then retry only.
-	return 0, false, nil
+	return invoices.EnsureSiteBooking(ctx, pool, b.ID, at)
 }
 
 func writePDF(w http.ResponseWriter, blob []byte, disp string) {
@@ -369,7 +369,7 @@ func invoicePDFHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 			http.NotFound(w, r)
 			return
 		}
-		invID, have, err := ensureGuestInvoiceID(ctx, pool, b)
+		invID, have, err := ensureGuestInvoiceID(ctx, pool, b, at)
 		if err != nil {
 			serverError(w, "ensure invoice", err)
 			return

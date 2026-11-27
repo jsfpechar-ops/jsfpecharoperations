@@ -111,6 +111,7 @@ stay.hand_filing.reference_hint
 stay.hand_filing.undo
 stay.hand_filing.undo_confirm
 stay.hand_filing.undo_until
+stay.scheduled_send_at
 stays.filter.state.*
 stays.row.request_payment
 stays.source.*

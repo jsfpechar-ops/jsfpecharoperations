@@ -61,7 +61,8 @@ func TransportBackoffFromRows(rows []TransportRow, now time.Time) (time.Time, bo
 	}
 	last, err := time.Parse(time.RFC3339, chain[0].FinishedAt)
 	if err != nil {
-		return time.Time{}, false
+		// Fail closed on corrupt/empty finished_at so a broken row cannot disable backoff.
+		last = now
 	}
 	gap := transportGapLong
 	if n := len(chain); n <= len(transportGaps) {

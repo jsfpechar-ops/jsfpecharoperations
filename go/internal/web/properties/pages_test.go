@@ -182,16 +182,69 @@ func TestPagesMatchPython(t *testing.T) {
 			t.Errorf("case %d differs\n got: %s\nwant: %s", i, g, w)
 			continue
 		}
-		if !reflect.DeepEqual(got.Items, want.Items) {
+		gotItems := normaliseGo2093GuideItems(t, tc.Name, got.Items)
+		wantItems := normaliseGo2093GuideItems(t, "", want.Items)
+		if !reflect.DeepEqual(gotItems, wantItems) {
 			n := 0
-			for n < len(got.Items) && n < len(want.Items) && got.Items[n] == want.Items[n] {
+			for n < len(gotItems) && n < len(wantItems) && gotItems[n] == wantItems[n] {
 				n++
 			}
 			lo := max(0, n-3)
-			t.Errorf("case %s: items differ at %d (go %d, py %d)\n go: %q\n py: %q", tc.Name, n, len(got.Items), len(want.Items),
-				got.Items[lo:min(len(got.Items), n+4)], want.Items[lo:min(len(want.Items), n+4)])
+			t.Errorf("case %s: items differ at %d (go %d, py %d)\n go: %q\n py: %q", tc.Name, n, len(gotItems), len(wantItems),
+				gotItems[lo:min(len(gotItems), n+4)], wantItems[lo:min(len(wantItems), n+4)])
 		}
 	}
+}
+
+// normaliseGo2093GuideItems verifies Go's updated check-in-anchored /guide#reporting
+// copy (brief 2093) and normalises only those 4 copy runs when comparing against
+// frozen Python's pages_golden.json.
+func normaliseGo2093GuideItems(t *testing.T, verifyCase string, items []string) []string {
+	t.Helper()
+	repl := map[string]string{
+		// EN
+		"Right after check-in": "<guide.reporting.immediate>",
+		"Immediately":          "<guide.reporting.immediate>",
+		"Each completed guest is sent automatically once check-in time starts (never before check-in).": "<guide.reporting.immediate_detail>",
+		"Sent as soon as every declared guest form is complete.":                                        "<guide.reporting.immediate_detail>",
+		"Automatically after check-in":                                                                  "<guide.reporting.scheduled>",
+		"Scheduled":                                                                                     "<guide.reporting.scheduled>",
+		"Each completed guest is sent a chosen number of hours (1 to 24, default 24) after check-in time (or after finishing the form if later), and never later than six hours before the deadline.": "<guide.reporting.scheduled_detail>",
+		"Sent a chosen number of hours (0 to 48) after the forms are complete, and never later than six hours before the deadline.":                                                                   "<guide.reporting.scheduled_detail>",
+		// CS
+		"Ihned po příjezdu": "<guide.reporting.immediate>",
+		"Ihned":             "<guide.reporting.immediate>",
+		"Každý vyplněný host se odešle automaticky ihned od začátku času příjezdu (nikdy před příjezdem).": "<guide.reporting.immediate_detail>",
+		"Odešle se, jakmile jsou hotové formuláře všech uvedených hostů.":                                  "<guide.reporting.immediate_detail>",
+		"Automaticky po příjezdu": "<guide.reporting.scheduled>",
+		"Naplánovaně":             "<guide.reporting.scheduled>",
+		"Každý vyplněný host se odešle zvolený počet hodin (1 až 24, výchozí 24) po čase příjezdu (případně po vyplnění formuláře, pokud je později), nejpozději šest hodin před termínem.": "<guide.reporting.scheduled_detail>",
+		"Odešle se zvolený počet hodin (0 až 48) po vyplnění, nejpozději šest hodin před termínem.":                                                                                         "<guide.reporting.scheduled_detail>",
+		// VI
+		"Ngay sau giờ nhận phòng": "<guide.reporting.immediate>",
+		"Ngay lập tức":            "<guide.reporting.immediate>",
+		"Mỗi khách đã hoàn tất được gửi tự động ngay khi bắt đầu giờ nhận phòng (không bao giờ gửi trước giờ nhận phòng).": "<guide.reporting.immediate_detail>",
+		"Gửi ngay khi mọi biểu mẫu khách đã khai đều hoàn tất.":                                                            "<guide.reporting.immediate_detail>",
+		"Tự động sau giờ nhận phòng": "<guide.reporting.scheduled>",
+		"Theo lịch":                  "<guide.reporting.scheduled>",
+		"Mỗi khách đã hoàn tất được gửi sau số giờ bạn chọn (1 đến 24, mặc định 24) kể từ giờ nhận phòng (hoặc sau khi điền xong nếu muộn hơn), và không bao giờ muộn hơn sáu giờ trước hạn chót.": "<guide.reporting.scheduled_detail>",
+		"Gửi sau một số giờ bạn chọn (0 đến 48) kể từ khi biểu mẫu hoàn tất, và không bao giờ muộn hơn sáu giờ trước hạn chót.":                                                                    "<guide.reporting.scheduled_detail>",
+	}
+	if verifyCase != "" && strings.HasPrefix(verifyCase, "guide_") {
+		joined := strings.Join(items, "\n")
+		if strings.Contains(joined, "(0 to 48)") || strings.Contains(joined, "(0 až 48)") || strings.Contains(joined, "(0 đến 48)") {
+			t.Errorf("%s: Go /guide#reporting still shows legacy 0..48 copy", verifyCase)
+		}
+	}
+	out := make([]string, len(items))
+	for i, it := range items {
+		if r, ok := repl[it]; ok {
+			out[i] = r
+		} else {
+			out[i] = it
+		}
+	}
+	return out
 }
 
 func TestPagesRegisterDoesNotTouchThePool(t *testing.T) {

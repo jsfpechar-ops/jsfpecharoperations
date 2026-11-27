@@ -14,16 +14,17 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/dococr"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
 
@@ -120,22 +121,6 @@ type draftReservation struct {
 	status    string
 }
 
-func (d draftScanDeps) loadReservation(ctx context.Context, token string, reservationID int64) (*draftReservation, error) {
-	var res draftReservation
-	err := d.pool.QueryRow(ctx,
-		`SELECT r.id, r.apartment_id, r.date_to::text, r.status
-		 FROM reservation r
-		 JOIN apartment a ON a.id = r.apartment_id
-		 WHERE r.id = $1 AND a.permalink_token = $2`, reservationID, token).Scan(&res.id, &res.apartment, &res.dateTo, &res.status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
 func (d draftScanDeps) rateBlocked(ctx context.Context, scope, key string, limit int) (bool, error) {
 	window := float64(d.now().UTC().Unix() - 15*60)
 	_, err := d.pool.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`, scope, key, window)
@@ -204,43 +189,38 @@ func (d draftScanDeps) deleteDraft(ctx context.Context, reservationID int64, dev
 }
 
 func draftIsSentGuest(values map[string]string, guests []map[string]string) bool {
-	fold := func(s string) string { return strings.TrimSpace(strings.ToLower(s)) }
-	birth := func(s string) string { return fold(s) }
-	who := func(m map[string]string) (string, string, string) {
-		return fold(m["first_name"]), fold(m["surname"]), birth(m["birth_date"])
-	}
-	doc := strings.ToUpper(strings.TrimSpace(values["doc_number"]))
-	fn, sn, bd := who(values)
-	for _, g := range guests {
-		gdoc := strings.ToUpper(strings.TrimSpace(g["doc_number"]))
-		gfn, gsn, gbd := who(g)
-		if doc != "" && doc == gdoc {
-			return true
-		}
-		if fn != "" && sn != "" && bd != "" && fn == gfn && sn == gsn && bd == gbd {
-			return true
-		}
-	}
-	return false
+	return draftIsSentGuestAt(values, guests, time.Now())
 }
 
 func (d draftScanDeps) reservationGuests(ctx context.Context, reservationID int64) ([]map[string]string, error) {
 	rows, err := d.pool.Query(ctx,
-		`SELECT first_name, surname, birth_date, doc_number FROM guest WHERE reservation_id = $1`, reservationID)
+		`SELECT COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date_enc,''), COALESCE(birth_date,''), COALESCE(doc_number_enc,''), COALESCE(doc_number,'')
+		 FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, reservationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var out []map[string]string
 	for rows.Next() {
-		var fn, sn, bd, dn *string
-		if err := rows.Scan(&fn, &sn, &bd, &dn); err != nil {
+		var fn, sn, bdEnc, bdPlain, dnEnc, dnPlain string
+		if err := rows.Scan(&fn, &sn, &bdEnc, &bdPlain, &dnEnc, &dnPlain); err != nil {
 			return nil, err
 		}
-		m := map[string]string{
-			"first_name": deref(fn), "surname": deref(sn), "birth_date": deref(bd), "doc_number": deref(dn),
+		bd := bdPlain
+		if bdEnc != "" {
+			if plain, derr := decryptGuestField(d.getenv, d.now, bdEnc, bdPlain); derr == nil {
+				bd = plain
+			}
 		}
-		out = append(out, m)
+		dn := dnPlain
+		if dnEnc != "" {
+			if plain, derr := decryptGuestField(d.getenv, d.now, dnEnc, dnPlain); derr == nil {
+				dn = plain
+			}
+		}
+		out = append(out, map[string]string{
+			"first_name": fn, "surname": sn, "birth_date": bd, "doc_number": dn,
+		})
 	}
 	return out, rows.Err()
 }
@@ -260,21 +240,54 @@ func pragueTodayISO(now time.Time) string {
 	return now.In(loc).Format("2006-01-02")
 }
 
+func (d draftScanDeps) save() saveDeps {
+	return saveDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
+func (d draftScanDeps) form() formPageDeps {
+	return formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
+func (d draftScanDeps) draftClaimBlocked(ctx context.Context, r *http.Request, apt *Apartment, resID int64, status string) (blocked bool, hostOwned bool, err error) {
+	hostOwned = d.form().access().hostOwns(ctx, r, apt.OwnerUserID)
+	if !billingjob.MailEnabled() || hostOwned {
+		return false, hostOwned, nil
+	}
+	row, err := EnsureClaimRow(ctx, d.pool, resID, isoNow(d.now()))
+	if err != nil {
+		return false, false, err
+	}
+	if !GuestAccessOpen(status, row.guestAccessLock) || !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
+		return true, false, nil
+	}
+	return false, false, nil
+}
+
 func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		lang := langFromRequest(r)
 		token := r.PathValue("token")
 		rid, _ := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
-		res, err := d.loadReservation(ctx, token, rid)
+		apt, token, early := OpenLink(r, d.pool, token, lang)
+		if early != nil {
+			early.ServeHTTP(w, r)
+			return
+		}
+		if requirePin(w, r, d.save().shell(), token, lang, apt) {
+			return
+		}
+		_, resMeta, status, ok, err := guestSaveReservation(ctx, d.save(), r, apt, rid, token)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		if res == nil {
+		if !ok {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		rlKey := clientip.Key(r, d.getenv, "guest_draft:"+token)
+		res := &draftReservation{id: rid, apartment: resMeta.apartmentID, dateTo: resMeta.dateTo, status: status}
+		rlKey := clientip.Key(r, d.getenv, "guest_draft:"+apt.PermalinkToken)
 		blocked, err := d.rateBlocked(ctx, "guest_draft", rlKey, guestDraftMaxWrites)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
@@ -285,6 +298,19 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 			return
 		}
 		_ = d.rateRecord(ctx, "guest_draft", rlKey)
+		claimBlocked, hostOwned, err := d.draftClaimBlocked(ctx, r, apt, rid, status)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		if claimBlocked {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if hostOwned {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		if cl := r.Header.Get("Content-Length"); cl != "" {
 			n, _ := strconv.Atoi(cl)
 			if n > draftMaxBodyBytes {
@@ -292,7 +318,8 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 				return
 			}
 		}
-		if strings.TrimSpace(res.dateTo)[:10] < pragueTodayISO(d.now()) {
+		dateTo := strings.TrimSpace(res.dateTo)
+		if len(dateTo) >= 10 && dateTo[:10] < pragueTodayISO(d.now()) {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -322,7 +349,7 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		if draftIsSentGuest(fields, guests) {
+		if draftIsSentGuestAt(fields, guests, d.now()) {
 			if !newKey {
 				_ = d.deleteDraft(ctx, rid, keyHash(deviceKey))
 			}
@@ -330,7 +357,8 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 			return
 		}
 		owned := clampOwned(r.FormValue("draft_owned"))
-		stored, err := d.saveDraft(ctx, rid, keyHash(deviceKey), 0, owned, fields)
+		gen := draftGeneration(ctx, d.pool, rid, d.now)
+		stored, err := d.saveDraft(ctx, rid, keyHash(deviceKey), gen, owned, fields)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
@@ -339,6 +367,7 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 			http.SetCookie(w, &http.Cookie{
 				Name: draftCookieName, Value: deviceKey, Path: "/",
 				MaxAge: draftCookieMaxAge, HttpOnly: true, SameSite: http.SameSiteLaxMode,
+				Secure: hostweb.SecureCookies(d.getenv),
 			})
 		}
 		w.WriteHeader(http.StatusNoContent)
@@ -359,21 +388,14 @@ func scanJSON(w http.ResponseWriter, status int, body map[string]any) {
 }
 
 func (d draftScanDeps) ocrAvailable(ctx context.Context, apartmentID int64) bool {
-	var ocrScan int
-	var ownerID int64
-	err := d.pool.QueryRow(ctx, `SELECT COALESCE(ocr_scan,0), owner_user_id FROM apartment WHERE id = $1`, apartmentID).Scan(&ocrScan, &ownerID)
-	if err != nil || ocrScan != 1 {
-		return false
+	return ocrAvailableForApartment(ctx, d.pool, d.getenv, apartmentID)
+}
+
+func scanMessage(lang, key string) string {
+	if msg := stringsCatalog.T(lang, key, nil); msg != "" && msg != key {
+		return msg
 	}
-	if _, err := exec.LookPath("tesseract"); err != nil {
-		return false
-	}
-	var status, plan string
-	err = d.pool.QueryRow(ctx, `SELECT COALESCE(status,''), COALESCE(plan,'') FROM billing_account WHERE owner_user_id = $1`, ownerID).Scan(&status, &plan)
-	if err != nil {
-		return false
-	}
-	return status == "active" && plan == "max"
+	return scanMessages[key]
 }
 
 func readUploadLimited(f multipart.File) ([]byte, error) {
@@ -384,46 +406,60 @@ func readUploadLimited(f multipart.File) ([]byte, error) {
 func scanPostHandler(d draftScanDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		lang := langFromRequest(r)
 		token := r.PathValue("token")
 		rid, _ := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
-		res, err := d.loadReservation(ctx, token, rid)
+		apt, token, early := OpenLink(r, d.pool, token, lang)
+		if early != nil {
+			early.ServeHTTP(w, r)
+			return
+		}
+		if requirePin(w, r, d.save().shell(), token, lang, apt) {
+			return
+		}
+		cfg, resMeta, status, ok, err := guestSaveReservation(ctx, d.save(), r, apt, rid, token)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		if res == nil {
+		if !ok {
 			scanJSON(w, http.StatusNotFound, map[string]any{"kind": "error", "message": "This stay is no longer available."})
 			return
 		}
-		if !d.ocrAvailable(ctx, res.apartment) {
+		if throttleGuestPost(w, r, d.save(), token, "guest_scan", lang) {
+			return
+		}
+		if d.form().formPagesRequireClaim(w, r, apt, formResRow{id: rid, apartmentID: resMeta.apartmentID, ownerUserID: cfg.ownerUserID, status: status, dateFrom: resMeta.dateFrom, dateTo: resMeta.dateTo, declaredGuests: resMeta.declaredGuests, overrideGuests: resMeta.overrideGuests, reducedGuests: resMeta.reducedGuests}, token, lang) {
+			return
+		}
+		if !d.ocrAvailable(ctx, resMeta.apartmentID) {
 			scanJSON(w, http.StatusServiceUnavailable, map[string]any{"kind": "unavailable"})
 			return
 		}
 		if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
-			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessages["ocr_no_file"]})
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_no_file")})
 			return
 		}
 		file, header, err := r.FormFile("passport_photo")
 		if err != nil || header == nil {
-			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessages["ocr_no_file"]})
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_no_file")})
 			return
 		}
 		defer file.Close()
 		raw, err := readUploadLimited(file)
 		if err != nil {
-			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessages["ocr_bad_file"]})
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_bad_file")})
 			return
 		}
 		ct := header.Header.Get("Content-Type")
-		if strings.Contains(ct, "pdf") || strings.HasSuffix(strings.ToLower(header.Filename), ".pdf") {
-			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessages["ocr_bad_file"]})
+		if strings.Contains(strings.ToLower(ct), "pdf") || strings.HasSuffix(strings.ToLower(header.Filename), ".pdf") {
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_bad_file")})
 			return
 		}
 		if len(raw) > maxImageBytes {
-			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessages["ocr_bad_file"]})
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_bad_file")})
 			return
 		}
-		// OCR engine port is executor step 3 when tesseract is wired; tests use golden shape only.
 		if d.getenv("UBYHOST_TEST_OCR_VALUES") == "1" {
 			scanJSON(w, http.StatusOK, map[string]any{
 				"kind": "values",
@@ -434,10 +470,23 @@ func scanPostHandler(d draftScanDeps) http.HandlerFunc {
 			})
 			return
 		}
-		if _, err := exec.LookPath("tesseract"); err != nil {
-			scanJSON(w, http.StatusServiceUnavailable, map[string]any{"kind": "unavailable"})
+		prepared, perr := dococr.PrepareImage(raw, ct)
+		if perr != nil {
+			scanJSON(w, http.StatusBadRequest, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_bad_file")})
 			return
 		}
-		scanJSON(w, http.StatusUnprocessableEntity, map[string]any{"kind": "error", "message": scanMessages["ocr_nothing_read"]})
+		values, rerr := dococr.ReadDocument(ctx, prepared)
+		if rerr != nil {
+			switch {
+			case errors.Is(rerr, dococr.ErrNothingRead):
+				scanJSON(w, http.StatusUnprocessableEntity, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_nothing_read")})
+			case errors.Is(rerr, dococr.ErrNoEngine):
+				scanJSON(w, http.StatusServiceUnavailable, map[string]any{"kind": "unavailable"})
+			default:
+				scanJSON(w, http.StatusBadGateway, map[string]any{"kind": "error", "message": scanMessage(lang, "ocr_failed")})
+			}
+			return
+		}
+		scanJSON(w, http.StatusOK, map[string]any{"kind": "values", "values": values})
 	}
 }
