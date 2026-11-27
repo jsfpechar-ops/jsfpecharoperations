@@ -2,7 +2,7 @@ package guest
 
 import (
 	"context"
-	"time"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,27 +11,25 @@ import (
 )
 
 func alertControllerMissing(ctx context.Context, pool *pgxpool.Pool, apt pickApartment) {
-	if pool == nil {
+	if pool == nil || apt.ID <= 0 {
 		return
 	}
 	ok, err := controllerComplete(ctx, pool, apt)
 	if err != nil || ok {
 		return
 	}
-	owner := int64(0)
-	if apt.OwnerUserID != nil {
-		owner = *apt.OwnerUserID
+	var owner *int64
+	if apt.OwnerUserID != nil && *apt.OwnerUserID > 0 {
+		v := *apt.OwnerUserID
+		owner = &v
 	}
 	aptID := apt.ID
-	tok := apt.PermalinkToken
-	go func() {
-		bg, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		_ = ubyport.RaiseAlert(bg, pool, "critical", "controller_missing",
-			"The guest form cannot name who controls the guest's data.",
-			"Add the data controller's name, address or IČO and contact e-mail.",
-			"controller_missing:"+tok, &aptID, nil, &owner, nil)
-	}()
+	_ = ubyport.RaiseAlert(ctx, pool, "critical", "controller_missing",
+		"The guest form cannot name who controls the guest's data.",
+		"Add the data controller's name, address or IČO and contact e-mail.",
+		"controller_missing:"+strconv.FormatInt(aptID, 10),
+		&aptID, nil, owner,
+		ubyport.AlertParams{"property": apt.InternalName})
 }
 
 func controllerComplete(ctx context.Context, pool *pgxpool.Pool, apt pickApartment) (bool, error) {

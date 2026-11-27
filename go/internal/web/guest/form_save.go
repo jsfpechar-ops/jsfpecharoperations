@@ -311,6 +311,11 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		return err
 	}
 	rememberOwnedGuestIDs(w, d.getenv, append(ownedGuestIDs(r, d.getenv), savedID))
+	if existing == nil {
+		if dk := draftKey(r); dk != "" {
+			_ = (draftScanDeps{pool: d.pool, getenv: d.getenv, now: d.now}).deleteDraft(ctx, resID, keyHash(dk))
+		}
+	}
 	// 2096: continue to the next guest while some are missing, else land on the
 	// stay Review & Confirm summary screen (confirm endpoint fires completion
 	// hooks and jumps to #fee-pay once confirmed).
@@ -816,7 +821,13 @@ func keptGuestSignature(posted, stored string) string {
 	return stored
 }
 
-func guestFormLocked(row *guestSaveRow) bool { return false }
+// guestFormLocked is reporting.guest_form_locked: filed (SENT) or restricted records are read-only.
+func guestFormLocked(row *guestSaveRow) bool {
+	if row == nil {
+		return false
+	}
+	return row.submitState == guestSubmitSent || strings.TrimSpace(row.restrictedAt) != ""
+}
 
 // hasSamePersonGuestOnStay checks whether another live guest row on resID
 // already represents the same individual (2095 Layer 1 duplicate prevention).
