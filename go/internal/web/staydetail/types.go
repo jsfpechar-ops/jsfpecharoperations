@@ -34,7 +34,7 @@ type GuestRow struct {
 // Guest is a guest row as the stay template reads it.
 type Guest struct {
 	stays.StayGuest
-	DocType, EnteredBy, LastErrors, RestrictedAt, ManualMarkedAt, ManualReference string
+	DocType, EnteredBy, LastErrors, RestrictedAt, ManualMarkedAt, ManualReference, SubmittedRef string
 }
 
 // Submission is one row of the stay's report list.
@@ -48,22 +48,23 @@ type Submission struct {
 
 // View is the context of reservation_detail.html.
 type View struct {
-	Reservation  Stay
-	Progress     stays.Progress
-	SendControls SendControls
-	GuestRows    []GuestRow
-	CheckIn      *time.Time
-	Deadline     *time.Time
-	Submissions  []Submission
-	ReturnTo     string
-	GuestLink    string
-	StayClaim    StayClaim
-	ClaimResend  bool
-	IsDemoStay   bool
-	HandFiling   HandFiling
-	StayInvoice  *invoices.StayInvoice
-	DoorCode     *doorcodes.Shown
-	Journey      stays.StayJourney
+	Reservation     Stay
+	Progress        stays.Progress
+	SendControls    SendControls
+	GuestRows       []GuestRow
+	CheckIn         *time.Time
+	Deadline        *time.Time
+	ScheduledSendAt string
+	Submissions     []Submission
+	ReturnTo        string
+	GuestLink       string
+	StayClaim       StayClaim
+	ClaimResend     bool
+	IsDemoStay      bool
+	HandFiling      HandFiling
+	StayInvoice     *invoices.StayInvoice
+	DoorCode        *doorcodes.Shown
+	Journey         stays.StayJourney
 }
 
 // SendControls is the part of reporting.send_controls the stay page reads.

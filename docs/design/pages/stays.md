@@ -12,7 +12,7 @@ Master version: 2.0.0. Adds only.
 - phone card (MASTER 7.3 roles, one DOM): `primary` = stay label with source inline; `secondary` = dates with nights inline; `badge` = report badge, then the deadline badge, on their own line; `meta` = property, then guests at the right; `actions` = menu at the top right, Send (only when ready) as the full-width last line
 - desktop rows: the Stay, Dates and Police report cells carry one sub-line; rows stay under 72 px; the date text is plain ink (the row is the link)
 - setup strip (`onboarding_banner`): one quiet line, `secondary compact` Continue + `quiet compact` Skip; the page's only primary is Add stay
-- badges: `action` = ready to send, guest missing, rejected, failed ("!" when overdue); `attention` = deadline within 24 h, sent and no confirmation after 48 h; `done` = confirmed; `neutral` = waiting for guests, not required, cancelled, archived
+- badges: 5-step journey strip (`mail`/`mail-x` Email SES, `mail-open` Link opened, `users` Form `n/m` + Domovní kniha, `key-round` TTLock-only Code, `police` Foreign Police) paired with one concise tone-matched summary pill (`waiting` grey, `scheduled` calm blue, `progress` amber, `done` green, `bad` red) and a collapsible no-JS `?` legend above the list; manual host actions resolve cleanly without stale states, and `cancelled_after_report` keeps a red warning step
 - row menu: Open, Copy guest form link, Add guest, Open guest form, Delete (or Restore in Archive)
 - pagination: Show more on phone, Previous/Next on desktop
 - empty states (unchanged keys): no property, no calendar, no match, archive empty

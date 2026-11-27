@@ -14,6 +14,7 @@
     "dashboard.rail.all_properties": "Všechna ubytování ({count})",
     "dashboard.rail.in_house": "Ubytováno",
     "dashboard.rail.upcoming": "Nadcházející",
+    "dashboard.window.heading": "Příjezdy a odjezdy",
     "dashboard.window.today": "Dnes",
     "dashboard.window.next7": "Příštích 7 dní",
     "dashboard.window.next7_empty": "V příštích 7 dnech žádné příjezdy ani odjezdy."
@@ -33,6 +34,7 @@
     "dashboard.rail.all_properties": "All properties ({count})",
     "dashboard.rail.in_house": "In house",
     "dashboard.rail.upcoming": "Upcoming",
+    "dashboard.window.heading": "Check-ins & check-outs",
     "dashboard.window.today": "Today",
     "dashboard.window.next7": "Next 7 days",
     "dashboard.window.next7_empty": "No check-ins or check-outs in the next 7 days."
@@ -52,6 +54,7 @@
     "dashboard.rail.all_properties": "Tất cả chỗ ở ({count})",
     "dashboard.rail.in_house": "Đang lưu trú",
     "dashboard.rail.upcoming": "Sắp tới",
+    "dashboard.window.heading": "Nhận & trả phòng",
     "dashboard.window.today": "Hôm nay",
     "dashboard.window.next7": "7 ngày tới",
     "dashboard.window.next7_empty": "Không có khách đến hoặc đi trong 7 ngày tới."

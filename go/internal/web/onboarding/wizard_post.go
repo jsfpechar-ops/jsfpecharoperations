@@ -72,7 +72,7 @@ func wizardAutomationChoiceError(r *http.Request) string {
 		return "flash.properties.timing_invalid"
 	}
 	if mode == "scheduled" {
-		if h := wizardFormInt(r, "submit_after_hours"); h == nil || *h < 1 || *h > 48 {
+		if h := wizardFormInt(r, "submit_after_hours"); h == nil || *h < 1 || *h > 24 {
 			return "flash.properties.timing_hours"
 		}
 	}
@@ -83,17 +83,17 @@ func wizardAutomationChoiceError(r *http.Request) string {
 func wizardAutomationTiming(r *http.Request) (string, int64) {
 	mode := formStr(r, "automation_mode")
 	if mode == "" {
-		mode = "manual"
+		mode = "scheduled"
 	}
 	if !wizardAutomationModes[mode] {
-		mode = "manual"
+		mode = "scheduled"
 	}
 	hours := int64(24)
-	if h := wizardFormInt(r, "submit_after_hours"); h != nil && *h != 0 {
+	if h := wizardFormInt(r, "submit_after_hours"); h != nil && *h > 0 {
 		hours = *h
 	}
-	if hours > 48 {
-		hours = 48
+	if hours > 24 {
+		hours = 24
 	}
 	return mode, hours
 }

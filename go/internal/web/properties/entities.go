@@ -5,8 +5,8 @@ package properties
 // _entity_post_payload, _entity_details_payload, _signature_payload,
 // _drawn_signature, _resolve_controller_alerts, _reconcile_pay_way_alerts and
 // invoices.py invoice_detail_payload / apply_account_payload.
-// The "Fill from register" button (fill_from_register) is a hook, see
-// fillFromRegister.
+// The "Fill from register" button (fill_from_register) is handled by
+// fillFromRegisterAnswer in entity_editor.go.
 
 import (
 	"encoding/base64"
@@ -24,7 +24,6 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -35,14 +34,6 @@ func RegisterEntities(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv 
 	s := &server{pool: pool, getenv: getenv, now: now}
 	mux.Handle("POST /entities", wrap("/entities", s.createEntity))
 	mux.Handle("POST /entities/{id}", wrap("/entities/{id}", s.updateEntity))
-}
-
-// fillFromRegister answers the "Fill from register" button of both forms
-// (form field fill_from_register). Brief 1523 replaces it from an init() in its
-// own file; until then the button answers 501 like the other branches that are
-// not ported yet.
-var fillFromRegister = func(s *server, w http.ResponseWriter, r *http.Request, q *request, edit *entityEdit) {
-	notPorted(w, r, layout.Env{Pool: s.pool, Getenv: s.getenv, Now: q.at}, q.host, "the ARES lookup (Fill from register)")
 }
 
 // entityEdit is the stored row an update starts from (nil for a new entity).
@@ -537,7 +528,7 @@ func (s *server) createEntity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if truthy(r, "fill_from_register") {
-		fillFromRegister(s, w, r, q, nil)
+		fillFromRegisterAnswer(s, w, r, q, nil)
 		return
 	}
 	cols, ok := s.entityPayload(w, r, q)
@@ -593,7 +584,7 @@ func (s *server) updateEntity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if truthy(r, "fill_from_register") {
-		fillFromRegister(s, w, r, q, edit)
+		fillFromRegisterAnswer(s, w, r, q, edit)
 		return
 	}
 	cols, ok := s.entityPayload(w, r, q)

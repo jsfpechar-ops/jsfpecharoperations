@@ -291,14 +291,15 @@
       {{if .SharedTimeError}}<p class="err-text" role="alert" data-field-error>{{t .SharedTimeError}}</p>{{end}}
       <div class="grid two">
         <div class="field"><label for="checkin_hour">{{t "apartment.form.door_code.checkin"}}</label>
-          <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour" required aria-required="true"><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkin_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
         <div class="field"><label for="checkout_hour">{{t "apartment.form.door_code.checkout"}}</label>
-          <select id="checkout_hour" name="checkout_hour" data-hour-twin="checkout_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select id="checkout_hour" name="checkout_hour" data-hour-twin="checkout_hour" required aria-required="true"><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkout_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
       </div>
+      {{if not $a.CheckinHour}}<p class="hint" data-checkin-fallback-note>{{t "apartment.form.times_fallback_hint"}}</p>{{end}}
       {{if .Door}}{{template "apartmentdetail.doorwindow" .Window}}{{end}}
     </section>
 
@@ -471,24 +472,12 @@
     <section class="panel property-section ui-section" id="automation">
       <div class="field-label-row"><h2 class="property-section-title">{{t "automation.timing_title"}}{{help_tip "automation-help" (t "automation.timing_help") "/guide#reporting"}}</h2></div>
       <p class="ui-sub">{{t "why.automation"}}</p>
-      <div class="grid two">
-        <div class="field">
-          <label for="automation_mode">{{t "automation.timing_label"}}</label>
-          <select id="automation_mode" name="automation_mode" aria-describedby="automation_mode-hint"
-                  data-automation-mode data-hours-target="submit_after_hours">
-            {{range $.AutomationModes}}
-            <option value="{{.}}" data-hint="{{t (print "automation.mode_hint." .)}}"{{if eq $a.AutomationMode .}} selected{{end}}>
-              {{t (print "automation.mode_short." .)}}</option>
-            {{end}}
-          </select>
-          <p class="hint" id="automation_mode-hint" data-automation-hint>{{t (print "automation.mode_hint." .AutomationShown)}}</p>
-        </div>
-        <div class="field">
-          <label for="submit_after_hours">{{t "automation.hours_delay"}}</label>
-          <input type="number" id="submit_after_hours" name="submit_after_hours"
-                 min="0" max="48" value="{{$a.SubmitAfterHours}}">
-        </div>
+      <div class="ui-choice-cards" id="automation_mode">
+        {{choice_card "automation_mode" "scheduled" (t "automation.mode_short.scheduled") (eq .AutomationShown "scheduled") "automation-scheduled-help" (t "automation.mode_hint.scheduled") (kv "caller" .AutomationHoursField)}}
+        {{choice_card "automation_mode" "immediate" (t "automation.mode_short.immediate") (eq .AutomationShown "immediate") "automation-immediate-help" (t "automation.mode_hint.immediate")}}
+        {{choice_card "automation_mode" "manual" (t "automation.mode_short.manual") (eq .AutomationShown "manual") "automation-manual-help" (t "automation.mode_hint.manual")}}
       </div>
+      {{if .TimingError}}<p class="err-text" id="submit_after_hours-error" role="alert" data-field-error>{{t .TimingError}}</p>{{end}}
       <div class="field" style="max-width:320px">
         <label for="default_purpose">{{t "automation.default_purpose"}}</label>
         <select id="default_purpose" name="default_purpose">

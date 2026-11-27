@@ -87,13 +87,13 @@ func completionAddStay(t *testing.T, pool *pgxpool.Pool, aptID int64, res, guest
 	uid := fmt.Sprintf("uid-2075-%d", time.Now().UnixNano())
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO reservation (apartment_id, uid, date_from, date_to, status, created_at, updated_at)
-		 VALUES ($1, $2, '2026-12-01', '2026-12-03', 'active', $3, $3) RETURNING id`,
+		 VALUES ($1, $2, '2026-10-30', '2026-11-02', 'active', $3, $3) RETURNING id`,
 		aptID, uid, ts).Scan(&resID); err != nil {
 		t.Fatal(err)
 	}
 	r := map[string]any{
-		"date_from":                 "2026-12-01",
-		"date_to":                   "2026-12-03",
+		"date_from":                 "2026-10-30",
+		"date_to":                   "2026-11-02",
 		"declared_guests":           1,
 		"registration_completed_at": "2026-10-30T10:00:00+00:00",
 	}

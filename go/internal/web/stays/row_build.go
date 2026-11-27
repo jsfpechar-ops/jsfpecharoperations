@@ -38,8 +38,10 @@ func enrichRows(ctx context.Context, pool *pgxpool.Pool, getenv func(string) str
 			declared: r.Reservation.Declared, override: r.Reservation.Override, reduced: r.Reservation.Reduced,
 		}
 		guests := byStay[r.Reservation.ID]
+		sig := signals[r.Reservation.ID]
 		rows[i].Progress = buildProgress(st, guests, at)
-		rows[i].Journey = BuildJourney(r.Reservation, rows[i].Progress, signals[r.Reservation.ID], pragueToday(at))
+		rows[i].Progress.ScheduledSendLabel = scheduledSendCompact(r.Reservation, rows[i].Progress, sig, guests, at)
+		rows[i].Journey = BuildJourney(r.Reservation, rows[i].Progress, sig, pragueToday(at))
 		lp := listProgress(st, guests, today)
 		rows[i].Controls = sendControls(r.Reservation, r.Reservation.AutomationMode, lp, guests)
 		if rows[i].Controls.SendEnabled && rows[i].ApartmentActive {

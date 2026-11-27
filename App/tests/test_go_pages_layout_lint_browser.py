@@ -333,4 +333,12 @@ from tests.comfy_host_ux_suite import (  # noqa: E402, F401
     test_comfy_ux_all_pages_pass_layout_lint_and_capture_shots,
     test_comfy_ux_rigorous_geometry_and_design_invariants,
 )
+from tests.checkin_autofiling_ux_suite import (  # noqa: E402, F401
+    autofiling_world,
+    test_checkin_autofiling_geometry_and_tooltips,
+    test_checkin_autofiling_pages_pass_layout_lint,
+)
+from tests.go_guest_elderly_ux_suite import (  # noqa: E402, F401
+    test_go_guest_elderly_ux_flow_geometry_and_a11y,
+)
 

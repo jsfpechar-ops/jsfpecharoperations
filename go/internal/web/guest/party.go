@@ -65,6 +65,7 @@ func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) s
 	mux.Handle("POST /l/{token}/{reservation_id}/party", wrap("POST /l/{token}/{reservation_id}/party", WithPOSTCSRF(getenv, now, partySizeHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/count", wrap("POST /l/{token}/{reservation_id}/count", WithPOSTCSRF(getenv, now, leadCountHandler(d))))
 	mux.Handle("POST /l/{token}/{reservation_id}/another", wrap("POST /l/{token}/{reservation_id}/another", WithPOSTCSRF(getenv, now, addAnotherHandler(d))))
+	mux.Handle("POST /l/{token}/{reservation_id}/confirm-registration", wrap("POST /l/{token}/{reservation_id}/confirm-registration", WithPOSTCSRF(getenv, now, confirmRegistrationHandler(d))))
 }
 
 func parsePartyPath(w http.ResponseWriter, r *http.Request) (token string, resID int64, ok bool) {
@@ -132,6 +133,7 @@ type partyStay struct {
 	declared                 *int64
 	reduced                  *int64
 	dateFrom                 string
+	dateTo                   string
 	checkinHour              string
 	leadChanges              int64
 	leadReducedFrom          *int64
@@ -142,13 +144,13 @@ func (d partyDeps) loadPartyStay(ctx context.Context, token string, resID int64)
 	err := d.pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
-		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
+		COALESCE(r.date_from::text,''), COALESCE(r.date_to::text,''), COALESCE(a.checkin_hour::text,''),
 		COALESCE(r.lead_reduced_changes,0), r.lead_reduced_from
 		FROM reservation r
 		JOIN apartment a ON a.id = r.apartment_id
 		WHERE r.id = $1 AND a.permalink_token = $2`,
 		resID, token).Scan(&s.id, &s.apartmentID, &s.ownerID, &s.status, &s.archivedAt,
-		&s.override, &s.declared, &s.reduced, &s.dateFrom, &s.checkinHour, &s.leadChanges, &s.leadReducedFrom)
+		&s.override, &s.declared, &s.reduced, &s.dateFrom, &s.dateTo, &s.checkinHour, &s.leadChanges, &s.leadReducedFrom)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, false, nil
 	}
@@ -578,9 +580,6 @@ func leadCountHandler(d partyDeps) http.HandlerFunc {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
 		}
-		if code == codeLowered || code == codeRestored {
-			d.afterLeadChange(r.Context(), stay.apartmentID, resID)
-		}
 		redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "count="+url.QueryEscape(code)), lang)
 	}
 }
@@ -622,6 +621,10 @@ func addAnotherHandler(d partyDeps) http.HandlerFunc {
 			next = maxGuests
 		}
 		_, _ = d.applyDeclared(r.Context(), resID, next)
+		nowS := d.now().UTC().Format(time.RFC3339)
+		_, _ = d.pool.Exec(r.Context(),
+			`UPDATE reservation SET registration_completed_at = NULL, updated_at = $1 WHERE id = $2`,
+			nowS, resID)
 		redirectGuest(w, r, guestLink(token, resID, lang)+"/new"+langQuery(lang), lang)
 	}
 }

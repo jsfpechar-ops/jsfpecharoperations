@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -51,8 +52,8 @@ var wizardFuncs = template.FuncMap{
 // wizardPages holds one template set per step page: the shared files
 // (wizardtemplates/_*.tmpl: the frame of setup_wizard/_layout.html and the
 // partials) plus <step>.tmpl, which fills the frame's blocks as the Jinja
-// page fills _layout.html's. A step whose file is not here yet (a later
-// brief adds it) answers 501. Parsed once; the layout clones a set per request.
+// page fills _layout.html's. Every step in Steps plus "done" must have a
+// template; wizardParsePages panics at startup if one is missing.
 var wizardPages = wizardParsePages()
 
 func wizardParsePages() map[string]*layout.Templates {
@@ -67,6 +68,11 @@ func wizardParsePages() map[string]*layout.Templates {
 			continue
 		}
 		out[strings.TrimSuffix(base, ".tmpl")] = layout.MustParseFuncs(wizardText, wizardFuncs, wizardFiles, "wizardtemplates/_*.tmpl", name)
+	}
+	for _, required := range append(append([]string{}, Steps...), "done") {
+		if _, ok := out[required]; !ok {
+			panic("onboarding wizard: missing template for step " + required)
+		}
 	}
 	return out
 }
@@ -141,19 +147,12 @@ func wizardBack(w http.ResponseWriter, r *http.Request, path string) {
 	hostweb.Back(w, r, path, hostweb.Flash{}, hostweb.Flash{})
 }
 
-// wizardNotPorted answers a branch whose Go port is still to come (501) with a
-// host page in the light-mode layout.
-func (s *wizardServer) wizardNotPorted(w http.ResponseWriter, r *http.Request, h *session.Host, at time.Time, what string) {
-	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: at}
-	layout.NotPortedPage(w, r, env, h, "apartments", what)
-}
-
 // wizardRender is render_wizard: setup_wizard/<step>.html inside the host
 // layout (v2, nav apartments, body form). The <title> is wizard.title.
 func (s *wizardServer) wizardRender(w http.ResponseWriter, r *http.Request, h *session.Host, at time.Time, status int, v *wizardView) {
 	tpl, ok := wizardPages[v.Step]
 	if !ok {
-		s.wizardNotPorted(w, r, h, at, "the "+v.Step+" step page")
+		serverError(w, fmt.Errorf("onboarding wizard: missing template %q", v.Step))
 		return
 	}
 	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: at}

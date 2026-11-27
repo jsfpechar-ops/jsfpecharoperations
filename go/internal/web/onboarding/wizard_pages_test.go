@@ -44,7 +44,7 @@ func TestWizardOperatorSelected(t *testing.T) {
 			t.Errorf("stored %v entities %v: %d, want %d", c.stored, c.entities, got, c.want)
 		}
 	}
-	for mode, want := range map[string]string{"manual": "manual", "scheduled": "scheduled", "immediate": "immediate", "": "manual", "off": "manual"} {
+	for mode, want := range map[string]string{"manual": "manual", "scheduled": "scheduled", "immediate": "immediate", "": "scheduled", "off": "scheduled"} {
 		if got := (&wizardView{Values: wizardValues{AutomationMode: mode}}).AutoMode(); got != want {
 			t.Errorf("auto mode %q: %q", mode, got)
 		}

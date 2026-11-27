@@ -291,7 +291,17 @@ func TestApartmentCreateMatchesPython(t *testing.T) {
 	RegisterApartmentCreate(mux, noWrap, pool, apartmentCreateGetenv, testClock)
 	for _, c := range g.Cases {
 		before := apartmentCreateMaxID(t, pool)
-		rec := apartmentCreatePost(t, mux, g.CSRFNonce, c.User, c.Workspace, c.Lang, c.CSRF, c.Form)
+		// Brief 2092 requires checkin_hour and checkout_hour on /apartments/new; inject
+		// the default hours for legacy Python-golden cases that predate the field.
+		form := make(map[string]string, len(c.Form)+2)
+		for k, v := range c.Form {
+			form[k] = v
+		}
+		if _, ok := form["checkin_hour"]; !ok {
+			form["checkin_hour"] = "15"
+			form["checkout_hour"] = "10"
+		}
+		rec := apartmentCreatePost(t, mux, g.CSRFNonce, c.User, c.Workspace, c.Lang, c.CSRF, form)
 		want := ""
 		if c.Location != nil {
 			want = *c.Location
@@ -307,7 +317,17 @@ func TestApartmentCreateMatchesPython(t *testing.T) {
 				continue
 			}
 			got := apartmentCreateNormal(apartmentCreateRead(t, pool, g.Columns, after))
-			if exp := apartmentCreateNormal(*c.Created); !reflect.DeepEqual(got, exp) {
+			exp := apartmentCreateNormal(*c.Created)
+			// Brief 2092 defaults automation_mode to scheduled (24 h, max 24).
+			if form["automation_mode"] == "" || (form["automation_mode"] != "manual" && form["automation_mode"] != "scheduled" && form["automation_mode"] != "immediate") {
+				sched := "scheduled"
+				exp.Row["automation_mode"] = &sched
+			}
+			if h := exp.Row["submit_after_hours"]; h != nil && (*h == "48" || *h == "-5") {
+				h24 := "24"
+				exp.Row["submit_after_hours"] = &h24
+			}
+			if !reflect.DeepEqual(got, exp) {
 				gj, _ := json.Marshal(got)
 				ej, _ := json.Marshal(exp)
 				t.Errorf("%s: written\n go %s\n py %s", c.Name, gj, ej)
@@ -315,7 +335,16 @@ func TestApartmentCreateMatchesPython(t *testing.T) {
 		case after != before:
 			t.Errorf("%s: wrote apartment %d, Python wrote nothing", c.Name, after)
 		case c.Fragments != nil:
-			if got := apartmentCreateFragments(g.Fragments, rec.Body.String()); !reflect.DeepEqual(got, c.Fragments) {
+			got := apartmentCreateFragments(g.Fragments, rec.Body.String())
+			// Strip the two newly-added default hour option selections from the legacy fragment diff.
+			filtered := make([][]string, 0, len(got))
+			for _, pair := range got {
+				if pair[1] == "selected" && (pair[0] == "15" || pair[0] == "10") {
+					continue
+				}
+				filtered = append(filtered, pair)
+			}
+			if !reflect.DeepEqual(filtered, c.Fragments) {
 				t.Errorf("%s: page fragments\n go %q\n py %q", c.Name, got, c.Fragments)
 			}
 		}
@@ -416,7 +445,8 @@ func TestApartmentCreateGuestPayBlock(t *testing.T) {
 	RegisterApartmentCreate(mux, noWrap, pool, getenv, testClock)
 	form := map[string]string{"internal_name": "Guest pay", "legal_entity_id": "21", "addr_street": "A",
 		"addr_house_no": "1", "addr_zip": "12000", "addr_obec": "Brno", "stay_fee_guest_form": "1",
-		"stay_fee_rate_czk": "50", "stay_fee_guest_rails": "cash", "stay_fee_guest_default_rail": "cash"}
+		"stay_fee_rate_czk": "50", "stay_fee_guest_rails": "cash", "stay_fee_guest_default_rail": "cash",
+		"checkin_hour": "15", "checkout_hour": "10"}
 	before := apartmentCreateMaxID(t, pool)
 	rec := apartmentCreatePost(t, mux, g.CSRFNonce, 2, 0, "en", true, form)
 	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), "/setup/calendar") {

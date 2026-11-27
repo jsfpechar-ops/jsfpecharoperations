@@ -244,7 +244,7 @@ func TestGuestRemovalCleanup(t *testing.T) {
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at, automation_mode, uby_idub, uby_name)
 		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4, 'immediate', 'UBY123', 'Flat')`, aptID, ownerID, tok, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, declared_guests, registration_completed_at, created_at, updated_at)
-		VALUES ($1, $2, 'rm2076-main', 'active', 'manual', '2026-06-10', '2026-06-12', 2, NULL, $3, $3)`, resID, aptID, stamp)
+		VALUES ($1, $2, 'rm2076-main', 'active', 'manual', '2026-06-10', '2026-06-12', 2, $3, $3, $3)`, resID, aptID, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, declared_guests, registration_completed_at, created_at, updated_at)
 		VALUES ($1, $2, 'rm2076-other', 'active', 'manual', '2026-06-10', '2026-06-12', 1, NULL, $3, $3)`, otherResID, aptID, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO guest (id, reservation_id, created_at, updated_at, first_name, surname, birth_date, nationality, doc_number, res_street, res_city, res_country, purpose, stay_from, stay_to, is_lead)
@@ -409,8 +409,8 @@ func TestGuestRemovalCleanup(t *testing.T) {
 		if gotMode != "completion_immediate" {
 			t.Fatalf("submit mode = %q, want completion_immediate", gotMode)
 		}
-		if gotOpts.IgnoreSchedule == nil || !*gotOpts.IgnoreSchedule {
-			t.Fatalf("submit IgnoreSchedule = %v, want true", gotOpts.IgnoreSchedule)
+		if gotOpts.IgnoreSchedule == nil || *gotOpts.IgnoreSchedule {
+			t.Fatalf("submit IgnoreSchedule = %v, want false (check-in-anchored schedule enforced)", gotOpts.IgnoreSchedule)
 		}
 		gotIDs := append([]int64(nil), gotOpts.OnlyGuestIDs...)
 		sort.Slice(gotIDs, func(i, j int) bool { return gotIDs[i] < gotIDs[j] })

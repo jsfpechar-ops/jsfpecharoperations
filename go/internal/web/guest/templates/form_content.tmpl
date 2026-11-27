@@ -71,19 +71,157 @@
   {{if .JustSaved}}
   <p class="hint g-saved-strip" role="status">{{.T "person_saved"}}</p>
   {{end}}
+  {{if .AlreadyAddedNames}}
+  <p class="hint g-already-added" data-already-added>{{.T "already_added"}}: {{range $i, $n := .AlreadyAddedNames}}{{if $i}}, {{end}}{{$n}}{{end}}</p>
+  {{end}}
   <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>
 
   <div class="g-card" data-guest-step data-step-title="{{.T "your_details"}}">
-    {{if .OCRAvailable}}<div class="g-field" id="ocr-scan">
+    {{if .OCRAvailable}}<div class="g-field" id="ocr-scan"
+     data-chip="{{.T "ocr_filled_chip"}}"
+     data-working="{{.T "ocr_scan_working"}}"
+     data-done="{{.T "ocr_scan_done"}}"
+     data-nat-missing="{{.T "ocr_nationality_missing"}}"
+     data-unavailable="{{.T "ocr_unavailable"}}">
   <label class="g-btn" for="ocr-scan-file">{{.T "ocr_scan_button"}}</label>
   <input type="file" id="ocr-scan-file" accept="image/jpeg,image/png,image/webp"
          style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)">
   <p class="hint" id="ocr-scan-hint" style="margin-top:12px">{{.T "ocr_scan_hint"}}</p>
   <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
 </div>
+<script>
+(function () {
+  var box = document.getElementById('ocr-scan');
+  var fileInput = document.getElementById('ocr-scan-file');
+  var scanStatus = document.getElementById('ocr-scan-status');
+  if (!box || !fileInput) return;
+  var form = fileInput.form;
+  var chipText = box.getAttribute('data-chip') || '';
+  var workingText = box.getAttribute('data-working') || '';
+  var doneText = box.getAttribute('data-done') || '';
+  var natMissingText = box.getAttribute('data-nat-missing') || '';
+  var unavailableText = box.getAttribute('data-unavailable') || '';
 
+  function clearChips() {
+    Array.prototype.forEach.call(document.querySelectorAll('.g-scan-chip'), function (chip) {
+      chip.parentNode.removeChild(chip);
+    });
+  }
+  function addChip(el) {
+    var field = el.closest('.g-field');
+    if (!field) return;
+    var chip = document.createElement('span');
+    chip.className = 'g-chip g-scan-chip';
+    chip.textContent = chipText;
+    field.appendChild(chip);
+    function drop() { if (chip.parentNode) chip.parentNode.removeChild(chip); }
+    el.addEventListener('input', drop, { once: true });
+    el.addEventListener('change', drop, { once: true });
+  }
+  function fillFields(values) {
+    var map = { surname: 'surname', first_name: 'first_name', birth_date: 'birth_date',
+                nationality: 'nationality', doc_number: 'doc_number' };
+    clearChips();
+    Object.keys(map).forEach(function (k) {
+      var el = document.getElementById(map[k]);
+      if (!el || !values[k]) return;
+      el.value = k === 'birth_date'
+        ? values[k].replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3')
+        : values[k];
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      addChip(el);
+    });
+  }
+  function showStatus(text, busy) {
+    if (!scanStatus) return;
+    scanStatus.textContent = '';
+    if (busy) {
+      var spin = document.createElement('span');
+      spin.className = 'g-spin';
+      spin.setAttribute('aria-hidden', 'true');
+      scanStatus.appendChild(spin);
+    }
+    scanStatus.appendChild(document.createTextNode(text));
+    scanStatus.hidden = false;
+  }
+  var MAX_EDGE = 1568;
+  function shrink(file) {
+    if (!window.createImageBitmap || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return Promise.resolve(file);
+    }
+    return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
+      var longest = Math.max(bmp.width, bmp.height);
+      if (longest <= MAX_EDGE && file.size <= 1500000) { bmp.close(); return file; }
+      var scale = Math.min(1, MAX_EDGE / longest);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      bmp.close();
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) {
+          resolve(blob && blob.size < file.size
+            ? new File([blob], 'scan.jpg', { type: 'image/jpeg' }) : file);
+        }, 'image/jpeg', 0.9);
+      });
+    }).catch(function () { return file; });
+  }
+  fileInput.addEventListener('change', function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file || !form) return;
+    var csrf = form.elements._csrf.value;
+    fileInput.disabled = true;
+    showStatus(workingText, true);
+    shrink(file).then(function (photo) {
+      var body = new FormData();
+      body.append('passport_photo', photo, photo.name || file.name);
+      body.append('_csrf', csrf);
+      return fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
+        method: 'POST',
+        body: body,
+        headers: { Accept: 'application/json' }
+      });
+    }).then(function (res) { return res.json(); }).then(function (data) {
+      if (data.kind === 'values') {
+        fillFields(data.values);
+        var nat = document.getElementById('nationality');
+        var natError = document.getElementById('nationality_error');
+        if (!data.values.nationality) {
+          if (natError) {
+            showStatus(doneText);
+            natError.textContent = natMissingText;
+            natError.setAttribute('data-ocr', '1');
+            natError.hidden = false;
+          } else {
+            showStatus(doneText + ' ' + natMissingText);
+          }
+          if (nat && !nat.value) (document.getElementById('nationality_search') || nat).focus();
+        } else {
+          if (natError && natError.hasAttribute('data-ocr')) {
+            natError.removeAttribute('data-ocr');
+            natError.hidden = true;
+          }
+          showStatus(doneText);
+        }
+      } else {
+        showStatus(data.message || unavailableText);
+      }
+    }).catch(function () {
+      showStatus(unavailableText);
+    }).then(function () {
+      fileInput.disabled = false;
+      fileInput.value = '';
+    });
+  });
+})();
+</script>
 {{end}}
     <div class="g-step-head">
       <h2>{{.T "your_details"}}{{if gt .PersonNumber 1}} <span class="g-chip">{{.T "person"}} {{$.PersonNumber}}</span>{{end}}</h2><details class="g-head-help" data-purpose-help="identity">
@@ -99,10 +237,6 @@
                inputmode="numeric" autocomplete="off"
                value="{{or (index $.Values "party_size") "1"}}">
         <div class="hint">{{.T "party_help"}}</div>
-        <details class="g-why" data-purpose-help="guest-count">
-          <summary class="g-why-summary">{{.T "guest_count_purpose_help_label"}}</summary>
-          <p class="g-intro">{{.T "guest_count_purpose_help"}}</p>
-        </details>
         {{$.ErrHTML "party_size"}}
       </div>
     {{end}}
@@ -189,8 +323,21 @@
       </details>
     </div>
     <p class="g-intro">{{.T "residence_help"}}</p>
-    {{if .ResidenceCopiedFrom}}
-      <p class="hint" role="status">{{.T "residence_copied"}}</p>
+    {{if .SameAddress}}
+      <div class="g-same-addr" data-same-address hidden
+           data-match-nat="{{.SameAddress.Nationality}}"
+           data-country="{{.SameAddress.Country}}"
+           data-city="{{.SameAddress.City}}"
+           data-street="{{.SameAddress.Street}}"
+           data-name="{{.SameAddress.Name}}">
+        <label class="g-same-addr-row">
+          <input type="checkbox" data-same-address-toggle>
+          <span class="g-same-addr-text">
+            <span class="g-same-addr-title" data-same-address-label></span>
+            <span class="g-same-addr-preview">{{.SameAddress.Street}}, {{.SameAddress.City}}, {{.SameAddress.CountryLabel}}</span>
+          </span>
+        </label>
+      </div>
     {{end}}
     <div class="g-field">
       <label for="res_country">{{.T "res_country"}}</label>

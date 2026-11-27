@@ -1,0 +1,218 @@
+/* Brief 2097: 5-step Stay Journey (SES email, link opened, form+housebook, TTLock, police) */
+
+.stay-journey {
+  gap: 4px;
+}
+
+.stay-journey-step {
+  min-width: 25px;
+  height: 25px;
+  border-radius: 7px;
+}
+
+.stay-journey-step svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stay-journey-step[data-tone="scheduled"] {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+  border-color: var(--status-ready-border);
+}
+
+.stay-journey-summary {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  background: var(--canvas-subtle);
+  color: var(--ink-secondary);
+}
+
+.stay-journey-summary[data-tone="waiting"] {
+  background: var(--canvas-subtle);
+  color: var(--ink-secondary);
+}
+
+.stay-journey-summary[data-tone="scheduled"] {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+}
+
+.stay-journey-summary[data-tone="progress"] {
+  background: var(--status-action-bg);
+  color: var(--status-action-ink);
+}
+
+.stay-journey-summary[data-tone="done"] {
+  background: var(--status-done-bg);
+  color: var(--status-done-ink);
+}
+
+.stay-journey-summary[data-tone="bad"] {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.stay-phone-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.stays-phone .card.stay .stay-journey {
+  margin-top: 0;
+}
+
+.stays-phone .card.stay .stay-journey-summary {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  white-space: normal;
+}
+
+.stay-journey-bar {
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+}
+
+.stay-journey-bar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.stay-journey-bar-step[data-tone="scheduled"] {
+  border-color: var(--status-ready-border);
+}
+
+.stay-journey-bar-step[data-tone="scheduled"] .stay-journey-bar-icon {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+}
+
+.stay-journey-bar-step[data-tone="progress"] {
+  border-color: var(--status-action-border);
+}
+
+.stay-journey-bar-step[data-tone="done"] {
+  border-color: var(--status-done-border);
+}
+
+.stay-journey-bar-link {
+  color: var(--status-done-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Collapsible no-JS icon + color legend (overrides app2.css global details box) */
+body.v2 details.journey-legend,
+.journey-legend {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+body.v2 details.journey-legend > summary.journey-legend-toggle,
+.journey-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  min-height: 0;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+body.v2 details.journey-legend > summary.journey-legend-toggle::after {
+  display: none;
+}
+
+.journey-legend-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.journey-legend-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 20px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.journey-legend-group strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.journey-legend-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.journey-legend-group li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.journey-legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--gray);
+  background: var(--gray-bg);
+}
+
+.journey-legend-swatch[data-tone="scheduled"] {
+  background: var(--status-ready-bg);
+  border-color: var(--blue);
+}
+
+.journey-legend-swatch[data-tone="progress"] {
+  background: var(--status-action-bg);
+  border-color: var(--amber);
+}
+
+.journey-legend-swatch[data-tone="done"] {
+  background: var(--status-done-bg);
+  border-color: var(--green);
+}
+
+.journey-legend-swatch[data-tone="bad"] {
+  background: var(--red-bg);
+  border-color: var(--red);
+}

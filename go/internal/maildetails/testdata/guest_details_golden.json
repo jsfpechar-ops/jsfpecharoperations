@@ -1,0 +1,395 @@
+{
+  "cases": [
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ada Lead</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Not filed yet</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Date of birth</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">14.05.1990</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Home address</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Main 1, Berlin, DEU</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document type</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Passport</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document number</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">•••• 45CD</td></tr></table></div></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Bo Second</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Filed</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Date of birth</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">14.05.1990</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Home address</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Main 1, Berlin, DEU</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document type</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Passport</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document number</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">••••</td></tr></table></div></td></tr>",
+      "expect_text": "Ada Lead\n  Nationality: Germany\n  Police filing: Not filed yet\n  Date of birth: 14.05.1990\n  Home address: Main 1, Berlin, DEU\n  Document type: Passport\n  Document number: •••• 45CD\n\nBo Second\n  Nationality: Germany\n  Police filing: Filed\n  Date of birth: 14.05.1990\n  Home address: Main 1, Berlin, DEU\n  Document type: Passport\n  Document number: ••••",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "X1Y",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD12R_zFbxBC1qZ-v3skd2earZkyNuqOdL5BRpyuro813vFLMUXfaQLp8ULwFQwpDJw==",
+          "doc_type": "P",
+          "first_name": "Bo",
+          "id": 2010,
+          "is_lead": 0,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 201,
+          "submit_state": "sent",
+          "surname": "Second"
+        },
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Ada",
+          "id": 2011,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 201,
+          "submit_state": "pending",
+          "surname": "Lead"
+        }
+      ],
+      "lang": "en",
+      "name": "full_on_dpa_1_8_en",
+      "reservation_id": 201,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.10"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Eva Novakova</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Státní občanství</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Česko</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Hlášení cizinecké policii</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Není potřeba</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Datum narození</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">03.12.1988</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Adresa bydliště</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Main 1, Berlin, DEU</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Druh dokladu</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Občanský průkaz</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Číslo dokladu</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">•••• 6789</td></tr></table></div></td></tr>",
+      "expect_text": "Eva Novakova\n  Státní občanství: Česko\n  Hlášení cizinecké policii: Není potřeba\n  Datum narození: 03.12.1988\n  Adresa bydliště: Main 1, Berlin, DEU\n  Druh dokladu: Občanský průkaz\n  Číslo dokladu: •••• 6789",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1988-12-03",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD9ZL_nGSbFS9rWngGspGz_bPBU7eCrI-3aqJfLRdMTvJ-BopicC4KCTpOlEw6uDSdg==",
+          "doc_number": "123456789",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0ODxxGuIhRHEdETJI2-GuZ1byRbU-Y-yvvTQ1pUF2siq8mppxv2Vkp4G2mxmaa3EK7uA==",
+          "doc_type": "ID",
+          "first_name": "Eva",
+          "id": 2020,
+          "is_lead": 1,
+          "nationality": "CZE",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 202,
+          "submit_state": "not_required",
+          "surname": "Novakova"
+        }
+      ],
+      "lang": "cs",
+      "name": "full_on_dpa_1_10_cs",
+      "reservation_id": 202,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ada Tester</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Filing failed</td></tr></table></div></td></tr>",
+      "expect_text": "Ada Tester\n  Nationality: Germany\n  Police filing: Filing failed",
+      "guest_details_mail": 0,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Ada",
+          "id": 2030,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 203,
+          "submit_state": "error",
+          "surname": "Tester"
+        }
+      ],
+      "lang": "en",
+      "name": "switch_off_with_dpa_1_8",
+      "reservation_id": 203,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ada Tester</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Refused by the register</td></tr></table></div></td></tr>",
+      "expect_text": "Ada Tester\n  Nationality: Germany\n  Police filing: Refused by the register",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Ada",
+          "id": 2040,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 204,
+          "submit_state": "blocked",
+          "surname": "Tester"
+        }
+      ],
+      "lang": "en",
+      "name": "switch_on_without_dpa",
+      "reservation_id": 204,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.7"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ada Tester</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Filed</td></tr></table></div></td></tr>",
+      "expect_text": "Ada Tester\n  Nationality: Germany\n  Police filing: Filed",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Ada",
+          "id": 2050,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 205,
+          "submit_state": "sent",
+          "surname": "Tester"
+        }
+      ],
+      "lang": "en",
+      "name": "switch_on_dpa_1_7_too_old",
+      "reservation_id": 205,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "2.0"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Guest without a name</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">–</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">custom_state</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Date of birth</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">01011990</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Home address</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Prague</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document type</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">xyz</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document number</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">•••• 7766</td></tr></table></div></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Cy Unknown</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">ZZZ</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Not filed yet</td></tr></table></div></td></tr>",
+      "expect_text": "Guest without a name\n  Nationality: –\n  Police filing: custom_state\n  Date of birth: 01011990\n  Home address: Prague\n  Document type: xyz\n  Document number: •••• 7766\n\nCy Unknown\n  Nationality: ZZZ\n  Police filing: Not filed yet",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "01011990",
+          "birth_date_enc": "",
+          "doc_number": "99887766",
+          "doc_number_enc": "",
+          "doc_type": "xyz",
+          "first_name": "",
+          "id": 2060,
+          "is_lead": 1,
+          "nationality": "",
+          "res_city": "Prague",
+          "res_city_enc": "",
+          "res_country": "",
+          "res_street": "",
+          "res_street_enc": "",
+          "reservation_id": 206,
+          "submit_state": "custom_state",
+          "surname": ""
+        },
+        {
+          "archived_at": null,
+          "birth_date": "",
+          "birth_date_enc": "",
+          "doc_number": "",
+          "doc_number_enc": "",
+          "doc_type": "",
+          "first_name": "Cy",
+          "id": 2061,
+          "is_lead": 0,
+          "nationality": "ZZZ",
+          "res_city": "",
+          "res_city_enc": "",
+          "res_country": "",
+          "res_street": "",
+          "res_street_enc": "",
+          "reservation_id": 206,
+          "submit_state": "",
+          "surname": "Unknown"
+        },
+        {
+          "archived_at": "2026-06-03T12:00:00Z",
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Archived",
+          "id": 2062,
+          "is_lead": 0,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 206,
+          "submit_state": "pending",
+          "surname": "Skip"
+        }
+      ],
+      "lang": "en",
+      "name": "plaintext_legacy_and_aliases",
+      "reservation_id": 206,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Gi&lt;b&gt; A&amp;B</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Nationality</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Germany</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Police filing</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Not filed yet</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Date of birth</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">14.05.1990</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Home address</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Oak &lt;1&gt;, R&amp;D, DEU</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document type</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Passport</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Document number</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">•••• 4321</td></tr></table></div></td></tr>",
+      "expect_text": "Gi<b> A&B\n  Nationality: Germany\n  Police filing: Not filed yet\n  Date of birth: 14.05.1990\n  Home address: Oak <1>, R&D, DEU\n  Document type: Passport\n  Document number: •••• 4321",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "Q7654321",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0ODyOpCKUlAe78ut4OgqLVO-4kNbNXYNQDT8GHKs9fhIAbVqPhGhHfF47l5TVIKLFB_g==",
+          "doc_type": "pas",
+          "first_name": "Gi<b>",
+          "id": 2070,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "R&D",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD9SoJ7h8imu-8ift0MELbDHo_JVnfLmfS9QAFbmSDvJwbGRYkvD4fG9uKezSbOkpaQ==",
+          "res_country": "DEU",
+          "res_street": "Oak <1>",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD4ASPDPbXlErSxHJw6sKtiEBYukVHDYiFAnsTUcqQ8CwBJhuK5o05E8d3ouD0_KdSg==",
+          "reservation_id": 207,
+          "submit_state": "pending",
+          "surname": "A&B"
+        }
+      ],
+      "lang": "de",
+      "name": "html_escaping_and_lang_fallback",
+      "reservation_id": 207,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ada Tester</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Státní občanství</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Spojené království</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Hlášení cizinecké policii</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Zatím neodeslané</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Datum narození</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">14.05.1990</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Adresa bydliště</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Main 1, Berlin, DEU</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Druh dokladu</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Průkaz o povolení k trvalému pobytu</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Číslo dokladu</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">•••• 45CD</td></tr></table></div></td></tr>",
+      "expect_text": "Ada Tester\n  Státní občanství: Spojené království\n  Hlášení cizinecké policii: Zatím neodeslané\n  Datum narození: 14.05.1990\n  Adresa bydliště: Main 1, Berlin, DEU\n  Druh dokladu: Průkaz o povolení k trvalému pobytu\n  Číslo dokladu: •••• 45CD",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": null,
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "trvaly_pobyt",
+          "first_name": "Ada",
+          "id": 2080,
+          "is_lead": 1,
+          "nationality": "GBR",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 208,
+          "submit_state": "pending",
+          "surname": "Tester"
+        }
+      ],
+      "lang": "cs-CZ",
+      "name": "unsupported_lang_cs_locale",
+      "reservation_id": 208,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The guest list is no longer available.</p></td></tr>",
+      "expect_text": "The guest list is no longer available.",
+      "guest_details_mail": 1,
+      "guests": [
+        {
+          "archived_at": "2026-06-03T12:00:00Z",
+          "birth_date": "1990-05-14",
+          "birth_date_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8emjYmd54aZ5Rd4qTs46Ggntfs_zjMSL52rhMP-KzljviEoG7zRcBUIx5vVtkiO2Q==",
+          "doc_number": "AB12345CD",
+          "doc_number_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD8S_ac0xwTQMwGj8zelJ-CY3KmvP19u85nL3UNF5MRp0eZrtVZuFPLS2uKWhkGoGLQ==",
+          "doc_type": "pas",
+          "first_name": "Ada",
+          "id": 2090,
+          "is_lead": 1,
+          "nationality": "DEU",
+          "res_city": "Berlin",
+          "res_city_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD-3PoviUHC1a7q8M2zsAnTacdOuTF6VdcCiLGBQ6bA8Jxea_Po3p1njmanA8h0G74Q==",
+          "res_country": "DEU",
+          "res_street": "Main 1",
+          "res_street_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD--oR7UbmDECr-Nuv8i1ZLgvc7C6KXzAb-NdGPo8BihN3QRMFZkr8r7oqoLdJY-odQ==",
+          "reservation_id": 209,
+          "submit_state": "pending",
+          "surname": "Tester"
+        }
+      ],
+      "lang": "en",
+      "name": "stay_with_no_active_guests",
+      "reservation_id": 209,
+      "seeded": true
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The guest list is no longer available.</p></td></tr>",
+      "expect_text": "The guest list is no longer available.",
+      "guest_details_mail": 1,
+      "guests": [],
+      "lang": "en",
+      "name": "missing_stay_en",
+      "reservation_id": 210,
+      "seeded": false
+    },
+    {
+      "dpa_versions": [
+        "1.8"
+      ],
+      "expect_html": "<tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Seznam hostů už není k dispozici.</p></td></tr>",
+      "expect_text": "Seznam hostů už není k dispozici.",
+      "guest_details_mail": 1,
+      "guests": [],
+      "lang": "cs",
+      "name": "missing_stay_cs",
+      "reservation_id": 211,
+      "seeded": false
+    }
+  ],
+  "fernet_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+}

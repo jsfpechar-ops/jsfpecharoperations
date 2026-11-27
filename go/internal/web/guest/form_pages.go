@@ -139,6 +139,7 @@ type formView struct {
 	DatesLink                string
 	HideBack                 bool
 	DupWarnings              []dupWarning
+	AlreadyAddedNames        []string
 	PersonNumber             int
 	ExpectedPeople           int
 	StayFromLabel            string
@@ -177,6 +178,7 @@ type formView struct {
 	SelectedChildRole        string
 	SignatureValue           string
 	ResidenceCopiedFrom      string
+	SameAddress              *formSameAddress
 	FeeNotice                bool
 	FeeEstimate              bool
 	FeePanel                 bool
@@ -213,10 +215,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 		early.ServeHTTP(w, r)
 		return nil
 	}
-	if formPagesAlertControllerMissing(apt) {
-		d.formWriteUnavailable(w, r, lang, "controller_missing", http.StatusServiceUnavailable, link, nil)
-		return nil
-	}
+	formPagesAlertControllerMissing(ctx, d.pool, apt)
 	if requirePin(w, r, d.shell(), link, lang, apt) {
 		return nil
 	}
@@ -620,6 +619,7 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 		editing = true
 	}
 	back := d.formPagesBackURL(ctx, link, apt, res.id, lang, editing)
+	canPick := formPagesCanPick(ctx, d.pool, apt, d.now)
 	saveKey := "guest_save_details"
 	if guest != nil {
 		saveKey = "guest_save_changes"
@@ -647,8 +647,8 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 		},
 		ReservationID: res.id,
 		BackURL:       back,
-		DatesLink:     formPagesDatesLink(back, editing, formPagesCanPick(apt)),
-		HideBack:      formPagesCanPick(apt) && !editing,
+		DatesLink:     formPagesDatesLink(back, editing, canPick),
+		HideBack:      canPick && !editing,
 		PersonNumber:  personNumber,
 		StayFromLabel: formPagesDateLabel(stayFrom, lang),
 		StayToLabel:   formPagesDateLabel(stayTo, lang),
@@ -661,6 +661,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	if guest != nil {
 		view.GuestID = guest.id
 	}
+	if !editing && personNumber > 1 {
+		view.AlreadyAddedNames = loadOwnedGuestNames(ctx, d.pool, res.id, ownedGuestIDs(r, d.getenv))
+	}
 	if prog.expected != nil {
 		view.ExpectedPeople = *prog.expected
 	}
@@ -671,6 +674,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 		view.DupWarnings = dups
 	}
 	view.Values = map[string]string{"stay_from": stayFrom, "stay_to": stayTo}
+	if mode == "new" && guest == nil {
+		view.SameAddress = formSameAddressCandidate(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), lang, d.getenv, d.now)
+	}
 	view.Inpass = "INPASS"
 	view.NoticeVersion = formNoticeVersion(d.getenv)
 	if ruian.Enabled(d.getenv) {
@@ -689,12 +695,15 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	}
 	view.Purposes = purposes
 	view.SelectedPurpose = formPagesDefaultPurpose(apt)
+	view.OCRAvailable = ocrAvailableForApartment(ctx, d.pool, d.getenv, apt.ID)
 	if guest != nil {
 		view.GuestFields = formGuestFieldMap(guest)
 		view.SignatureValue = guest.signaturePNG
 		if p := strings.TrimSpace(guest.purpose); p != "" {
 			view.SelectedPurpose = p
 		}
+	} else {
+		applyFormDraft(ctx, d, r, apt, link, res.id, lang, mode, guest, &view)
 	}
 	formPagesFillU15(ctx, d, &view, res, guest, r)
 	view.SaveActionLabel = view.T(saveKey)
@@ -811,7 +820,11 @@ func postFormFields(r *http.Request) map[string]string {
 
 // Portal hooks (briefs 1720b–1722 replace stubs with shared helpers).
 
-func formPagesAlertControllerMissing(apt *Apartment) bool { return false }
+// formPagesAlertControllerMissing is guest.py _alert_controller_missing: warn
+// the host when the GDPR controller identity is incomplete; never block guests.
+func formPagesAlertControllerMissing(ctx context.Context, pool *pgxpool.Pool, apt *Apartment) {
+	alertControllerMissingForApartment(ctx, pool, apt)
+}
 
 func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, d formPageDeps, token, kind, lang string) bool {
 	if guestPostLimited(r.Context(), d.pool, d.getenv, r, token, kind, d.now()) {
@@ -874,7 +887,13 @@ func formPagesOwnedIDs(r *http.Request, getenv func(string) string) map[int64]bo
 	return out
 }
 
-func formPagesGuestLocked(g *formGuestRow, res formResRow) bool { return false }
+// formPagesGuestLocked is reporting.guest_form_locked: filed (SENT) or restricted records are read-only.
+func formPagesGuestLocked(g *formGuestRow, _ formResRow) bool {
+	if g == nil {
+		return false
+	}
+	return g.submitState == formSubmitSent || strings.TrimSpace(g.restrictedAt) != ""
+}
 
 // formPagesBackURL is guest.py _form_back_url: the stay hub once the stay has a
 // form, else the picker, and nothing at all while the picker is empty.
@@ -904,7 +923,10 @@ func formPagesDatesLink(back string, editing, canPick bool) string {
 	return back
 }
 
-func formPagesCanPick(apt *Apartment) bool { return false }
+// formPagesCanPick is guest.py _can_pick_other_stays.
+func formPagesCanPick(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, now func() time.Time) bool {
+	return canPickOtherStays(ctx, pool, apt, now)
+}
 
 func formPagesDefaultPurpose(apt *Apartment) string {
 	if apt != nil && strings.TrimSpace(apt.DefaultPurpose) != "" {
