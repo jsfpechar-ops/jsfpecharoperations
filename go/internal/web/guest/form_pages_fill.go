@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -115,4 +116,88 @@ func formGuestUnder15OnStay(birth, stayFrom string) bool {
 		return false
 	}
 	return validation.CertainlyUnderAge(birth, &from, guestcontract.UnderSignAge)
+}
+
+func formDisplayName(first, surname string) string {
+	var parts []string
+	for _, raw := range []string{first, surname} {
+		for _, word := range strings.Fields(strings.TrimSpace(raw)) {
+			r := []rune(strings.ToLower(word))
+			if len(r) == 0 {
+				continue
+			}
+			r[0] = []rune(strings.ToUpper(string(r[0])))[0]
+			parts = append(parts, string(r))
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+type formSameAddress struct {
+	Name         string
+	Nationality  string
+	Country      string
+	CountryLabel string
+	City         string
+	Street       string
+}
+
+// formSameAddressCandidate returns the most recent completed guest's permanent
+// home address from the same browser device cookie for an opt-in checkbox on
+// companion forms. It never pre-fills the inputs automatically.
+func formSameAddressCandidate(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, lang string, getenv func(string) string, now func() time.Time) *formSameAddress {
+	if len(owned) == 0 || pool == nil {
+		return nil
+	}
+	rows, err := pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''),
+		COALESCE(nationality,''),
+		COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_country,'')
+		FROM guest
+		WHERE reservation_id = $1 AND archived_at IS NULL AND filled_at IS NOT NULL
+		ORDER BY id DESC`, resID)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var first, surname, nat, streetPlain, streetEnc, cityPlain, cityEnc, country string
+		if err := rows.Scan(&id, &first, &surname, &nat, &streetPlain, &streetEnc, &cityPlain, &cityEnc, &country); err != nil {
+			return nil
+		}
+		if !owned[id] {
+			continue
+		}
+		street := strings.TrimSpace(streetPlain)
+		if streetEnc != "" {
+			if plain, err := decryptGuestField(getenv, now, streetEnc, streetPlain); err == nil {
+				street = strings.TrimSpace(plain)
+			}
+		}
+		city := strings.TrimSpace(cityPlain)
+		if cityEnc != "" {
+			if plain, err := decryptGuestField(getenv, now, cityEnc, cityPlain); err == nil {
+				city = strings.TrimSpace(plain)
+			}
+		}
+		country = strings.TrimSpace(country)
+		if street == "" || city == "" || country == "" {
+			continue
+		}
+		label := strings.TrimSpace(ubyport.CountryName(country, lang))
+		if label == "" {
+			label = country
+		}
+		return &formSameAddress{
+			Name:         formDisplayName(first, surname),
+			Nationality:  strings.ToUpper(strings.TrimSpace(nat)),
+			Country:      strings.ToUpper(country),
+			CountryLabel: label,
+			City:         city,
+			Street:       street,
+		}
+	}
+	return nil
 }

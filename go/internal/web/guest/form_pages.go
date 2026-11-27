@@ -139,6 +139,7 @@ type formView struct {
 	DatesLink                string
 	HideBack                 bool
 	DupWarnings              []dupWarning
+	AlreadyAddedNames        []string
 	PersonNumber             int
 	ExpectedPeople           int
 	StayFromLabel            string
@@ -177,6 +178,7 @@ type formView struct {
 	SelectedChildRole        string
 	SignatureValue           string
 	ResidenceCopiedFrom      string
+	SameAddress              *formSameAddress
 	FeeNotice                bool
 	FeeEstimate              bool
 	FeePanel                 bool
@@ -661,6 +663,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	if guest != nil {
 		view.GuestID = guest.id
 	}
+	if !editing && personNumber > 1 {
+		view.AlreadyAddedNames = loadOwnedGuestNames(ctx, d.pool, res.id, ownedGuestIDs(r, d.getenv))
+	}
 	if prog.expected != nil {
 		view.ExpectedPeople = *prog.expected
 	}
@@ -671,6 +676,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 		view.DupWarnings = dups
 	}
 	view.Values = map[string]string{"stay_from": stayFrom, "stay_to": stayTo}
+	if mode == "new" && guest == nil {
+		view.SameAddress = formSameAddressCandidate(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), lang, d.getenv, d.now)
+	}
 	view.Inpass = "INPASS"
 	view.NoticeVersion = formNoticeVersion(d.getenv)
 	if ruian.Enabled(d.getenv) {

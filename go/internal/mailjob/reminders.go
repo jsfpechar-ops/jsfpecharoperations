@@ -78,6 +78,7 @@ type reminderRow struct {
 	PermalinkToken string
 	InternalName   string
 	UbyName        string
+	CheckinHour    *int64
 	OwnerUserID    *int64
 	LegalEntityID  *int64
 	ClaimState     string
@@ -93,7 +94,7 @@ const reminderRowsSQL = `
 SELECT r.id, r.apartment_id, r.date_from, r.date_to, COALESCE(r.source, ''),
        r.declared_guests, r.expected_guests_override, r.lead_reduced_guests,
        COALESCE(a.permalink_token, ''), COALESCE(a.internal_name, ''), COALESCE(a.uby_name, ''),
-       a.owner_user_id, a.legal_entity_id,
+       a.checkin_hour, a.owner_user_id, a.legal_entity_id,
        COALESCE(c.state, ''), COALESCE(c.email, ''), COALESCE(c.lang, ''),
        COALESCE(c.email_masked, ''), COALESCE(c.claimed_at, '')
 FROM reservation r
@@ -201,30 +202,44 @@ func SweepReminders(ctx context.Context, pool *pgxpool.Pool, now time.Time) (map
 			}
 		}
 
-		// 0245 (idea E): nobody has opened the guest link by 18:00 the day before arrival.
-		// The mail key is the check-in-day key, so a stay never gets a second host reminder.
-		early := start.Equal(tomorrow) && hour >= 18 && r.ClaimState == "" && !complete &&
+		// 2094: day-before 18:00 nudge and check-in-time alarm use distinct idempotency keys
+		// so the day-before reminder never suppresses the check-in-time email.
+		var chPtr *int
+		if r.CheckinHour != nil {
+			v := int(*r.CheckinHour)
+			chPtr = &v
+		}
+		checkInHour := ubyport.EffectiveCheckinHour(chPtr)
+		early := start.Equal(tomorrow) && hour >= 18 && !complete &&
 			p.Status != "reported" && p.Status != "not_required" && r.Source != "demo"
-		if early || (start.Equal(today) && !complete && hour >= 9) {
+		checkInDue := start.Equal(today) && hour >= checkInHour && !complete &&
+			p.Status != "reported" && p.Status != "not_required" && r.Source != "demo"
+		if early || checkInDue {
 			hostEmail, err := entityContactEmail(ctx, pool, r.LegalEntityID)
 			if err != nil {
 				return nil, err
 			}
 			if hostEmail != "" {
+				mailKey := fmt.Sprintf("reminder_host:checkin:%d:%s", r.ID, start.Format("2006-01-02"))
+				if early {
+					mailKey = fmt.Sprintf("reminder_host:day_before:%d:%s", r.ID, start.Format("2006-01-02"))
+				}
 				content := mailnotify.BuildReminderHost(publicBase(getenv), mailnotify.ReminderHostInput{
-					Lang:         hostLanguage,
-					PropertyName: propertyTitle(r),
-					Date:         start.Format("02.01.2006"),
-					Assigned:     r.EmailMasked,
-					StayURL:      strings.TrimRight(hostweb.AppBase(getenv), "/") + fmt.Sprintf("/reservations/%d#now", r.ID),
-					Claimed:      r.ClaimState == claimStateClaimed,
-					Filled:       p.Filled,
-					Expected:     p.Expected,
-					Tomorrow:     early,
+					Lang:           hostLanguage,
+					PropertyName:   propertyTitle(r),
+					Date:           start.Format("02.01.2006"),
+					Assigned:       r.EmailMasked,
+					StayURL:        strings.TrimRight(hostweb.AppBase(getenv), "/") + fmt.Sprintf("/reservations/%d#now", r.ID),
+					Claimed:        r.ClaimState == claimStateClaimed,
+					Filled:         p.Filled,
+					Expected:       p.Expected,
+					Tomorrow:       early,
+					CheckInStarted: checkInDue,
+					CheckInHour:    checkInHour,
 				})
 				if _, err := queueMail(ctx, pool, getenv, r, mailRequest{
 					kind:    reminderHostKind,
-					key:     fmt.Sprintf("reminder_host:%d:%s", r.ID, start.Format("2006-01-02")),
+					key:     mailKey,
 					to:      hostEmail,
 					subject: content.Subject,
 					payload: encodePayload(kv{"text", content.Text}, kv{"lang", hostLanguage}, kv{"html", content.HTML}),
@@ -259,7 +274,7 @@ func loadReminderRows(ctx context.Context, pool *pgxpool.Pool) ([]reminderRow, e
 		if err := rows.Scan(&r.ID, &r.ApartmentID, &r.DateFrom, &r.DateTo, &r.Source,
 			&r.Declared, &r.Override, &r.Reduced,
 			&r.PermalinkToken, &r.InternalName, &r.UbyName,
-			&r.OwnerUserID, &r.LegalEntityID,
+			&r.CheckinHour, &r.OwnerUserID, &r.LegalEntityID,
 			&r.ClaimState, &r.ClaimEmail, &r.ClaimLang, &r.EmailMasked, &r.ClaimedAt); err != nil {
 			return nil, err
 		}

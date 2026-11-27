@@ -63,9 +63,9 @@
       </div>
   <h3 class="property-section-title">{{t "wizard.question.automation"}}{{help_tip "wiz-why-automation" (t "why.automation")}}</h3>
   <div class="ui-choice-cards">
-    {{choice_card "automation_mode" "manual" (t "automation.mode.manual") (eq .AutoMode "manual") "wizard-manual-help" (t "wizard.automation.manual_detail")}}
     {{choice_card "automation_mode" "scheduled" (t "automation.mode.scheduled") (eq .AutoMode "scheduled") "wizard-scheduled-help" (t "wizard.automation.scheduled_detail") (kv "caller" .HoursField)}}
     {{choice_card "automation_mode" "immediate" (t "automation.mode.immediate") (eq .AutoMode "immediate") "wizard-immediate-help" (t "wizard.automation.immediate_detail")}}
+    {{choice_card "automation_mode" "manual" (t "automation.mode.manual") (eq .AutoMode "manual") "wizard-manual-help" (t "wizard.automation.manual_detail")}}
   </div>
 </form>
 {{end}}

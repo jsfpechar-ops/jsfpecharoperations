@@ -71,6 +71,9 @@
   {{if .JustSaved}}
   <p class="hint g-saved-strip" role="status">{{.T "person_saved"}}</p>
   {{end}}
+  {{if .AlreadyAddedNames}}
+  <p class="hint g-already-added" data-already-added>{{.T "already_added"}}: {{range $i, $n := .AlreadyAddedNames}}{{if $i}}, {{end}}{{$n}}{{end}}</p>
+  {{end}}
   <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>
@@ -99,10 +102,6 @@
                inputmode="numeric" autocomplete="off"
                value="{{or (index $.Values "party_size") "1"}}">
         <div class="hint">{{.T "party_help"}}</div>
-        <details class="g-why" data-purpose-help="guest-count">
-          <summary class="g-why-summary">{{.T "guest_count_purpose_help_label"}}</summary>
-          <p class="g-intro">{{.T "guest_count_purpose_help"}}</p>
-        </details>
         {{$.ErrHTML "party_size"}}
       </div>
     {{end}}
@@ -189,8 +188,21 @@
       </details>
     </div>
     <p class="g-intro">{{.T "residence_help"}}</p>
-    {{if .ResidenceCopiedFrom}}
-      <p class="hint" role="status">{{.T "residence_copied"}}</p>
+    {{if .SameAddress}}
+      <div class="g-same-addr" data-same-address hidden
+           data-match-nat="{{.SameAddress.Nationality}}"
+           data-country="{{.SameAddress.Country}}"
+           data-city="{{.SameAddress.City}}"
+           data-street="{{.SameAddress.Street}}"
+           data-name="{{.SameAddress.Name}}">
+        <label class="g-same-addr-row">
+          <input type="checkbox" data-same-address-toggle>
+          <span class="g-same-addr-text">
+            <span class="g-same-addr-title" data-same-address-label></span>
+            <span class="g-same-addr-preview">{{.SameAddress.Street}}, {{.SameAddress.City}}, {{.SameAddress.CountryLabel}}</span>
+          </span>
+        </label>
+      </div>
     {{end}}
     <div class="g-field">
       <label for="res_country">{{.T "res_country"}}</label>

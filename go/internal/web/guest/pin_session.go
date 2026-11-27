@@ -39,7 +39,7 @@ func pinSessionValid(r *http.Request, secret, token, pin string, now time.Time) 
 		return false
 	}
 	var payload map[string]any
-	if err := secure.NewTimedSerializer(secret, pinSessionSalt).Loads(raw, pinCookieAge, now, &payload); err != nil {
+	if err := secure.NewTimedSerializer(secret, pinSessionSalt).Loads(raw, pinCookieAge*time.Second, now, &payload); err != nil {
 		return false
 	}
 	tok, _ := payload["token"].(string)

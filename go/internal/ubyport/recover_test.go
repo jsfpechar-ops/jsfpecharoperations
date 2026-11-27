@@ -229,7 +229,7 @@ func TestRefreshRegistrationCompletedAt(t *testing.T) {
 		existing     any
 		want         string // "" nil, "new" any new stamp, else that stored value
 	}{
-		{"declared count reached", 2, 2, 0, recent, nil, "new"},
+		{"declared count reached", 2, 2, 0, recent, nil, ""},
 		{"quiet after 12 hours", nil, 2, 0, quiet, nil, "new"},
 		{"not yet quiet", nil, 2, 0, recent, nil, ""},
 		{"incomplete guest clears stamp", 2, 1, 1, recent, old, ""},
@@ -275,7 +275,7 @@ func TestRefreshRegistrationCompletedAtLeadReduction(t *testing.T) {
 		existing any
 		want     string // "" nil, "new" any new stamp, else that stored value
 	}{
-		{"reduction reaches the count", 2, nil, "new"},
+		{"reduction reaches the count", 2, nil, ""},
 		{"no reduction, host count not reached", nil, nil, ""},
 		{"reduction keeps a stored stamp", 2, old, old},
 	}

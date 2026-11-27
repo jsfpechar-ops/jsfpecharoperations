@@ -108,10 +108,10 @@ func TestSaveHelpers(t *testing.T) {
 func TestImmediateCompletionIsDueAtOnce(t *testing.T) {
 	now := saveTestNow()
 	stamp := "2026-11-01T12:00:00+00:00"
-	if !ubyport.DueForAutomaticSend("immediate", 24, stamp, nil, now) {
+	if !ubyport.DueForAutomaticSend("immediate", 24, nil, stamp, nil, now) {
 		t.Error("immediate apartment: a stay completed now is not due now")
 	}
-	if ubyport.DueForAutomaticSend("scheduled", 24, stamp, nil, now) {
+	if ubyport.DueForAutomaticSend("scheduled", 24, nil, stamp, nil, now) {
 		t.Error("scheduled apartment: a stay completed now is due before submit_after_hours")
 	}
 }
@@ -200,7 +200,7 @@ func saveSeed(t *testing.T, pool *pgxpool.Pool, mode string, expected any, filed
 		t.Fatal(err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO reservation (apartment_id, source, uid, date_from, date_to, expected_guests_override, status, created_at, updated_at)
-		VALUES ($1, 'manual', $2, '2026-12-01', '2026-12-03', $3, 'active', $4, $4) RETURNING id`, f.apt, tag, expected, ts).Scan(&f.res); err != nil {
+		VALUES ($1, 'manual', $2, '2026-10-30', '2026-11-02', $3, 'active', $4, $4) RETURNING id`, f.apt, tag, expected, ts).Scan(&f.res); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < filed; i++ {
@@ -310,8 +310,8 @@ func TestSaveCompleteImmediateStayFilesScoped(t *testing.T) {
 	if gotApt != f.apt || gotMode != "completion_immediate" {
 		t.Errorf("got apt=%d mode=%q, want apt=%d mode=completion_immediate", gotApt, gotMode, f.apt)
 	}
-	if gotOpts.IgnoreSchedule == nil || !*gotOpts.IgnoreSchedule {
-		t.Errorf("IgnoreSchedule = %v, want true", gotOpts.IgnoreSchedule)
+	if gotOpts.IgnoreSchedule == nil || *gotOpts.IgnoreSchedule {
+		t.Errorf("IgnoreSchedule = %v, want false (check-in gate enforced)", gotOpts.IgnoreSchedule)
 	}
 	if len(gotOpts.OnlyGuestIDs) != 1 || gotOpts.OnlyGuestIDs[0] != guestID {
 		t.Errorf("OnlyGuestIDs = %v, want [%d]", gotOpts.OnlyGuestIDs, guestID)

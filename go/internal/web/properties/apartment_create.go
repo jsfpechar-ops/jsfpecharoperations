@@ -55,7 +55,7 @@ var apartmentTextFields = []string{"internal_name", "city_en", "addr_okres", "ad
 	"guest_message", "notes"}
 
 // apartmentCopyKeys is admin._COPY_PROPERTY_KEYS without the two entity ids.
-var apartmentCopyKeys = []string{"automation_mode", "submit_after_hours", "default_purpose", "permalink_window_days",
+var apartmentCopyKeys = []string{"automation_mode", "submit_after_hours", "checkin_hour", "checkout_hour", "default_purpose", "permalink_window_days",
 	"permalink_reachback_days", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_authority_name",
 	"stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_payee", "stay_fee_instruction",
 	"stay_fee_council_account"}
@@ -197,18 +197,20 @@ func newApartmentPayload(r *http.Request) (p apartmentPayload, ok bool) {
 	p.text["city_en"] = guestCity(p.text["addr_obec"])
 	p.legal, p.controller = ints["legal_entity_id"], ints["data_controller_entity_id"]
 	p.password = formStr(r, "uby_ws_password")
-	// _automation_timing_values: a new property starts on Manual. form_str
-	// reads a missing or empty value as its default (default_purpose too).
+	// Default new properties to check-in-anchored scheduled mode (24 h, range 1..24).
 	mode := formStr(r, "automation_mode")
 	if !truthy(r, "automation_mode") {
-		mode = "manual"
+		mode = "scheduled"
 	}
 	if mode != "immediate" && mode != "scheduled" && mode != "manual" {
-		mode = "manual"
+		mode = "scheduled"
 	}
 	hours := int64(24)
-	if h := int64Of(ints["submit_after_hours"]); h != 0 {
-		hours = min(h, 48)
+	if h := int64Of(ints["submit_after_hours"]); h > 0 {
+		hours = min(h, 24)
+		if hours < 1 {
+			hours = 24
+		}
 	}
 	window := int64(1)
 	if d := int64Of(ints["permalink_window_days"]); d != 0 {
@@ -344,11 +346,14 @@ func apartmentAddressErrorList(text map[string]string, lang string) (map[string]
 // refuseApartmentCreate is _refuse_apartment_create: the form again with what
 // the host typed, 400 when something was refused, 200 for operator_refresh.
 func (s *server) refuseApartmentCreate(w http.ResponseWriter, r *http.Request, q *request, p apartmentPayload,
-	operatorError string, nameError bool, addressErrors map[string]string) {
+	operatorError string, nameError, timesError bool, addressErrors map[string]string) {
 	ctx, ws := r.Context(), q.host.Workspace.ID
 	form := ApartmentNewForm{Draft: map[string]string{}, Prefill: map[string]string{}, OperatorError: operatorError,
-		NameError: nameError, AddressErrors: addressErrors}
+		NameError: nameError, TimesError: timesError, AddressErrors: addressErrors}
 	for _, key := range apartmentTextFields {
+		form.Draft[key] = formStr(r, key)
+	}
+	for _, key := range apartmentHourNames {
 		form.Draft[key] = formStr(r, key)
 	}
 	form.DraftEntityID, form.SelectedEntityID = int64Of(p.legal), int64Of(p.legal)
@@ -374,7 +379,7 @@ func (s *server) refuseApartmentCreate(w http.ResponseWriter, r *http.Request, q
 		fail(w, err)
 		return
 	}
-	if operatorError != "" || nameError || len(addressErrors) > 0 {
+	if operatorError != "" || nameError || timesError || len(addressErrors) > 0 {
 		form.Status = http.StatusBadRequest
 	}
 	if err := RenderApartmentNew(w, r, layout.Env{Pool: s.pool, Getenv: s.getenv, Now: q.at}, q.host, form); err != nil {
@@ -402,21 +407,34 @@ func (s *server) apartmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if has(r, "operator_refresh") {
 		// "Check again" after adding business details in another tab: nothing is written.
-		s.refuseApartmentCreate(w, r, q, p, "", false, nil)
+		s.refuseApartmentCreate(w, r, q, p, "", false, false, nil)
 		return
 	}
 	ctx, ws := r.Context(), q.host.Workspace.ID
 	nameError := pyStrip(p.text["internal_name"]) == ""
+	var checkinHour, checkoutHour *int64
+	timesError := false
+	if h, ok := apartmentHour(formStr(r, "checkin_hour")); ok {
+		checkinHour = &h
+	} else {
+		timesError = true
+	}
+	if h, ok := apartmentHour(formStr(r, "checkout_hour")); ok {
+		checkoutHour = &h
+	} else {
+		timesError = true
+	}
 	operatorError, email, err := s.apartmentOperatorError(ctx, r, ws, p)
 	if err != nil {
 		fail(w, err)
 		return
 	}
 	addressErrors := apartmentAddressErrors(p.text, q.lang)
-	if nameError || operatorError != "" || len(addressErrors) > 0 {
-		s.refuseApartmentCreate(w, r, q, p, operatorError, nameError, addressErrors)
+	if nameError || timesError || operatorError != "" || len(addressErrors) > 0 {
+		s.refuseApartmentCreate(w, r, q, p, operatorError, nameError, timesError, addressErrors)
 		return
 	}
+	p.cols = setColumn(setColumn(p.cols, "checkin_hour", *checkinHour), "checkout_hour", *checkoutHour)
 	id, err := s.insertApartment(ctx, q, p, email, r)
 	if err != nil {
 		fail(w, err)

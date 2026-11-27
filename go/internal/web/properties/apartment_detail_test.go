@@ -226,9 +226,9 @@ func TestApartmentDetailPage(t *testing.T) {
 		`id="uby_mark" name="uby_mark" value="AAKLI" maxlength="6"`, `id="uby_name" name="uby_name" value="BYT VINOHRADSKA 12" maxlength="35"`,
 		`id="uby_contact" name="uby_contact" value="a@x.test" maxlength="50"`,
 		`formaction="/apartments/130201/test-connection"`,
-		`<option value="immediate" data-hint=`, `<option value="27" selected>Employment</option>`,
-		`id="submit_after_hours" name="submit_after_hours"
-                 min="0" max="48" value="3"`,
+		`name="automation_mode" value="immediate" checked`, `id="automation-scheduled-help"`,
+		`id="automation-immediate-help"`, `id="automation-manual-help"`, `<option value="27" selected>Employment</option>`,
+		`id="submit_after_hours" name="submit_after_hours" min="1" max="24" value="3"`,
 		// calendars
 		`<details class="prop-sec" id="sec-fee"`,
 		`<details class="prop-sec" id="sec-calendars"`,
@@ -432,7 +432,7 @@ func TestApartmentDetailCopy(t *testing.T) {
                  value="4"`, // an empty window is filled from the loft
 		`data-strip="fee" data-state="ok"><i class="sd" aria-hidden="true"></i><b>Stay fee</b><small>40 Kč</small>`,
 		`<option value="10" selected>Tourism</option>`, // a purpose that is set stays
-		`<option value="scheduled" data-hint=`,
+		`name="automation_mode" value="scheduled" checked`,
 	}, []string{`<option value="27" selected>`})
 	var legal *int64
 	if err := pool.QueryRow(ctx, `SELECT legal_entity_id FROM apartment WHERE id = $1`, adPlain).Scan(&legal); err != nil || legal != nil {

@@ -94,6 +94,7 @@ type apartmentRefusal struct {
 	policeErrors    map[string]string // uby_mark / police field validation errors
 	policeOrder     []string
 	sharedTimeError string // an i18n key set by this file, never from the form
+	timingError     string // flash.properties.timing_hours when scheduled hours outside 1..24
 	lockTimesError  bool
 	feeAccountError bool // refuse_fee_save: the council account did not normalise
 }
@@ -176,7 +177,7 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 				}
 			}
 		}
-		view.AddressErrors, view.PoliceErrors, view.OperatorError, view.SharedTimeError = ref.addressErrors, ref.policeErrors, ref.operatorError, ref.sharedTimeError
+		view.AddressErrors, view.PoliceErrors, view.OperatorError, view.SharedTimeError, view.TimingError = ref.addressErrors, ref.policeErrors, ref.operatorError, ref.sharedTimeError, ref.timingError
 		for _, field := range ref.addressOrder {
 			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", field})
 		}
@@ -191,6 +192,9 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 		if ref.sharedTimeError != "" {
 			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", "checkin_hour"})
 		}
+		if ref.timingError != "" {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"police", "submit_after_hours"})
+		}
 		if ref.lockTimesError {
 			// 0397: stay on the Door lock tab with the lock the host chose.
 			view.SaveErrors = append(view.SaveErrors, detailSaveError{"lock", "lock_checkin_hour"})
@@ -199,7 +203,7 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 			}
 			view.SettingsSection, view.LockTimesError = "lock", true
 		}
-		if ref.operatorError != "" || len(ref.addressErrors) > 0 || len(ref.policeErrors) > 0 || ref.sharedTimeError != "" || ref.lockTimesError {
+		if ref.operatorError != "" || len(ref.addressErrors) > 0 || len(ref.policeErrors) > 0 || ref.sharedTimeError != "" || ref.timingError != "" || ref.lockTimesError {
 			view.Status = http.StatusBadRequest
 		}
 	}
@@ -352,8 +356,12 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 		raw := formStr(r, name)
 		if raw == "" {
-			hours[name] = nil
-			continue
+			ref := apartmentRefusal{sharedTimeError: "flash.error.times_required"}
+			if strings.Contains(formStr(r, "return_to"), "section=lock") {
+				ref = apartmentRefusal{lockTimesError: true}
+			}
+			s.refuseApartmentSave(w, r, q, a, ref)
+			return
 		}
 		v, ok := apartmentHour(raw)
 		if !ok {
@@ -391,6 +399,13 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 	if has(r, "operator_refresh") {
 		s.refuseApartmentSave(w, r, q, a, apartmentRefusal{})
 		return
+	}
+	if has(r, "automation_mode") && formStr(r, "automation_mode") == "scheduled" {
+		h, ok := apartmentFormInt(r, "submit_after_hours")
+		if !ok || h == nil || *h < 1 || *h > 24 {
+			s.refuseApartmentSave(w, r, q, a, apartmentRefusal{timingError: "flash.properties.timing_hours"})
+			return
+		}
 	}
 	operatorError, email, err := s.apartmentOperatorError(ctx, r, ws, pay)
 	if err != nil {

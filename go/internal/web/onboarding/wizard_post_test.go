@@ -169,14 +169,14 @@ func TestWizardAutomationTiming(t *testing.T) {
 		wantHours                  int64
 	}{
 		{"scheduled", "6", "", "scheduled", 6},
-		{"scheduled", " 48 ", "", "scheduled", 48},
-		{"scheduled", "49", "flash.properties.timing_hours", "", 0},
+		{"scheduled", " 24 ", "", "scheduled", 24},
+		{"scheduled", "25", "flash.properties.timing_hours", "", 0},
 		{"scheduled", "0", "flash.properties.timing_hours", "", 0},
 		{"scheduled", "x", "flash.properties.timing_hours", "", 0},
 		{"scheduled", "1_2", "", "scheduled", 12},
 		{"manual", "", "", "manual", 24},
-		{"manual", "-5", "", "manual", -5},
-		{"immediate", "100", "", "immediate", 48},
+		{"manual", "-5", "", "manual", 24},
+		{"immediate", "100", "", "immediate", 24},
 		{"immediate", "0", "", "immediate", 24},
 		{"", "5", "flash.properties.timing_invalid", "", 0},
 		{"Manual", "5", "flash.properties.timing_invalid", "", 0},

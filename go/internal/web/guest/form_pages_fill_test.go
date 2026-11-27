@@ -81,3 +81,12 @@ func TestFormGuestUnder15UsesArrivalDate(t *testing.T) {
 		t.Fatal("already 15 on arrival must sign")
 	}
 }
+
+func TestFormDisplayNameTitleCasesPoliceCaps(t *testing.T) {
+	if got := formDisplayName("MARGARET ANNE", "HENDERSON"); got != "Margaret Anne Henderson" {
+		t.Fatalf("formDisplayName = %q, want Margaret Anne Henderson", got)
+	}
+	if got := formDisplayName("  ", "NOVÁK"); got != "Novák" {
+		t.Fatalf("formDisplayName = %q, want Novák", got)
+	}
+}
