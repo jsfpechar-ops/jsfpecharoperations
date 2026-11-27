@@ -14,11 +14,8 @@ package properties
 // the Reporting settings. The forms post to the Python routes as they do
 // today (POST /apartments/{id}, .../feeds, .../archive, .../regenerate-pin).
 //
-// What this port answers 501 for, with the Caddy fallback header (notPorted),
-// so Python serves it: a path id that is not a number, a property that is not
-// the workspace's (both are Python's branded 404 page), and a copy_from value
-// this port does not judge. Nothing routes here until the owner adds the path
-// to UBYHOST_GO_PATHS (brief 1705).
+// Invalid path IDs, properties outside the workspace, and unrecognized
+// copy_from values answer with the branded host 404 page.
 
 import (
 	"context"
