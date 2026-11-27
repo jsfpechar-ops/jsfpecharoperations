@@ -9,14 +9,16 @@ Today `DueForAutomaticSend` measures `scheduled` from `registration_completed_at
 ## Core design (Go-only, zero DB migration)
 
 1. **Replace `scheduled`’s anchor — do not add a 4th mode.** Existing `scheduled` properties automatically inherit the new check-in-anchored behaviour with no DB migration and no user email (owner confirmed 2026-11-27).
-2. **Unified send-time formula (`ScheduledSendAt` in `go/internal/ubyport/collect.go`):**
-   - `anchor` = earliest live guest `stay_from`, else `reservation.date_from` (same anchor as `ReportingDeadline`).
+2. **Unified per-guest send-time formula (`ScheduledSendAt` in `go/internal/ubyport/collect.go`):**
+   - **Per-guest timer (owner confirmed 2026-11-27):** each complete reportable guest has their own timer and does **not** wait for missing co-guests (e.g. on a `2/3` stay, guests 1 & 2 file in Batch 1 at `check-in + 24h`, and guest 3 files separately in Batch 2 whenever they finish).
+   - `guestAnchor` = guest's `stay_from` when set, else `reservation.date_from`.
+   - `guestSubmittedAt` = guest's `COALESCE(NULLIF(filled_at,''), NULLIF(updated_at,''), NULLIF(created_at,''))` (falls back to `reservation.registration_completed_at` if blank).
    - `checkInHour` = `apartment.checkin_hour` when in `0..23`, else fallback `15` (Europe/Prague).
-   - `checkInMoment` = `anchor` at `checkInHour:00` in `Europe/Prague`.
-   - `latest` = `ReportingDeadline(anchor) - 6h` (hard statutory cap, decision 2026-11-09).
-   - For `immediate`: `sendAt = min(max(checkInMoment, completedAt), latest)`. Neither sweep nor `SubmitCompletedStay` sends before `checkInMoment`.
-   - For `scheduled`: `sendAt = min(max(checkInMoment + H, completedAt + H), latest)` where `H = submit_after_hours` (default `24`, valid `1..24`).
-   - Incomplete stays (empty `completedAt`): unchanged — still file complete guests at `latest` (`deadline - 6h`, brief 1070).
+   - `checkInMoment` = `guestAnchor` at `checkInHour:00` in `Europe/Prague`.
+   - `latest` = `ReportingDeadline(guestAnchor) - 6h` (hard statutory cap, decision 2026-11-09).
+   - For `immediate`: `sendAt = min(max(checkInMoment, guestSubmittedAt), latest)`. Neither sweep nor `SubmitCompletedStay` sends before `checkInMoment`.
+   - For `scheduled`: `sendAt = min(max(checkInMoment + H, guestSubmittedAt + H), latest)` where `H = submit_after_hours` (default `24`, valid `1..24`).
+   - Guest with no parsable submit timestamp: falls back to `latest` (`deadline - 6h`, brief 1070).
    - Manual "Send now": unchanged — `IgnoreSchedule: true` always lets the host send early.
 3. **Default delay = `24` hours (confirmed by owner 2026-11-27; not `72` hours) — why:**
    - Under decision D3 (`go/internal/deadlines/deadlines.go`), arrival day counts as working day 1 on Mon–Fri.
@@ -45,6 +47,7 @@ Today `DueForAutomaticSend` measures `scheduled` from `registration_completed_at
 | [2092](../tasks/2092-go-mandatory-checkin-hours-and-scheduled-default.md) | B | `task/2092-go-mandatory-checkin-hours-and-scheduled-default` | Required `checkin_hour`/`checkout_hour` on create/copy/settings + `scheduled` 24 h default + `1..24` validation |
 | [2093](../tasks/2093-go-automation-choice-cards-examples-and-copy.md) | C + UX | `task/2093-go-automation-choice-cards-examples-and-copy` | Choice cards with `?` examples on Property settings & wizard, computed send time on Stay detail, pills/guide/rehearsal copy (`cs`/`en`/`vi`), UX gate |
 | [2094](../tasks/2094-go-checkin-time-incomplete-alarm-and-mail.md) | B | `task/2094-go-checkin-time-incomplete-alarm-and-mail` | Check-in-time `guest_incomplete_checkin` alert + distinct second host email (`reminder_host:checkin:...`) in Go `deadlines` + `mailjob` |
+| [2095](../tasks/2095-go-duplicate-guest-prevention-and-alert.md) | B | `task/2095-go-duplicate-guest-prevention-and-alert` | 3-layer duplicate-guest guard: guest form block, `duplicate_guest_in_stay` host alert + email (zero PII), and auto-filing duplicate skip |
 
 ## Risks and verification
 

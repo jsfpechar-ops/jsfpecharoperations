@@ -14,7 +14,7 @@ Updated: 2026-11-27.
 - Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
-- Check-in auto-filing (Go): [plan](../plans/checkin-anchored-auto-filing.md), 2091–2094 (24h default, alarms).
+- Check-in auto-filing (Go): [plan](../plans/checkin-anchored-auto-filing.md), 2091–2095.
 - 2001: invoice Wolt-simple + stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
 - Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 green (#1335).
 - Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 (#1252).
