@@ -179,10 +179,7 @@ func enqueueCheckInHostMail(
 	if hostEmail == "" || !strings.Contains(hostEmail, "@") {
 		return nil
 	}
-	publicBase := strings.TrimRight(strings.TrimSpace(getenv("UBYHOST_PUBLIC_URL")), "/")
-	if publicBase == "" {
-		publicBase = strings.TrimRight(hostweb.AppBase(getenv), "/")
-	}
+	publicBase := strings.TrimRight(hostweb.PublicBase(getenv), "/")
 	content := mailnotify.BuildReminderHost(publicBase, mailnotify.ReminderHostInput{
 		Lang:           "en",
 		PropertyName:   propName,

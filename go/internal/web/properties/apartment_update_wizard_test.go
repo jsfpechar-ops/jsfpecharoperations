@@ -91,7 +91,7 @@ func TestApartmentUpdateWizard(t *testing.T) {
 
 	// Property step refusals.
 	refused("blank hour", 201, "property", "en", map[string]string{"checkout_hour": "", "internal_name": `<b>"Loft"</b>`}, []string{
-		`<p class="err-text" role="alert">Choose the check-in and check-out time. UbyHost needs them for door codes and cleaning.</p>`,
+		`<p class="err-text" role="alert">Choose the check-in and check-out time.</p>`,
 		`value="&lt;b&gt;&#34;Loft&#34;&lt;/b&gt;" required`,
 	}, []string{`<b>"Loft"`})
 	refused("hour 24", 201, "property", "en", map[string]string{"checkin_hour": "24", "checkout_hour": ""}, []string{

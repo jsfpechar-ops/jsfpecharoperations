@@ -22,6 +22,18 @@ sys.path.insert(0, str(APP_DIR))
 
 from app import host_i18n  # noqa: E402
 
+GO_OVERRIDES = GO_INTERNAL / "hostweb" / "i18n_go_overrides.json"
+
+
+def merged_strings() -> dict[str, dict[str, str]]:
+    """host_i18n.STRINGS overlaid with Go-first strings maintained in Go."""
+    merged = {lang: dict(table) for lang, table in host_i18n.STRINGS.items()}
+    if GO_OVERRIDES.exists():
+        overrides = json.loads(GO_OVERRIDES.read_text(encoding="utf-8"))
+        for lang, table in overrides.items():
+            merged.setdefault(lang, {}).update(table)
+    return merged
+
 
 def read_keys(path: Path) -> list[str]:
     keys = []
@@ -32,22 +44,22 @@ def read_keys(path: Path) -> list[str]:
     return keys
 
 
-def expand(keys: list[str]) -> list[str]:
+def expand(keys: list[str], all_strings: dict[str, dict[str, str]]) -> list[str]:
     """The listed keys, each "prefix.*" line replaced by every key with that prefix."""
     out = []
     for key in keys:
         if key.endswith(".*"):
             prefix = key[:-1]
-            out.extend(sorted({k for table in host_i18n.STRINGS.values() for k in table if k.startswith(prefix)}))
+            out.extend(sorted({k for table in all_strings.values() for k in table if k.startswith(prefix)}))
         else:
             out.append(key)
     return out
 
 
-def render(keys: list[str]) -> str:
-    keys = expand(keys)
+def render(keys: list[str], all_strings: dict[str, dict[str, str]]) -> str:
+    keys = expand(keys, all_strings)
     catalog = {}
-    for lang, strings in host_i18n.STRINGS.items():
+    for lang, strings in all_strings.items():
         catalog[lang] = {key: strings[key] for key in keys if key in strings}
     return json.dumps(catalog, sort_keys=True, ensure_ascii=False, indent=1) + "\n"
 
@@ -67,12 +79,13 @@ def guest_catalog_keys(path: Path) -> bool:
 
 def main(argv: list[str]) -> int:
     check = "--check" in argv
+    all_strings = merged_strings()
     stale = []
     for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
         if guest_catalog_keys(keys_file):
             continue
         out = keys_file.with_name("i18n.json")
-        text = render(read_keys(keys_file))
+        text = render(read_keys(keys_file), all_strings)
         current = out.read_text(encoding="utf-8") if out.exists() else None
         if current == text:
             continue

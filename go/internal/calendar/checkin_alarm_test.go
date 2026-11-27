@@ -35,7 +35,7 @@ func TestRunCheckInIncompleteAlarm_TimingIdempotencyAndResolve(t *testing.T) {
 		switch k {
 		case "UBYHOST_MAIL_BACKEND":
 			return "log"
-		case "UBYHOST_APP_URL", "UBYHOST_PUBLIC_URL":
+		case "UBYHOST_APP_BASE_URL", "UBYHOST_PUBLIC_BASE_URL":
 			return "https://app.example.test"
 		}
 		return os.Getenv(k)

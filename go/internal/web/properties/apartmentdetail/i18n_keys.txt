@@ -31,6 +31,7 @@ apartment.form.copy_from.title
 apartment.form.door_code.checkin
 apartment.form.door_code.checkout
 apartment.form.door_code.choose
+apartment.form.times_fallback_hint
 apartment.form.entity.hint
 apartment.form.entity.label
 apartment.form.feed.last_sync
@@ -308,6 +309,7 @@ apartment.form.operator.required
 flash.error.door_code_hours
 flash.error.no_such_controller
 flash.error.times_required
+flash.properties.timing_hours
 flash.stay_fees.link_invalid
 flash.stay_fees.operator_account_required
 property_page.save_failed

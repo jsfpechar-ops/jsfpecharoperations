@@ -90,7 +90,7 @@ func TestApartmentAutomationTiming(t *testing.T) {
 	spExpect303(t, "invalid", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?err=Choose%20when%20to%20send%20to%20UbyPort.%20Nothing%20was%20saved.#property-summaries")
 	form.Set("automation_mode", "scheduled")
 	form.Set("submit_after_hours", "0")
-	spExpect303(t, "hours", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?err=Enter%20the%20delay%20in%20whole%20hours%2C%20from%201%20to%2048.%20Nothing%20was%20saved.#property-summaries")
+	spExpect303(t, "hours", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?err=Enter%20the%20delay%20in%20whole%20hours%2C%20from%201%20to%2024.%20Nothing%20was%20saved.#property-summaries")
 	rec := spPost(t, mux, base, form, 130001, "en", true, "application/json")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("json refuse: %d", rec.Code)

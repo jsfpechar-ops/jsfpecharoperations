@@ -37,7 +37,7 @@ func TestRunDuplicateGuestCheck_RaisesMailsAndResolves(t *testing.T) {
 		switch k {
 		case "UBYHOST_MAIL_BACKEND":
 			return "log"
-		case "UBYHOST_APP_URL":
+		case "UBYHOST_APP_BASE_URL":
 			return "https://app.example.test"
 		}
 		return os.Getenv(k)
