@@ -48,6 +48,7 @@ Today `DueForAutomaticSend` measures `scheduled` from `registration_completed_at
 | [2093](../tasks/2093-go-automation-choice-cards-examples-and-copy.md) | C + UX | `task/2093-go-automation-choice-cards-examples-and-copy` | Choice cards with `?` examples on Property settings & wizard, computed send time on Stay detail, pills/guide/rehearsal copy (`cs`/`en`/`vi`), UX gate |
 | [2094](../tasks/2094-go-checkin-time-incomplete-alarm-and-mail.md) | B | `task/2094-go-checkin-time-incomplete-alarm-and-mail` | Check-in-time `guest_incomplete_checkin` alert + distinct second host email (`reminder_host:checkin:...`) in Go `deadlines` + `mailjob` |
 | [2095](../tasks/2095-go-duplicate-guest-prevention-and-alert.md) | B | `task/2095-go-duplicate-guest-prevention-and-alert` | 3-layer duplicate-guest guard: guest form block, `duplicate_guest_in_stay` host alert + email (zero PII), and auto-filing duplicate skip |
+| [2096](../tasks/2096-go-guest-review-summary-confirm.md) | C | `task/2096-go-guest-review-summary-confirm` | Guest pre-submit Review & Confirm summary screen (`Already added` strip, expanded cards, explicit Confirm button, zero DB migration, 12h quiet fallback) |
 
 ## Risks and verification
 
