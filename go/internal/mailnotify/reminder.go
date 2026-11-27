@@ -130,40 +130,57 @@ func BuildReminderGuest(publicBaseURL string, in ReminderGuestInput) Content {
 
 // ReminderHostInput is build_reminder_host's keyword arguments.
 type ReminderHostInput struct {
-	Lang         string `json:"lang"`
-	PropertyName string `json:"property_name"`
-	Date         string `json:"date"`
-	Assigned     string `json:"assigned"`
-	StayURL      string `json:"stay_url"`
-	Claimed      bool   `json:"claimed"`
-	Filled       int    `json:"filled"`
-	Expected     *int   `json:"expected"`
-	Tomorrow     bool   `json:"tomorrow"`
+	Lang           string `json:"lang"`
+	PropertyName   string `json:"property_name"`
+	Date           string `json:"date"`
+	Assigned       string `json:"assigned"`
+	StayURL        string `json:"stay_url"`
+	Claimed        bool   `json:"claimed"`
+	Filled         int    `json:"filled"`
+	Expected       *int   `json:"expected"`
+	Tomorrow       bool   `json:"tomorrow"`
+	CheckInStarted bool   `json:"checkin_started,omitempty"`
+	CheckInHour    int    `json:"checkin_hour,omitempty"`
 }
 
 // BuildReminderHost is build_reminder_host: the check-in-day nudge for the host,
 // in the host's language (HostLanguage).
 func BuildReminderHost(publicBaseURL string, in ReminderHostInput) Content {
 	lang := HostLanguage(in.Lang)
+	hourLabel := ""
+	if in.CheckInStarted {
+		h := in.CheckInHour
+		if h < 0 || h > 23 {
+			h = 15
+		}
+		hourLabel = twoDigitHour(h)
+	}
 	var subjectKey string
 	switch {
 	case in.Tomorrow:
 		subjectKey = "mail.reminder_host.subject_tomorrow"
+	case in.CheckInStarted && in.Expected != nil:
+		subjectKey = "mail.reminder_host.subject_checkin"
+	case in.CheckInStarted:
+		subjectKey = "mail.reminder_host.subject_checkin_unclaimed"
 	case in.Expected != nil:
 		subjectKey = "mail.reminder_host.subject"
 	default:
 		subjectKey = "mail.reminder_host.subject_unclaimed"
 	}
 	subject := HostText(lang, subjectKey, Args{
-		"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
+		"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected), "hour": hourLabel,
 	})
 	heading := HostText(lang, "mail.reminder_host.heading", nil)
 	when := ""
-	if in.Tomorrow {
+	switch {
+	case in.Tomorrow:
 		when = "_tomorrow"
+	case in.CheckInStarted:
+		when = "_checkin"
 	}
 	intro := HostText(lang, "mail.reminder_host.intro"+when, Args{
-		"property": in.PropertyName, "date": in.Date,
+		"property": in.PropertyName, "date": in.Date, "hour": hourLabel,
 	})
 	preheader := HostText(lang, "mail.reminder_host.preheader"+when, nil)
 	assignedLabel := HostText(lang, "mail.reminder_host.assigned_label", nil)
@@ -184,7 +201,7 @@ func BuildReminderHost(publicBaseURL string, in ReminderHostInput) Content {
 	nextSteps := HostText(lang, nextKey, Args{"filled": in.Filled, "expected": optInt(in.Expected)})
 	action := HostText(lang, "mail.reminder_host.action_stay", nil)
 	fallback := GuestText(lang, "mail_link_fallback", nil)
-	footer := HostText(lang, "mail.reminder_host.footer"+when, nil)
+	footer := HostText(lang, "mail.reminder_host.footer"+when, Args{"hour": hourLabel})
 
 	extra := []string{BlockLink(in.StayURL, fallback)}
 	if in.Claimed {
@@ -218,4 +235,10 @@ func BuildReminderHost(publicBaseURL string, in ReminderHostInput) Content {
 			FooterLines:   []any{"UbyHost", footer},
 		}),
 	}
+}
+
+func twoDigitHour(h int) string {
+	d1 := byte('0' + (h / 10))
+	d2 := byte('0' + (h % 10))
+	return string([]byte{d1, d2, ':', '0', '0'})
 }

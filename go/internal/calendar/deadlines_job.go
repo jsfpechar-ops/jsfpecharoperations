@@ -16,16 +16,18 @@ import (
 
 // DeadlinesSummary holds the counts of one deadlines run, as _log_run logs them.
 type DeadlinesSummary struct {
-	Alerts      int
-	RequestsDue int
-	Watchdog    WatchdogResult
-	Stalled     int
+	Alerts        int
+	RequestsDue   int
+	CheckInAlarms int
+	Watchdog      WatchdogResult
+	Stalled       int
 }
 
 // deadlinesSteps are the parts of one run; tests replace them.
 type deadlinesSteps struct {
 	check       func() (int, error)
 	dsrDue      func() (int, error)
+	checkIn     func() (int, error) // nil in tests that do not need it
 	watchdog    func() (WatchdogResult, error)
 	stalled     func() (int, error) // nil in tests that do not need it
 	raiseFailed func() error
@@ -47,6 +49,7 @@ func RunDeadlinesJob(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(str
 		check: func() (int, error) { return CheckDeadlines(ctx, pool, getenv, at, nil) },
 		// Python's date.today() is the server's local date (TZ unset: UTC).
 		dsrDue:      func() (int, error) { return RaiseDSRDueAlerts(ctx, pool, at.Local()) },
+		checkIn:     func() (int, error) { return RunCheckInIncompleteAlarm(ctx, pool, getenv, at) },
 		watchdog:    func() (WatchdogResult, error) { return RunFilingWatchdog(ctx, pool, lookupEnv, at) },
 		stalled:     func() (int, error) { r, err := RunFilingStalled(ctx, pool, getenv, at); return r.Stalled, err },
 		raiseFailed: func() error { return jobs.RaiseFailed(ctx, pool, "deadlines") },
@@ -75,6 +78,13 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 		deadlinesRaiseFailed(s)
 	} else if sum.Alerts > 0 || sum.RequestsDue > 0 {
 		slog.Info("deadline watch", "alerts", sum.Alerts, "requests_due", sum.RequestsDue)
+	}
+	if s.checkIn != nil {
+		if n, err := s.checkIn(); err != nil {
+			slog.Error("checkin incomplete alarm failed", "error", fmt.Sprintf("%T", err))
+		} else {
+			sum.CheckInAlarms = n
+		}
 	}
 	// WP23: the watchdog runs even when the watch failed; its mails and its
 	// heartbeat reach the owner when the app itself is not being looked at.
