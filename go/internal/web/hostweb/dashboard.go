@@ -39,6 +39,7 @@ var dashFuncs = template.FuncMap{
 	"dash_not_registered": dashNotRegistered,
 	"dash_is_demo":        dashIsDemo,
 	"journey_strip":       stays.RenderJourneyStrip,
+	"journey_summary":     stays.RenderJourneySummary,
 	"cal_prop_href":       calPropHref,
 	"cal_prop_id":         calPropID,
 	"bar_meta":            barMeta,

@@ -12,7 +12,7 @@ Updated: 2026-11-27.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
-- Stay journey 5-step status (Go): [2097](../tasks/2097-go-stay-journey-5step-ses-and-manual-paths.md) (SES email, link opened, form+housebook, TTLock-only, calm-blue auto-police + manual paths).
+- Stay journey 5-step status (Go): [2097](../tasks/2097-go-stay-journey-5step-ses-and-manual-paths.md) done (SES email, link opened, form+housebook, TTLock-only, calm-blue auto-police + manual paths).
 - Check-in auto-filing (Go): [plan](../plans/checkin-anchored-auto-filing.md), 2091–2096 done.
 - 2001: invoice Wolt-simple + stay header ([brief](../tasks/2001-invoice-wolt-simple.md)); 2000: no police nags on Overview without UbyPort login.
 - Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 green (#1335).

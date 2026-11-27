@@ -1,6 +1,6 @@
 # 2097: Dumbproof 5-step Stay Journey (SES email, link opened, form + housebook, TTLock, police + manual paths)
 
-Status: todo
+Status: done
 Depends on: 2091, 2093, 2094 | Base commit: 446b58964 | Branch: task/2097-go-stay-journey-5step-ses-and-manual-paths
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

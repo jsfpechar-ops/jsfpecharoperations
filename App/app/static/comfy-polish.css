@@ -43,7 +43,7 @@ body.v2 .stays-desk tbody td.row-actions {
 
 .stay-rep-grid {
   display: grid;
-  grid-template-columns: 144px minmax(112px, 1fr);
+  grid-template-columns: 178px minmax(140px, 1fr);
   align-items: start;
   column-gap: 12px;
 }
@@ -52,9 +52,9 @@ body.v2 .stays-desk tbody td.row-actions {
   display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 5px;
-  width: 144px;
-  min-height: 24px;
+  gap: 4px;
+  width: 178px;
+  min-height: 25px;
 }
 
 .stay-rep-grid .stay-journey-step {
@@ -69,6 +69,12 @@ body.v2 .stays-desk tbody td.row-actions {
   width: 50px;
   padding: 0 4px;
   font-variant-numeric: tabular-nums;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="police"] {
+  min-width: 26px;
+  width: auto;
+  padding: 0 5px;
 }
 
 .stay-rep-status {
