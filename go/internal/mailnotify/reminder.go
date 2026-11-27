@@ -1,6 +1,9 @@
 package mailnotify
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Host is the operating entity as a guest sees it in a footer (host_details in
 // Python). Fill it from the legal_entity row:
@@ -46,6 +49,17 @@ func GuestFooterLines(lang, propertyName string, host *Host) []any {
 	return lines
 }
 
+const (
+	// GuestReminderLegacy preserves the original day-before copy for golden parity.
+	GuestReminderLegacy = ""
+	// GuestReminderPostClaim nudges a guest who claimed early and left forms unfinished.
+	GuestReminderPostClaim = "post_claim"
+	// GuestReminderDayBefore nudges a guest the day before arrival when forms are unfinished.
+	GuestReminderDayBefore = "day_before"
+	// GuestReminderCheckInDay sends the final check-in-day nudge before check-in starts.
+	GuestReminderCheckInDay = "checkin_day"
+)
+
 // ReminderGuestInput is build_reminder_guest's keyword arguments. The JSON tags
 // are the golden file's keys.
 type ReminderGuestInput struct {
@@ -55,23 +69,68 @@ type ReminderGuestInput struct {
 	Host         *Host  `json:"host"`
 	Filled       int    `json:"filled"`
 	Expected     *int   `json:"expected"`
+	Stage        string `json:"stage,omitempty"`
+	CheckInHour  int    `json:"checkin_hour,omitempty"`
 }
 
-// BuildReminderGuest is build_reminder_guest: the day-before reminder for a
-// guest whose forms are still incomplete. publicBaseURL is the logo's origin;
-// the guest copy follows in.Lang (see GuestLanguage). The html lang attribute
-// is the raw in.Lang, as in Python.
+// BuildReminderGuest is build_reminder_guest: the incomplete-registration
+// reminder for a guest. Stage selects post-claim, day-before, or check-in-day
+// copy; the empty stage keeps legacy day-before output for golden parity.
+// publicBaseURL is the logo's origin; the guest copy follows in.Lang (see
+// GuestLanguage). The html lang attribute is the raw in.Lang, as in Python.
 func BuildReminderGuest(publicBaseURL string, in ReminderGuestInput) Content {
 	lang := in.Lang
+	hourLabel := ""
+	if in.Stage == GuestReminderCheckInDay {
+		h := in.CheckInHour
+		if h < 0 || h > 23 {
+			h = 15
+		}
+		hourLabel = fmt.Sprintf("%02d:00", h)
+	}
+
+	subjectKey := "mail_reminder_guest_subject"
+	subjectNoCountKey := "mail_reminder_guest_subject_no_count"
+	introKey := "mail_reminder_guest_intro"
+	introNoCountKey := "mail_reminder_guest_intro_no_count"
+	headingKey := "mail_reminder_guest_heading"
+	preheaderKey := "mail_reminder_guest_preheader"
+	noteLabelKey := "mail_reminder_guest_note_label"
+	noteKey := "mail_reminder_guest_note"
+
+	switch in.Stage {
+	case GuestReminderPostClaim:
+		subjectKey = "mail_reminder_guest_subject_post_claim"
+		subjectNoCountKey = "mail_reminder_guest_subject_post_claim_no_count"
+		introKey = "mail_reminder_guest_intro_post_claim"
+		introNoCountKey = "mail_reminder_guest_intro_post_claim_no_count"
+		headingKey = "mail_reminder_guest_heading_post_claim"
+		preheaderKey = "mail_reminder_guest_preheader_post_claim"
+		noteLabelKey = "mail_reminder_guest_note_label_auto"
+		noteKey = "mail_reminder_guest_note_post_claim"
+	case GuestReminderDayBefore:
+		noteLabelKey = "mail_reminder_guest_note_label_auto"
+		noteKey = "mail_reminder_guest_note_day_before"
+	case GuestReminderCheckInDay:
+		subjectKey = "mail_reminder_guest_subject_checkin"
+		subjectNoCountKey = "mail_reminder_guest_subject_checkin_no_count"
+		introKey = "mail_reminder_guest_intro_checkin"
+		introNoCountKey = "mail_reminder_guest_intro_checkin_no_count"
+		headingKey = "mail_reminder_guest_heading_checkin"
+		preheaderKey = "mail_reminder_guest_preheader_checkin"
+		noteLabelKey = "mail_reminder_guest_note_label_final"
+		noteKey = "mail_reminder_guest_note_final"
+	}
+
+	subjectArgs := Args{
+		"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
+		"hour": hourLabel,
+	}
 	var subject string
 	if in.Expected != nil {
-		subject = GuestText(lang, "mail_reminder_guest_subject", Args{
-			"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
-		})
+		subject = GuestText(lang, subjectKey, subjectArgs)
 	} else {
-		subject = GuestText(lang, "mail_reminder_guest_subject_no_count", Args{
-			"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
-		})
+		subject = GuestText(lang, subjectNoCountKey, subjectArgs)
 	}
 	var intro string
 	if in.Expected != nil {
@@ -79,20 +138,24 @@ func BuildReminderGuest(publicBaseURL string, in ReminderGuestInput) Content {
 		if missing < 0 {
 			missing = 0
 		}
-		intro = GuestText(lang, "mail_reminder_guest_intro", Args{"missing": missing})
+		intro = GuestText(lang, introKey, Args{
+			"missing": missing, "property": in.PropertyName, "hour": hourLabel,
+		})
 	} else {
-		intro = GuestText(lang, "mail_reminder_guest_intro_no_count", Args{"property": in.PropertyName})
+		intro = GuestText(lang, introNoCountKey, Args{
+			"property": in.PropertyName, "hour": hourLabel,
+		})
 	}
 	action := GuestText(lang, "mail_reminder_guest_action", nil)
-	noteLabel := GuestText(lang, "mail_reminder_guest_note_label", nil)
-	note := GuestText(lang, "mail_reminder_guest_note", nil)
+	noteLabel := GuestText(lang, noteLabelKey, nil)
+	note := GuestText(lang, noteKey, nil)
 	device := GuestText(lang, "mail_reminder_guest_device", nil)
 	fallback := GuestText(lang, "mail_link_fallback", nil)
 	footerLines := GuestFooterLines(lang, in.PropertyName, in.Host)
 	oneReminder := noteLabel + " \u2014 " + note
 
 	blocks := GuestBlocks(
-		GuestText(lang, "mail_reminder_guest_heading", nil),
+		GuestText(lang, headingKey, nil),
 		intro,
 		in.StayURL,
 		action,
@@ -121,7 +184,7 @@ func BuildReminderGuest(publicBaseURL string, in ReminderGuestInput) Content {
 			PublicBaseURL: publicBaseURL,
 			Lang:          in.Lang,
 			Title:         in.PropertyName,
-			Preheader:     GuestText(lang, "mail_reminder_guest_preheader", nil),
+			Preheader:     GuestText(lang, preheaderKey, Args{"hour": hourLabel}),
 			Blocks:        blocks,
 			FooterLines:   footerLines,
 		}),

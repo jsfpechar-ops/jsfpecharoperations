@@ -33,8 +33,6 @@ const (
 	reminderHostKind      = "reminder_host"
 	incompleteCheckinKind = "guest_incomplete_checkin"
 	claimStateClaimed     = "claimed" // claim.CLAIMED
-	// claim.REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM
-	reminderGuestMinHoursAfterClaim = 6
 	// mail.GUEST_KINDS contains reminder_guest, so the demo-stay gate applies to it.
 	hostLanguage = "en" // mail_notify.HOST_MAIL_LANGUAGE
 )
@@ -160,56 +158,60 @@ func SweepReminders(ctx context.Context, pool *pgxpool.Pool, now time.Time) (map
 			}
 		}
 
-		tomorrow := today.AddDate(0, 0, 1)
-		if start.Equal(tomorrow) && hour >= 9 && r.ClaimState == claimStateClaimed &&
-			r.ClaimEmail != "" && claimMature(r.ClaimedAt, now) && !complete {
-			lang := r.ClaimLang
-			if lang == "" {
-				lang = "en"
-			}
-			host, err := hostDetails(ctx, pool, r.LegalEntityID)
-			if err != nil {
-				return nil, err
-			}
-			content := mailnotify.BuildReminderGuest(publicBase(getenv), mailnotify.ReminderGuestInput{
-				Lang:         lang,
-				PropertyName: propertyLabel(r, lang),
-				StayURL:      publicBase(getenv) + fmt.Sprintf("/l/%s/%d", r.PermalinkToken, r.ID),
-				Host:         host,
-				Filled:       p.Filled,
-				Expected:     p.Expected,
-			})
-			replyTo, err := entityContactEmail(ctx, pool, r.LegalEntityID)
-			if err != nil {
-				return nil, err
-			}
-			payload := encodePayload(
-				kv{"text", content.Text}, kv{"lang", lang}, kv{"html", content.HTML},
-				kv{"reply_to", replyTo}, // html and reply_to only when set
-			)
-			queued, err := queueMail(ctx, pool, getenv, r, mailRequest{
-				kind:    reminderGuestKind,
-				key:     fmt.Sprintf("reminder_guest:%d:%s", r.ID, start.Format("2006-01-02")),
-				to:      r.ClaimEmail,
-				subject: content.Subject,
-				payload: payload,
-			})
-			if err != nil {
-				return nil, err
-			}
-			if queued {
-				summary["guest"]++
-			}
-		}
-
-		// 2094: day-before 18:00 nudge and check-in-time alarm use distinct idempotency keys
-		// so the day-before reminder never suppresses the check-in-time email.
 		var chPtr *int
 		if r.CheckinHour != nil {
 			v := int(*r.CheckinHour)
 			chPtr = &v
 		}
 		checkInHour := ubyport.EffectiveCheckinHour(chPtr)
+
+		tomorrow := today.AddDate(0, 0, 1)
+		if r.ClaimState == claimStateClaimed && r.ClaimEmail != "" && !complete {
+			if plan, due := calendar.DecideGuestReminder(r.ID, start, today, hour, checkInHour, r.ClaimedAt, now); due {
+				lang := r.ClaimLang
+				if lang == "" {
+					lang = "en"
+				}
+				host, err := hostDetails(ctx, pool, r.LegalEntityID)
+				if err != nil {
+					return nil, err
+				}
+				content := mailnotify.BuildReminderGuest(publicBase(getenv), mailnotify.ReminderGuestInput{
+					Lang:         lang,
+					PropertyName: propertyLabel(r, lang),
+					StayURL:      publicBase(getenv) + fmt.Sprintf("/l/%s/%d", r.PermalinkToken, r.ID),
+					Host:         host,
+					Filled:       p.Filled,
+					Expected:     p.Expected,
+					Stage:        plan.Stage,
+					CheckInHour:  plan.CheckInHour,
+				})
+				replyTo, err := entityContactEmail(ctx, pool, r.LegalEntityID)
+				if err != nil {
+					return nil, err
+				}
+				payload := encodePayload(
+					kv{"text", content.Text}, kv{"lang", lang}, kv{"html", content.HTML},
+					kv{"reply_to", replyTo}, // html and reply_to only when set
+				)
+				queued, err := queueMail(ctx, pool, getenv, r, mailRequest{
+					kind:    reminderGuestKind,
+					key:     plan.Key,
+					to:      r.ClaimEmail,
+					subject: content.Subject,
+					payload: payload,
+				})
+				if err != nil {
+					return nil, err
+				}
+				if queued {
+					summary["guest"]++
+				}
+			}
+		}
+
+		// 2094: day-before 18:00 nudge and check-in-time alarm use distinct idempotency keys
+		// so the day-before reminder never suppresses the check-in-time email.
 		early := start.Equal(tomorrow) && hour >= 18 && !complete &&
 			p.Status != "reported" && p.Status != "not_required" && r.Source != "demo"
 		checkInDue := start.Equal(today) && hour >= checkInHour && !complete &&
@@ -293,22 +295,6 @@ func formsComplete(p calendar.AlertProgress) bool {
 
 func incompleteKey(reservationID int64) string {
 	return fmt.Sprintf("%s:%d", incompleteCheckinKind, reservationID)
-}
-
-// claimMature is claim._reminder_guest_claim_mature with the sweep's clock.
-// An unreadable stamp counts as not mature (Python raises ValueError there).
-func claimMature(claimedAt string, now time.Time) bool {
-	if claimedAt == "" {
-		return false
-	}
-	parsed, err := time.Parse(time.RFC3339Nano, strings.Replace(claimedAt, "Z", "+00:00", 1))
-	if err != nil {
-		parsed, err = time.ParseInLocation("2006-01-02T15:04:05", claimedAt, time.UTC)
-		if err != nil {
-			return false
-		}
-	}
-	return now.Sub(parsed) >= reminderGuestMinHoursAfterClaim*time.Hour
 }
 
 // propertyLabel is mail_notify.property_label: the host's name first, then the
