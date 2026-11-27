@@ -201,6 +201,21 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        "name": "ubyhost_guest_text_lg",
+        "set_by": "static/guest-elderly.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "guest",
+        "purpose": {
+            "en": "Remembers whether you turned on larger text on the guest registration page",
+            "cs": "Pamatuje si, zda jste na registra\u010dn\u00ed str\u00e1nce pro hosty zapnuli v\u011bt\u0161\u00ed p\u00edsmo",
+        },
+        "lifetime": {
+            "en": "Until you turn larger text off or clear it",
+            "cs": "Dokud v\u011bt\u0161\u00ed p\u00edsmo nevypnete nebo jej nevyma\u017eete",
+        },
+    },
+    {
         # WP09: written only when a visitor clicks the opt-out on /privacy
         # (static/analytics-optout.js). The PostHog tracker reads it and then counts
         # nothing in this browser; the opt-back-in link removes it.
@@ -437,6 +452,18 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "de": "Bis Sie es löschen",
             "es": "Hasta que la borre",
             "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    "ubyhost_guest_text_lg": {
+        "purpose": {
+            "de": "Merkt sich, ob Sie auf der G\u00e4steregistrierungsseite gr\u00f6\u00dfere Schrift aktiviert haben",
+            "es": "Recuerda si activ\u00f3 el texto m\u00e1s grande en la p\u00e1gina de registro de hu\u00e9spedes",
+            "fr": "M\u00e9morise si vous avez activ\u00e9 le texte plus grand sur la page d\u2019enregistrement des voyageurs",
+        },
+        "lifetime": {
+            "de": "Bis Sie die gr\u00f6\u00dfere Schrift ausschalten oder es l\u00f6schen",
+            "es": "Hasta que desactive el texto m\u00e1s grande o lo borre",
+            "fr": "Jusqu\u2019\u00e0 ce que vous d\u00e9sactiviez le texte plus grand ou l\u2019effaciez",
         },
     },
     "ubyhost.analytics.disabled": {
