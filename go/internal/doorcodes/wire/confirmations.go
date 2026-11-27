@@ -45,8 +45,7 @@ type ConfirmationBilling interface {
 var _ ConfirmationBilling = LiveBilling{}
 
 // LiveConfirmations implements doorcodes.Confirmations: claim.maybe_notify_completion, the
-// registration receipt. It is the live counterpart of the placeholder Confirmations in
-// services.go, which stays as it is.
+// registration receipt (also aliased as Confirmations).
 type LiveConfirmations struct {
 	Pool    *pgxpool.Pool
 	Mailer  *Mailer
@@ -76,6 +75,12 @@ func (c LiveConfirmations) log() *slog.Logger {
 // claim must be CLAIMED, not yet notified, the stay complete and the claim e-mail known.
 // A held door code (hold) waits unless force is set. The mail is keyed completion:<res>:<filled>.
 func (c LiveConfirmations) MaybeNotifyCompletion(ctx context.Context, reservationID, apartmentID int64, force bool) error {
+	if c.Pool == nil {
+		return errNilPool
+	}
+	if c.Billing == nil {
+		c.Billing = LiveBilling{Pool: c.Pool, Now: c.Now}
+	}
 	var state string
 	var email, lang, notified *string
 	err := c.Pool.QueryRow(ctx,

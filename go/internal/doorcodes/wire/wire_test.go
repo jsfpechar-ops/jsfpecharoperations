@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mailnotify"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
@@ -486,15 +488,31 @@ func TestDrainWithoutBackendIsNoop(t *testing.T) {
 	}
 }
 
-func TestNotPortedStubs(t *testing.T) {
+func TestBillingAndConfirmationsRequirePool(t *testing.T) {
 	ctx := context.Background()
-	if _, _, err := (Billing{}).ReservationProgress(ctx, 1); err != ErrNotPorted {
-		t.Fatalf("ReservationProgress: %v", err)
+	if _, _, err := (Billing{}).ReservationProgress(ctx, 1); err != errNilPool {
+		t.Fatalf("ReservationProgress: want errNilPool, got %v", err)
 	}
-	if _, err := (Billing{}).CompletionFee(ctx, 1, 1); err != ErrNotPorted {
-		t.Fatalf("CompletionFee: %v", err)
+	if _, err := (Billing{}).CompletionFee(ctx, 1, 1); err != errNilPool {
+		t.Fatalf("CompletionFee: want errNilPool, got %v", err)
 	}
-	if err := (Confirmations{}).MaybeNotifyCompletion(ctx, 1, 1, false); err != ErrNotPorted {
-		t.Fatalf("MaybeNotifyCompletion: %v", err)
+	if err := (Confirmations{}).MaybeNotifyCompletion(ctx, 1, 1, false); err != errNilPool {
+		t.Fatalf("MaybeNotifyCompletion: want errNilPool, got %v", err)
+	}
+}
+
+func TestBillingAndConfirmationsLiveWiring(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	b := Billing{Pool: pool}
+	if _, _, err := b.ReservationProgress(ctx, 999999); err != errStayNotFound {
+		t.Fatalf("Billing.ReservationProgress missing stay: want errStayNotFound, got %v", err)
+	}
+	if _, err := b.CompletionFee(ctx, 999999, 999999); !errors.Is(err, stayfee.ErrNotFound) {
+		t.Fatalf("Billing.CompletionFee missing stay: want stayfee.ErrNotFound, got %v", err)
+	}
+	c := Confirmations{Pool: pool, Billing: b}
+	if err := c.MaybeNotifyCompletion(ctx, 999999, 999999, false); err != nil {
+		t.Fatalf("Confirmations.MaybeNotifyCompletion missing claim: %v", err)
 	}
 }
