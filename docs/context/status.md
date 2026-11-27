@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-26.
+Updated: 2026-11-27.
 
 ## Go cutover (11-25)
 - PR #1319: 2040–2085 done, `parity_gate.sh` PASS, main merged. Owner: `scripts/merge-pr-on-green.sh 1319`, then deploy (autopurge off week 1).
@@ -14,11 +14,12 @@ Updated: 2026-11-26.
 - Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
-- 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
-- Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 + polish green (PR #1335).
-- Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 merged (#1252).
+- Check-in auto-filing (Go): [plan](../plans/checkin-anchored-auto-filing.md), 2091–2093 (confirm 24h vs 72h).
+- 2001: invoice Wolt-simple + stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
+- Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 green (#1335).
+- Go parity: **GATE: PASS** (#1319, 2040–2085); 2011–2018 (#1252).
 - 2000: no police nags on Overview without UbyPort login.
-- Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
+- Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): **1793**, **0852**; **1730**/**1770** wait on sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): A2 done (2029); A6 waits on Python retirement.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073; 1835 (#1071) after 1834; owner 1837 Q4-5.
 - Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md) (11-22: 3 typed codes, Notion import); runnable 2032, 2035, 1668, 1664.
