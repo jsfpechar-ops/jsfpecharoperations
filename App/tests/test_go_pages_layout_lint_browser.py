@@ -338,4 +338,7 @@ from tests.checkin_autofiling_ux_suite import (  # noqa: E402, F401
     test_checkin_autofiling_geometry_and_tooltips,
     test_checkin_autofiling_pages_pass_layout_lint,
 )
+from tests.go_guest_elderly_ux_suite import (  # noqa: E402, F401
+    test_go_guest_elderly_ux_flow_geometry_and_a11y,
+)
 

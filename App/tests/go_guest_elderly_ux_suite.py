@@ -16,7 +16,12 @@ from urllib.parse import urlparse, urlunparse
 
 import psycopg
 import pytest
-from playwright.sync_api import sync_playwright
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    from playwright.sync_api import sync_playwright
+else:
+    sync_playwright = pytest.importorskip("playwright.sync_api").sync_playwright
 
 from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.go_web_harness import (
