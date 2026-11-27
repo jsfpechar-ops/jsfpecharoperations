@@ -1,6 +1,6 @@
 # 2093: Go automation choice cards, `?` examples, stay send time, and copy
 
-Status: todo
+Status: done
 Depends on: 2091, 2092 | Base commit: 52c418cf5 | Branch: task/2093-go-automation-choice-cards-examples-and-copy
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -1,6 +1,6 @@
 # 2092: Go mandatory check-in/out hours and scheduled 24 h default
 
-Status: todo
+Status: done
 Depends on: 2091 | Base commit: 52c418cf5 | Branch: task/2092-go-mandatory-checkin-hours-and-scheduled-default
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

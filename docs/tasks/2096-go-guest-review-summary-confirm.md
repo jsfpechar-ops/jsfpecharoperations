@@ -1,6 +1,6 @@
 # Task 2096 — Go: Pre-submit guest review & confirm summary screen
 
-Status: todo
+Status: done
 
 **Tier:** C (guest flow & template change, **Go-only**, zero Python changes — requires 390 px mobile screenshot check on the review and confirmed states per Hard Rule 7)
 **Branch:** `task/2096-go-guest-review-summary-confirm`

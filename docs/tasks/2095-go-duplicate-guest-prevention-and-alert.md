@@ -1,6 +1,6 @@
 # 2095: Go duplicate-guest prevention, host alert, and auto-filing guard
 
-Status: todo
+Status: done
 Depends on: 2091 | Base commit: 52c418cf5 | Branch: task/2095-go-duplicate-guest-prevention-and-alert
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

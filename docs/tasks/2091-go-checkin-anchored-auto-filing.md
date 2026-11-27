@@ -1,6 +1,6 @@
 # 2091: Go check-in-anchored per-guest automatic police filing
 
-Status: todo
+Status: done
 Depends on: none | Base commit: 52c418cf5 | Branch: task/2091-go-checkin-anchored-auto-filing
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

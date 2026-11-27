@@ -1,6 +1,6 @@
 # 2094: Go check-in-time incomplete-form alarm and second host email
 
-Status: todo
+Status: done
 Depends on: 2091 | Base commit: 52c418cf5 | Branch: task/2094-go-checkin-time-incomplete-alarm-and-mail
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
