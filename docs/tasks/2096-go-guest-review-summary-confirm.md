@@ -1,11 +1,17 @@
 # Task 2096 — Go: Pre-submit guest review & confirm summary screen
 
+Status: todo
+
 **Tier:** C (guest flow & template change, **Go-only**, zero Python changes — requires 390 px mobile screenshot check on the review and confirmed states per Hard Rule 7)
 **Branch:** `task/2096-go-guest-review-summary-confirm`
 **Plan:** [docs/plans/checkin-anchored-auto-filing.md](../plans/checkin-anchored-auto-filing.md)
 **Run after:** `2091` (per-guest check-in-anchored timer) and `2095` (duplicate-guest block & alert; both touch `go/internal/web/guest/form_save.go` and `go/internal/web/guest/i18n.json`).
 
-## 1. Goal & context
+## 1. Objective
+
+Add a pre-submit **Review & Confirm summary screen** to the Go guest registration flow (`go/internal/web/guest/`) with zero database migrations and zero Python changes, so guests always review every guest they entered before confirming their stay registration.
+
+## 2. Context
 
 Today, saving the last guest in the Go guest registration flow (`go/internal/web/guest/`) immediately stamps `reservation.registration_completed_at`, fires `runCompletion` (door code + completion receipt), and drops the guest onto the green "Thank you. Everyone is registered. You can close this page." screen with all guest summaries collapsed inside `<details>` folds. Between Person 1 and Person 2, the blank `/new` form does not show who was already added, so guests frequently re-enter themselves or miss typos before finishing.
 
@@ -50,7 +56,9 @@ This task adds a mandatory **Review & Confirm summary screen** in Go — with **
    - Update `RefreshRegistrationCompletedAt` in `go/internal/ubyport/recover.go` so periodic background sweeps only auto-stamp `registration_completed_at` on `formsSettled` (all live forms complete and 12 hours quiet since newest guest edit) — **not** immediately on `declaredFilled`. This prevents a background sweep from silently bypassing the Review & Confirm summary screen right after the guest saves Person 2, while still auto-settling forgotten tabs after 12 hours so door codes and receipts are not stranded forever.
    - Keep `stay_claim.go` (`claimConfirm`) from bypassing review by relying on the updated `RefreshRegistrationCompletedAt` (no premature stamp on `declaredFilled`).
 
-## 2. Files to read (and only these)
+## 3. Files
+
+### Files to read (and only these)
 
 - `go/internal/web/guest/stay_claim.go` (grep `scStay`, `loadStay`, `claimConfirm`, then read <=150-line slices)
 - `go/internal/web/guest/stay_view.go`
@@ -68,7 +76,7 @@ This task adds a mandatory **Review & Confirm summary screen** in Go — with **
 - `go/internal/ubyport/recover_test.go` (lines 200–310)
 - `go/cmd/ubyhost-web/register_web_guest_party_test.go`
 
-## 3. Files to create / modify
+### Files to create / modify
 
 | File | Action | Purpose |
 |---|---|---|
@@ -92,7 +100,7 @@ This task adds a mandatory **Review & Confirm summary screen** in Go — with **
 
 **Strictly do NOT touch any Python file (`App/**`) or any migration file.**
 
-## 4. Implementation steps (exact order)
+## 4. Steps
 
 1. Update `go/internal/ubyport/recover.go` (`RefreshRegistrationCompletedAt`) so background refresh only auto-stamps `registration_completed_at` on `formsSettled` (12h quiet when all forms are complete, `len(guests) > 0`, and if `expected != nil`, `filled >= *expected` or quiet fallback). Update `go/internal/ubyport/recover_test.go`.
 2. Add the 4 new i18n keys (`already_added`, `review_confirm_title`, `review_confirm_body`, `review_confirm_button`) across all 6 languages (`cs`, `de`, `en`, `es`, `fr`, `uk`) in `go/internal/web/guest/i18n.json` — no em-dashes, concise copy.
@@ -103,7 +111,14 @@ This task adds a mandatory **Review & Confirm summary screen** in Go — with **
 7. Write `go/internal/web/guest/confirm_registration_test.go` and update the listed Go unit tests (`stay_view_test.go`, `form_save_test.go`, `party_lead_hooks_test.go`, `form_pages_test.go`, `register_web_guest_party_test.go`).
 8. Run all Go tests and capture 390 px mobile screenshots of the guest Review & Confirm screen and Confirmed screen (per Hard Rule 7), verifying no overflow, readable summary cards, visible Edit/Remove buttons, and prominent Confirm button.
 
-## 5. Tests to run
+## 5. Do not touch
+
+- Any Python file (`App/**`) or any migration file (`App/migrations_pg/**`, `go/internal/schema/expected_schema.json`).
+- `go/internal/doorcodes/**` (door codes already gate on `reservation.registration_completed_at IS NOT NULL`).
+- `go/internal/ubyport/collect.go` (per-guest timer in `2091` already guarantees statutory filing even if a guest forgets to click Confirm).
+- Any host-side templates or CSS.
+
+## 6. Commands
 
 ```bash
 cd go && go test ./internal/web/guest/... ./internal/ubyport/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30
@@ -118,7 +133,7 @@ Plus 390 px mobile screenshot verification of:
 - Guest Review & Confirm summary screen (`NeedsConfirm = true`, 2 guests open by default, Edit/Remove + Confirm button visible)
 - Guest Confirmed screen (`Confirmed = true`, green checkmark card + folded summaries)
 
-## 6. Acceptance criteria
+## 7. Acceptance
 
 - Saving Guest 1 of 2 redirects to `/new` showing `Already added: <Guest 1 name>` (only guests saved on this device).
 - Saving Guest 2 of 2 does **not** immediately mark the stay confirmed, does **not** issue door codes yet, and redirects to the **Review & Confirm summary screen** with all device-owned guests expanded by default (`<details open>`), inline Edit/Remove links, any duplicate warnings above the button, and a no-JS server POST **"Confirm and submit registration"** button.
@@ -127,24 +142,24 @@ Plus 390 px mobile screenshot verification of:
 - Clicking **"Add another guest"** clears `registration_completed_at` so after filling the added guest, the guest reviews and confirms again.
 - If a guest forgets to click Confirm, `2091`'s per-guest check-in-anchored timer still files their valid registration to UbyPort on time (Hard Rule 1 preserved), and `RefreshRegistrationCompletedAt` auto-settles after 12 hours quiet.
 - Zero Python files modified, zero DB migrations added.
-- All Go tests pass with 0 failures; 390 px screenshots checked with no visual defects.
+- All Go tests pass with 0 failures; 390 px screenshots checked with no visual defects; no em-dashes in user-visible copy; all 6 guest languages (`cs`, `de`, `en`, `es`, `fr`, `uk`) in parity.
 
-## 7. Hard rules reminder
-
-- Rule 1 (UbyPort filing correctness): statutory filing must never fail or miss deadlines if a guest leaves the review screen without clicking Confirm.
-- Rule 2 (Privacy first): never leak another device's guest PII in `AlreadyAddedNames` or on the Review summary screen; zero PII in audit logs.
-- Rule 6: light mode only; Confirm form works 100% without JavaScript (standard HTML `<form method="post">` + `_csrf`).
-- Rule 7: guest template change requires 390 px screenshot verification.
-- Rule 9: no em-dashes in user-visible copy; all 6 guest languages (`cs`, `de`, `en`, `es`, `fr`, `uk`) kept in parity.
-- Rule 11: 100% Go-only.
-
-## 8. Stop conditions
+## 8. Stop and ask
 
 STOP and write `docs/tasks/2096-report.md` if:
 - Any golden test (`form_pages_golden.json`, `form_save_golden.json`, `party_golden.json`) requires large structural regeneration beyond the expected redirect/summary changes and is ambiguous;
 - `go test ./internal/web/guest/...` fails on an unrelated guest test;
 - Any change appears to require touching Python (`App/`) or adding a DB migration.
 
-## 9. Report format (`docs/tasks/2096-report.md`)
+## 9. Report
 
-Write a concise report covering: files changed, Go test command output (last 30 lines), 390 px screenshot findings for both Review and Confirmed states, and any deviations.
+Write `docs/tasks/2096-report.md` covering: files changed, Go test command output (last 30 lines), 390 px screenshot findings for both Review and Confirmed states, and any deviations.
+
+## Risk list (for the reviewer)
+
+- **Cross-device PII boundary:** `AlreadyAddedNames` and open `<details>` cards must strictly filter by `ownedGuestIDs(r)` so Device B never sees Device A's personal details.
+- **Forgotten confirm tap:** `2091` per-guest filing and `recover.go` 12h quiet auto-settle guarantee neither UbyPort statutory filing nor door-code issuance is permanently stranded.
+
+## Owner steps
+
+None — pure Go guest-flow update, no migration or env changes.
