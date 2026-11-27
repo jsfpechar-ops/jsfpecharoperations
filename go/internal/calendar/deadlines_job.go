@@ -19,6 +19,7 @@ type DeadlinesSummary struct {
 	Alerts        int
 	RequestsDue   int
 	CheckInAlarms int
+	Duplicates    int
 	Watchdog      WatchdogResult
 	Stalled       int
 }
@@ -28,6 +29,7 @@ type deadlinesSteps struct {
 	check       func() (int, error)
 	dsrDue      func() (int, error)
 	checkIn     func() (int, error) // nil in tests that do not need it
+	dupCheck    func() (int, error) // nil in tests that do not need it
 	watchdog    func() (WatchdogResult, error)
 	stalled     func() (int, error) // nil in tests that do not need it
 	raiseFailed func() error
@@ -50,6 +52,7 @@ func RunDeadlinesJob(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(str
 		// Python's date.today() is the server's local date (TZ unset: UTC).
 		dsrDue:      func() (int, error) { return RaiseDSRDueAlerts(ctx, pool, at.Local()) },
 		checkIn:     func() (int, error) { return RunCheckInIncompleteAlarm(ctx, pool, getenv, at) },
+		dupCheck:    func() (int, error) { return RunDuplicateGuestCheck(ctx, pool, getenv, at) },
 		watchdog:    func() (WatchdogResult, error) { return RunFilingWatchdog(ctx, pool, lookupEnv, at) },
 		stalled:     func() (int, error) { r, err := RunFilingStalled(ctx, pool, getenv, at); return r.Stalled, err },
 		raiseFailed: func() error { return jobs.RaiseFailed(ctx, pool, "deadlines") },
@@ -84,6 +87,13 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 			slog.Error("checkin incomplete alarm failed", "error", fmt.Sprintf("%T", err))
 		} else {
 			sum.CheckInAlarms = n
+		}
+	}
+	if s.dupCheck != nil {
+		if n, err := s.dupCheck(); err != nil {
+			slog.Error("duplicate guest check failed", "error", fmt.Sprintf("%T", err))
+		} else {
+			sum.Duplicates = n
 		}
 	}
 	// WP23: the watchdog runs even when the watch failed; its mails and its

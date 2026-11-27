@@ -192,6 +192,25 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 		return nil, err
 	}
 
+	var dupByRes map[int64]map[int64]bool
+	if !o.IgnoreAutomation {
+		byRes := make(map[int64][]GuestIdentity)
+		for _, c := range guests {
+			byRes[c.resID] = append(byRes[c.resID], GuestIdentity{
+				ID:          c.id,
+				Surname:     c.guest.Surname,
+				FirstName:   c.guest.FirstName,
+				BirthDate:   c.guest.BirthDate,
+				DocNumber:   c.guest.DocNumber,
+				Nationality: c.nationality,
+			})
+		}
+		dupByRes = make(map[int64]map[int64]bool, len(byRes))
+		for resID, list := range byRes {
+			dupByRes[resID] = DuplicateGuestIDs(list)
+		}
+	}
+
 	anchors := map[int64]*time.Time{}
 	out := []BatchPair{}
 	for _, c := range guests {
@@ -223,6 +242,9 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 			continue
 		}
 		if !o.IgnoreAutomation && c.attempts >= collectMaxAutoAttempts {
+			continue
+		}
+		if !o.IgnoreAutomation && dupByRes[c.resID][c.id] {
 			continue
 		}
 		if !o.IgnoreAutomation && c.submissionID != nil && *c.submissionID != 0 {

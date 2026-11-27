@@ -409,8 +409,8 @@ func TestGuestRemovalCleanup(t *testing.T) {
 		if gotMode != "completion_immediate" {
 			t.Fatalf("submit mode = %q, want completion_immediate", gotMode)
 		}
-		if gotOpts.IgnoreSchedule == nil || !*gotOpts.IgnoreSchedule {
-			t.Fatalf("submit IgnoreSchedule = %v, want true", gotOpts.IgnoreSchedule)
+		if gotOpts.IgnoreSchedule == nil || *gotOpts.IgnoreSchedule {
+			t.Fatalf("submit IgnoreSchedule = %v, want false (check-in-anchored schedule enforced)", gotOpts.IgnoreSchedule)
 		}
 		gotIDs := append([]int64(nil), gotOpts.OnlyGuestIDs...)
 		sort.Slice(gotIDs, func(i, j int) bool { return gotIDs[i] < gotIDs[j] })

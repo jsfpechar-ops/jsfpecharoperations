@@ -240,6 +240,13 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	// sentence for the guest. Both passes run before the refusal is tested, so a
 	// translated sentence is what the page shows and what the log counts.
 	issues = localizeIssues(nameLatinIssues(issues, lang), lang)
+	if len(validation.ErrorsOnly(issues)) == 0 {
+		if dup, derr := hasSamePersonGuestOnStay(ctx, d, resID, existingID, values); derr != nil {
+			return derr
+		} else if dup {
+			issues = append(issues, validation.Issue{Field: "surname", Message: stringsCatalog.T(lang, "error_duplicate_guest", nil), Severity: "error"})
+		}
+	}
 	if len(validation.ErrorsOnly(issues)) > 0 {
 		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, form, raw, values, stayFrom, stayTo, sig, issues)
 		return nil
@@ -819,6 +826,46 @@ func keptGuestSignature(posted, stored string) string {
 }
 
 func guestFormLocked(row *guestSaveRow) bool { return false }
+
+// hasSamePersonGuestOnStay checks whether another live guest row on resID
+// already represents the same individual (2095 Layer 1 duplicate prevention).
+func hasSamePersonGuestOnStay(ctx context.Context, d saveDeps, resID, excludeID int64, values validation.GuestRow) (bool, error) {
+	rows, err := d.pool.Query(ctx, `
+		SELECT id, COALESCE(surname, ''), COALESCE(first_name, ''), COALESCE(birth_date, ''),
+		       COALESCE(doc_number_enc, ''), COALESCE(nationality, '')
+		FROM guest
+		WHERE reservation_id = $1 AND archived_at IS NULL AND id != $2`, resID, excludeID)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	keys, _ := secure.LoadDataKeys(d.getenv)
+	at := d.now()
+	incoming := ubyport.GuestIdentity{
+		ID:          excludeID,
+		Surname:     values.Surname,
+		FirstName:   values.FirstName,
+		BirthDate:   values.BirthDate,
+		DocNumber:   values.DocNumber,
+		Nationality: values.Nationality,
+	}
+	for rows.Next() {
+		var other ubyport.GuestIdentity
+		var docEnc string
+		if err := rows.Scan(&other.ID, &other.Surname, &other.FirstName, &other.BirthDate, &docEnc, &other.Nationality); err != nil {
+			return false, err
+		}
+		if docEnc != "" && keys != nil {
+			if plain, derr := keys.DecryptField(docEnc, at); derr == nil {
+				other.DocNumber = plain
+			}
+		}
+		if ubyport.IsSamePerson(other, incoming) {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
+}
 
 // renderGuestForm422 redraws the form the guest just submitted, with what they
 // typed and the sentences saying what to fix — Python's 422 (guest.py:2530
