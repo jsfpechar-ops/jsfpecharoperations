@@ -178,6 +178,7 @@ type formView struct {
 	SelectedChildRole        string
 	SignatureValue           string
 	ResidenceCopiedFrom      string
+	SameAddress              *formSameAddress
 	FeeNotice                bool
 	FeeEstimate              bool
 	FeePanel                 bool
@@ -676,12 +677,7 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	}
 	view.Values = map[string]string{"stay_from": stayFrom, "stay_to": stayTo}
 	if mode == "new" && guest == nil {
-		if prefill, copiedFrom := formResidencePrefill(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), d.getenv, d.now); len(prefill) > 0 {
-			for k, v := range prefill {
-				view.Values[k] = v
-			}
-			view.ResidenceCopiedFrom = copiedFrom
-		}
+		view.SameAddress = formSameAddressCandidate(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), lang, d.getenv, d.now)
 	}
 	view.Inpass = "INPASS"
 	view.NoticeVersion = formNoticeVersion(d.getenv)

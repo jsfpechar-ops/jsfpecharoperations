@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -132,13 +133,24 @@ func formDisplayName(first, surname string) string {
 	return strings.Join(parts, " ")
 }
 
-// formResidencePrefill copies the permanent home address from the most recent
-// completed guest on this stay that belongs to the same browser device cookie.
-func formResidencePrefill(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, getenv func(string) string, now func() time.Time) (map[string]string, string) {
+type formSameAddress struct {
+	Name         string
+	Nationality  string
+	Country      string
+	CountryLabel string
+	City         string
+	Street       string
+}
+
+// formSameAddressCandidate returns the most recent completed guest's permanent
+// home address from the same browser device cookie for an opt-in checkbox on
+// companion forms. It never pre-fills the inputs automatically.
+func formSameAddressCandidate(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, lang string, getenv func(string) string, now func() time.Time) *formSameAddress {
 	if len(owned) == 0 || pool == nil {
-		return nil, ""
+		return nil
 	}
 	rows, err := pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''),
+		COALESCE(nationality,''),
 		COALESCE(res_street,''), COALESCE(res_street_enc,''),
 		COALESCE(res_city,''), COALESCE(res_city_enc,''),
 		COALESCE(res_country,'')
@@ -146,14 +158,14 @@ func formResidencePrefill(ctx context.Context, pool *pgxpool.Pool, resID int64, 
 		WHERE reservation_id = $1 AND archived_at IS NULL AND filled_at IS NOT NULL
 		ORDER BY id DESC`, resID)
 	if err != nil {
-		return nil, ""
+		return nil
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int64
-		var first, surname, streetPlain, streetEnc, cityPlain, cityEnc, country string
-		if err := rows.Scan(&id, &first, &surname, &streetPlain, &streetEnc, &cityPlain, &cityEnc, &country); err != nil {
-			return nil, ""
+		var first, surname, nat, streetPlain, streetEnc, cityPlain, cityEnc, country string
+		if err := rows.Scan(&id, &first, &surname, &nat, &streetPlain, &streetEnc, &cityPlain, &cityEnc, &country); err != nil {
+			return nil
 		}
 		if !owned[id] {
 			continue
@@ -174,11 +186,18 @@ func formResidencePrefill(ctx context.Context, pool *pgxpool.Pool, resID int64, 
 		if street == "" || city == "" || country == "" {
 			continue
 		}
-		return map[string]string{
-			"res_country": country,
-			"res_city":    city,
-			"res_street":  street,
-		}, formDisplayName(first, surname)
+		label := strings.TrimSpace(ubyport.CountryName(country, lang))
+		if label == "" {
+			label = country
+		}
+		return &formSameAddress{
+			Name:         formDisplayName(first, surname),
+			Nationality:  strings.ToUpper(strings.TrimSpace(nat)),
+			Country:      strings.ToUpper(country),
+			CountryLabel: label,
+			City:         city,
+			Street:       street,
+		}
 	}
-	return nil, ""
+	return nil
 }

@@ -276,23 +276,54 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             page.click("[data-guest-save]")
             page.wait_for_load_state("networkidle")
 
-            # Person 2 form automatically prefills Margaret Henderson's permanent home address.
+            # Person 2: Step 2 starts blank; opt-in same-address checkbox is hidden for
+            # non-matching nationalities and appears unchecked when nationality matches.
             page.goto(f"{base_http}/l/{token}/{res_id}/new?lang=en")
             page.wait_for_load_state("networkidle")
             assert page.locator('[data-purpose-help="guest-count"]').count() == 0
             page.fill("#first_name", "Thomas")
             page.fill("#surname", "Henderson")
             page.fill("#birth_date", "03.08.1949")
+            page.fill("#doc_number", "C02Y99T12")
+            # Different nationality (USA) -> checkbox stays hidden on Step 2.
+            page.fill("#nationality_search", "United States")
+            page.wait_for_timeout(120)
+            page.locator("#nationality_list li").first.click()
+            page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
+            page.wait_for_timeout(150)
+            assert page.input_value("#res_street") == ""
+            assert page.input_value("#res_city") == ""
+            assert not page.locator("[data-same-address]").is_visible()
+
+            # Switch to matching nationality (Germany) -> Step 2 still starts blank,
+            # opt-in checkbox appears unchecked, checking fills all 3 fields, unchecking clears them.
+            page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn.secondary').click()
+            page.wait_for_timeout(120)
             page.fill("#nationality_search", "Germany")
             page.wait_for_timeout(120)
             page.locator("#nationality_list li").first.click()
-            page.fill("#doc_number", "C02Y99T12")
             page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
             page.wait_for_timeout(150)
+            assert page.input_value("#res_street") == ""
+            assert page.input_value("#res_city") == ""
+            assert page.locator("[data-same-address]").is_visible()
+            assert "Margaret Henderson" in page.locator("[data-same-address]").inner_text()
+            assert not page.locator("[data-same-address-toggle]").is_checked()
+
+            page.locator("[data-same-address-toggle]").check()
+            page.wait_for_timeout(80)
             assert page.input_value("#res_street") == "Lindenstrasse 18"
             assert page.input_value("#res_city") == "Munich"
             assert page.input_value("#res_country") == "DEU"
-            assert "Margaret Henderson" in page.locator(".g-copied-note").inner_text()
+            assert page.input_value("#res_country_search") == "Germany"
+
+            page.locator("[data-same-address-toggle]").uncheck()
+            page.wait_for_timeout(80)
+            assert page.input_value("#res_street") == ""
+            assert page.input_value("#res_city") == ""
+
+            page.locator("[data-same-address-toggle]").check()
+            page.wait_for_timeout(80)
             page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
             page.wait_for_timeout(150)
 

@@ -23,7 +23,8 @@
       warnNameDigits: "Names normally do not contain numbers — did you paste a document number here?",
       warnPlaceholderDoc: "This looks like a placeholder number — please enter the number from your passport or ID.",
       warnNonEuPassport: "Non-EU citizens must enter a passport number (national ID cards and driving licences are not accepted).",
-      signedOk: "Signature added", signNeeded: "Please draw your signature across the box before saving."
+      signedOk: "Signature added", signNeeded: "Please draw your signature across the box before saving.",
+      sameAddrAs: "Same permanent address as {name}"
     },
     cs: {
       fixBelow: "Zkontrolujte prosím zvýrazněná pole:", requiredField: "Vyplňte prosím toto pole.",
@@ -38,7 +39,8 @@
       warnNameDigits: "Jméno obvykle neobsahuje číslice — nevložili jste sem číslo dokladu?",
       warnPlaceholderDoc: "Vypadá to jako zkušební číslo — zadejte prosím číslo z pasu nebo občanského průkazu.",
       warnNonEuPassport: "Občané mimo EU musí uvést číslo cestovního pasu (národní průkazy a řidičské průkazy policie nepřijímá).",
-      signedOk: "Podpis je zaznamenán", signNeeded: "Před uložením se prosím podepište do rámečku."
+      signedOk: "Podpis je zaznamenán", signNeeded: "Před uložením se prosím podepište do rámečku.",
+      sameAddrAs: "Stejné trvalé bydliště jako {name}"
     },
     de: {
       fixBelow: "Bitte prüfen Sie die markierten Felder:", requiredField: "Bitte füllen Sie dieses Feld aus.",
@@ -53,7 +55,8 @@
       warnNameDigits: "Namen enthalten normalerweise keine Ziffern — haben Sie versehentlich eine Dokumentennummer eingefügt?",
       warnPlaceholderDoc: "Das sieht nach einer Platzhalternummer aus — bitte geben Sie die Nummer Ihres Reisepasses oder Ausweises ein.",
       warnNonEuPassport: "Nicht-EU-Bürger müssen eine Reisepassnummer angeben (Personalausweise und Führerscheine werden nicht akzeptiert).",
-      signedOk: "Unterschrift erfasst", signNeeded: "Bitte zeichnen Sie Ihre Unterschrift in das Feld, bevor Sie speichern."
+      signedOk: "Unterschrift erfasst", signNeeded: "Bitte zeichnen Sie Ihre Unterschrift in das Feld, bevor Sie speichern.",
+      sameAddrAs: "Gleiche Wohnanschrift wie {name}"
     },
     es: {
       fixBelow: "Por favor, revise los campos marcados:", requiredField: "Por favor, complete este campo.",
@@ -68,7 +71,8 @@
       warnNameDigits: "Los nombres no suelen contener números — ¿pegó aquí un número de documento?",
       warnPlaceholderDoc: "Parece un número de ejemplo — introduzca el número real de su pasaporte o documento.",
       warnNonEuPassport: "Los ciudadanos de fuera de la UE deben indicar el número de pasaporte (no se aceptan carnés nacionales ni licencias de conducir).",
-      signedOk: "Firma añadida", signNeeded: "Por favor, dibuje su firma dentro del recuadro antes de guardar."
+      signedOk: "Firma añadida", signNeeded: "Por favor, dibuje su firma dentro del recuadro antes de guardar.",
+      sameAddrAs: "Mismo domicilio permanente que {name}"
     },
     fr: {
       fixBelow: "Veuillez vérifier les champs indiqués :", requiredField: "Veuillez remplir ce champ.",
@@ -83,7 +87,8 @@
       warnNameDigits: "Un nom ne contient normalement pas de chiffres — avez-vous collé un numéro de document ?",
       warnPlaceholderDoc: "Cela ressemble à un numéro factice — veuillez saisir le numéro de votre passeport ou pièce d'identité.",
       warnNonEuPassport: "Les ressortissants hors UE doivent saisir un numéro de passeport (cartes d'identité nationales et permis de conduire refusés).",
-      signedOk: "Signature ajoutée", signNeeded: "Veuillez tracer votre signature dans le cadre avant d'enregistrer."
+      signedOk: "Signature ajoutée", signNeeded: "Veuillez tracer votre signature dans le cadre avant d'enregistrer.",
+      sameAddrAs: "Même adresse permanente que {name}"
     },
     uk: {
       fixBelow: "Будь ласка, перевірте виділені поля:", requiredField: "Будь ласка, заповніть це поле.",
@@ -98,7 +103,8 @@
       warnNameDigits: "Ім'я зазвичай не містить цифр — чи не вставили ви сюди номер документа?",
       warnPlaceholderDoc: "Це схоже на тестовий номер — введіть номер із вашого паспорта.",
       warnNonEuPassport: "Громадянам країн поза ЄС потрібно вказати номер закордонного паспорта (внутрішні ID-картки та водійські посвідчення не приймаються).",
-      signedOk: "Підпис додано", signNeeded: "Будь ласка, поставте підпис у полі перед збереженням."
+      signedOk: "Підпис додано", signNeeded: "Будь ласка, поставте підпис у полі перед збереженням.",
+      sameAddrAs: "Та сама адреса проживання, що й у {name}"
     },
     vi: {
       fixBelow: "Vui lòng kiểm tra các mục được đánh dấu:", requiredField: "Vui lòng điền vào mục này.",
@@ -113,7 +119,8 @@
       warnNameDigits: "Tên thường không có chữ số — bạn có dán nhầm số hộ chiếu vào đây không?",
       warnPlaceholderDoc: "Số này giống số mẫu — vui lòng nhập đúng số trên hộ chiếu hoặc giấy tờ tùy thân.",
       warnNonEuPassport: "Công dân ngoài EU cần nhập số hộ chiếu (thẻ căn cước và bằng lái xe không được chấp nhận).",
-      signedOk: "Đã lưu chữ ký", signNeeded: "Vui lòng ký tên vào khung trước khi lưu."
+      signedOk: "Đã lưu chữ ký", signNeeded: "Vui lòng ký tên vào khung trước khi lưu.",
+      sameAddrAs: "Cùng địa chỉ thường trú với {name}"
     }
   };
 
@@ -480,7 +487,81 @@
     }
   }
 
-  function start() { initCalmValidation(); initSignatureGuard(); evaluateSanityWarnings(); }
+  function initSameAddressOptIn() {
+    var box = document.querySelector("[data-same-address]");
+    if (!box) return;
+    var toggle = box.querySelector("[data-same-address-toggle]");
+    var labelEl = box.querySelector("[data-same-address-label]");
+    var nat = document.getElementById("nationality");
+    var country = document.getElementById("res_country");
+    var city = document.getElementById("res_city");
+    var street = document.getElementById("res_street");
+    if (!toggle || !country || !city || !street) return;
+
+    var matchNat = (box.getAttribute("data-match-nat") || "").trim().toUpperCase();
+    var srcCountry = (box.getAttribute("data-country") || "").trim().toUpperCase();
+    var srcCity = box.getAttribute("data-city") || "";
+    var srcStreet = box.getAttribute("data-street") || "";
+    var srcName = box.getAttribute("data-name") || "";
+    if (labelEl) labelEl.textContent = strings().sameAddrAs.replace("{name}", srcName);
+
+    var savedCountry = "";
+    var syncing = false;
+
+    function syncCountrySearch() {
+      var search = document.getElementById("res_country_search");
+      if (!search) return;
+      var opt = country.options[country.selectedIndex];
+      search.value = opt && opt.value ? opt.textContent.trim() : "";
+    }
+
+    function updateVisibility() {
+      var curNat = nat ? (nat.value || "").trim().toUpperCase() : "";
+      var relevant = !!curNat && (curNat === matchNat || curNat === srcCountry);
+      box.hidden = !relevant;
+      if (!relevant && toggle.checked) toggle.checked = false;
+    }
+
+    toggle.addEventListener("change", function () {
+      syncing = true;
+      if (toggle.checked) {
+        savedCountry = country.value || "";
+        country.value = srcCountry;
+        city.value = srcCity;
+        street.value = srcStreet;
+        clearFieldError(country); clearFieldError(city); clearFieldError(street);
+      } else {
+        country.value = savedCountry;
+        city.value = "";
+        street.value = "";
+      }
+      syncCountrySearch();
+      country.dispatchEvent(new Event("change", { bubbles: true }));
+      city.dispatchEvent(new Event("input", { bubbles: true }));
+      street.dispatchEvent(new Event("input", { bubbles: true }));
+      syncing = false;
+    });
+
+    function onManualEdit() {
+      if (syncing || !toggle.checked) return;
+      if (country.value !== srcCountry || city.value !== srcCity || street.value !== srcStreet) {
+        toggle.checked = false;
+      }
+    }
+    country.addEventListener("change", onManualEdit);
+    city.addEventListener("input", onManualEdit);
+    street.addEventListener("input", onManualEdit);
+
+    if (nat) {
+      nat.addEventListener("change", updateVisibility);
+      nat.addEventListener("input", updateVisibility);
+    }
+    var form = document.getElementById("guest-form");
+    if (form) form.addEventListener("guest-wizard:shown", updateVisibility);
+    updateVisibility();
+  }
+
+  function start() { initCalmValidation(); initSignatureGuard(); initSameAddressOptIn(); evaluateSanityWarnings(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();

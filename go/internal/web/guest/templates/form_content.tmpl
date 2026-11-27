@@ -188,8 +188,21 @@
       </details>
     </div>
     <p class="g-intro">{{.T "residence_help"}}</p>
-    {{if .ResidenceCopiedFrom}}
-      <p class="g-copied-note" role="status">{{.T "residence_copied" "name" .ResidenceCopiedFrom}}</p>
+    {{if .SameAddress}}
+      <div class="g-same-addr" data-same-address hidden
+           data-match-nat="{{.SameAddress.Nationality}}"
+           data-country="{{.SameAddress.Country}}"
+           data-city="{{.SameAddress.City}}"
+           data-street="{{.SameAddress.Street}}"
+           data-name="{{.SameAddress.Name}}">
+        <label class="g-same-addr-row">
+          <input type="checkbox" data-same-address-toggle>
+          <span class="g-same-addr-text">
+            <span class="g-same-addr-title" data-same-address-label></span>
+            <span class="g-same-addr-preview">{{.SameAddress.Street}}, {{.SameAddress.City}}, {{.SameAddress.CountryLabel}}</span>
+          </span>
+        </label>
+      </div>
     {{end}}
     <div class="g-field">
       <label for="res_country">{{.T "res_country"}}</label>
