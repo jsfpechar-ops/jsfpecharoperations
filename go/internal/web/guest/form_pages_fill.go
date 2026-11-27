@@ -116,3 +116,69 @@ func formGuestUnder15OnStay(birth, stayFrom string) bool {
 	}
 	return validation.CertainlyUnderAge(birth, &from, guestcontract.UnderSignAge)
 }
+
+func formDisplayName(first, surname string) string {
+	var parts []string
+	for _, raw := range []string{first, surname} {
+		for _, word := range strings.Fields(strings.TrimSpace(raw)) {
+			r := []rune(strings.ToLower(word))
+			if len(r) == 0 {
+				continue
+			}
+			r[0] = []rune(strings.ToUpper(string(r[0])))[0]
+			parts = append(parts, string(r))
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// formResidencePrefill copies the permanent home address from the most recent
+// completed guest on this stay that belongs to the same browser device cookie.
+func formResidencePrefill(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, getenv func(string) string, now func() time.Time) (map[string]string, string) {
+	if len(owned) == 0 || pool == nil {
+		return nil, ""
+	}
+	rows, err := pool.Query(ctx, `SELECT id, COALESCE(first_name,''), COALESCE(surname,''),
+		COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_country,'')
+		FROM guest
+		WHERE reservation_id = $1 AND archived_at IS NULL AND filled_at IS NOT NULL
+		ORDER BY id DESC`, resID)
+	if err != nil {
+		return nil, ""
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var first, surname, streetPlain, streetEnc, cityPlain, cityEnc, country string
+		if err := rows.Scan(&id, &first, &surname, &streetPlain, &streetEnc, &cityPlain, &cityEnc, &country); err != nil {
+			return nil, ""
+		}
+		if !owned[id] {
+			continue
+		}
+		street := strings.TrimSpace(streetPlain)
+		if streetEnc != "" {
+			if plain, err := decryptGuestField(getenv, now, streetEnc, streetPlain); err == nil {
+				street = strings.TrimSpace(plain)
+			}
+		}
+		city := strings.TrimSpace(cityPlain)
+		if cityEnc != "" {
+			if plain, err := decryptGuestField(getenv, now, cityEnc, cityPlain); err == nil {
+				city = strings.TrimSpace(plain)
+			}
+		}
+		country = strings.TrimSpace(country)
+		if street == "" || city == "" || country == "" {
+			continue
+		}
+		return map[string]string{
+			"res_country": country,
+			"res_city":    city,
+			"res_street":  street,
+		}, formDisplayName(first, surname)
+	}
+	return nil, ""
+}

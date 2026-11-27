@@ -102,10 +102,6 @@
                inputmode="numeric" autocomplete="off"
                value="{{or (index $.Values "party_size") "1"}}">
         <div class="hint">{{.T "party_help"}}</div>
-        <details class="g-why" data-purpose-help="guest-count">
-          <summary class="g-why-summary">{{.T "guest_count_purpose_help_label"}}</summary>
-          <p class="g-intro">{{.T "guest_count_purpose_help"}}</p>
-        </details>
         {{$.ErrHTML "party_size"}}
       </div>
     {{end}}
@@ -193,7 +189,7 @@
     </div>
     <p class="g-intro">{{.T "residence_help"}}</p>
     {{if .ResidenceCopiedFrom}}
-      <p class="hint" role="status">{{.T "residence_copied"}}</p>
+      <p class="g-copied-note" role="status">{{.T "residence_copied" "name" .ResidenceCopiedFrom}}</p>
     {{end}}
     <div class="g-field">
       <label for="res_country">{{.T "res_country"}}</label>

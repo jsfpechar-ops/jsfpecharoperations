@@ -302,26 +302,6 @@
   },
   {
    "lifetime": {
-    "cs": "Dokud větší písmo nevypnete nebo jej nevymažete",
-    "de": "Bis Sie die größere Schrift ausschalten oder es löschen",
-    "en": "Until you turn larger text off or clear it",
-    "es": "Hasta que desactive el texto más grande o lo borre",
-    "fr": "Jusqu’à ce que vous désactiviez le texte plus grand ou l’effaciez",
-    "uk": "Доки ви не вимкнете більший шрифт або не видалите його"
-   },
-   "name": "ubyhost_guest_text_lg",
-   "party": "first",
-   "purpose": {
-    "cs": "Pamatuje si, zda jste na registrační stránce pro hosty zapnuli větší písmo",
-    "de": "Merkt sich, ob Sie auf der Gästeregistrierungsseite größere Schrift aktiviert haben",
-    "en": "Remembers whether you turned on larger text on the guest registration page",
-    "es": "Recuerda si activó el texto más grande en la página de registro de huéspedes",
-    "fr": "Mémorise si vous avez activé le texte plus grand sur la page d’enregistrement des voyageurs",
-    "uk": "Запам’ятовує, чи ввімкнули ви більший шрифт на сторінці реєстрації гостей"
-   }
-  },
-  {
-   "lifetime": {
     "cs": "Dokud měření znovu nezapnete nebo klíč nevymažete",
     "de": "Bis Sie die Messung wieder aktivieren oder ihn löschen",
     "en": "Until you turn measurement back on or clear it",

@@ -130,7 +130,7 @@
   <details class="g-card g-summary"{{if $.NeedsConfirm}} open{{end}}>
     <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true"><svg class="ui-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="check"><path d="M20 6 9 17l-5-5"/></svg></span>{{else}}{{$.T "not_filled"}}{{end}}</summary>
     <div class="g-summary-body">
-      <h2>{{$.T "summary_title"}}</h2>
+      <h2>{{if gt (len $.Mine) 1}}{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}}{{else}}{{$.T "summary_title"}}{{end}}</h2>
       {{if .Summary}}
         <dl class="g-summary-list">
           <dt>{{$.T "birth_date"}}</dt><dd>{{.Summary.BirthDate}}</dd>

@@ -189,6 +189,8 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
 
             page.click(f'a[href*="/{res_id}"]')
             page.wait_for_load_state("networkidle")
+            assert page.locator('[data-purpose-help="guest-count"]').count() == 0
+            assert page.locator('[data-text-size-toggle]').count() == 0
             assert_screen(page, "step1_390")
 
             # Calm inline validation summary with zero sticky-bar occlusion and no duplicate country error.
@@ -204,16 +206,31 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             assert err_check["comboErrVisible"] == 0
             assert_screen(page, "step1_error_390")
 
-            # A+ large-text toggle scales typography without setting any cookie.
-            cookies_before = {c["name"] for c in ctx.cookies()}
-            page.click("[data-text-size-toggle]")
-            page.wait_for_timeout(100)
-            assert {c["name"] for c in ctx.cookies()} == cookies_before
-            assert_screen(page, "step1_large_390", min_body_font=20.0)
-            page.click("[data-text-size-toggle]")
-            page.wait_for_timeout(100)
+            # Step 1 UbyPort guards catch non-Latin, impossible DOB, short doc before Step 3;
+            # soft sanity warnings flag digits in name, identical names, placeholder doc.
+            page.fill("#party_size", "2")
+            page.fill("#first_name", "Иван")
+            page.fill("#surname", "Henderson")
+            page.fill("#birth_date", "31.02.1951")
+            page.fill("#nationality_search", "Germany")
+            page.wait_for_timeout(120)
+            page.locator("#nationality_list li").first.click()
+            page.fill("#doc_number", "AB")
+            page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
+            page.wait_for_timeout(150)
+            # Still on Step 1 with inline errors for first_name, birth_date, doc_number
+            assert page.locator("#first_name").is_visible()
+            assert page.locator(".g-field-inline-err").count() >= 3
 
-            # Forgiving DOB normalization + full 3-step submit -> Review & Confirm -> All Done.
+            # Soft sanity warning check (identical given + surname & placeholder doc)
+            page.fill("#first_name", "Henderson")
+            page.locator("#first_name").blur()
+            page.fill("#doc_number", "123456")
+            page.locator("#doc_number").blur()
+            page.wait_for_timeout(100)
+            assert page.locator(".g-field-warn").count() >= 2
+
+            # Forgiving DOB normalization + full 3-step submit -> Guest 2 companion prefill check.
             page.fill("#first_name", "Margaret")
             page.fill("#surname", "Henderson")
             page.fill("#birth_date", "14/05/1951")
@@ -221,10 +238,10 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             page.wait_for_timeout(100)
             assert page.input_value("#birth_date") == "14.05.1951"
             assert "14 May 1951" in page.locator("#birth-date-readback").inner_text()
-            page.fill("#nationality_search", "Germany")
-            page.wait_for_timeout(120)
-            page.locator("#nationality_list li").first.click()
             page.fill("#doc_number", "C01X00T47")
+            page.locator("#doc_number").blur()
+            page.wait_for_timeout(80)
+            assert page.locator(".g-field-warn").count() == 0
             page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
             page.wait_for_timeout(150)
             assert_screen(page, "step2_390")
@@ -234,8 +251,16 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
             page.wait_for_timeout(150)
 
+            # Stray tiny dot does NOT mark signature ready; real stroke does.
             canvas = page.locator("canvas").first
             box = canvas.bounding_box()
+            page.mouse.move(box["x"] + 40, box["y"] + box["height"] * 0.6)
+            page.mouse.down()
+            page.mouse.move(box["x"] + 42, box["y"] + box["height"] * 0.6)
+            page.mouse.up()
+            page.wait_for_timeout(80)
+            assert page.locator(".g-sign-ready").count() == 0
+
             page.mouse.move(box["x"] + 36, box["y"] + box["height"] * 0.6)
             page.mouse.down()
             page.mouse.move(box["x"] + box["width"] - 36, box["y"] + box["height"] * 0.5, steps=8)
@@ -245,6 +270,56 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             page.locator("#legal_ack").check()
             assert_screen(page, "step3_sign_390")
 
+            # Verify zero localStorage keys were written.
+            assert page.evaluate("() => window.localStorage.length") == 0
+
+            page.click("[data-guest-save]")
+            page.wait_for_load_state("networkidle")
+
+            # Person 2 form automatically prefills Margaret Henderson's permanent home address.
+            page.goto(f"{base_http}/l/{token}/{res_id}/new?lang=en")
+            page.wait_for_load_state("networkidle")
+            assert page.locator('[data-purpose-help="guest-count"]').count() == 0
+            page.fill("#first_name", "Thomas")
+            page.fill("#surname", "Henderson")
+            page.fill("#birth_date", "03.08.1949")
+            page.fill("#nationality_search", "Germany")
+            page.wait_for_timeout(120)
+            page.locator("#nationality_list li").first.click()
+            page.fill("#doc_number", "C02Y99T12")
+            page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
+            page.wait_for_timeout(150)
+            assert page.input_value("#res_street") == "Lindenstrasse 18"
+            assert page.input_value("#res_city") == "Munich"
+            assert page.input_value("#res_country") == "DEU"
+            assert "Margaret Henderson" in page.locator(".g-copied-note").inner_text()
+            page.locator('[data-guest-step]:visible .g-wizard-nav .g-btn:not(.secondary)').click()
+            page.wait_for_timeout(150)
+
+            # Desktop 1280px Step 3 check: left rail Change buttons sit on the same row as labels.
+            page.set_viewport_size({"width": 1280, "height": 900})
+            page.wait_for_timeout(120)
+            rail_check = page.evaluate("""() => {
+              return Array.from(document.querySelectorAll('.g-checkin-step.is-done')).map(li => {
+                const label = li.querySelector('span:not(.sr-only)').getBoundingClientRect();
+                const btn = li.querySelector('.g-checkin-step-edit').getBoundingClientRect();
+                return { wrapped: btn.top >= label.bottom - 2, btnRight: btn.right, labelRight: label.right };
+              });
+            }""")
+            assert len(rail_check) == 2
+            assert all(not r["wrapped"] for r in rail_check), f"Rail Change button wrapped: {rail_check}"
+            assert_screen(page, "desktop_step3_1280")
+
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.wait_for_timeout(100)
+            canvas2 = page.locator("canvas").first
+            box2 = canvas2.bounding_box()
+            page.mouse.move(box2["x"] + 36, box2["y"] + box2["height"] * 0.6)
+            page.mouse.down()
+            page.mouse.move(box2["x"] + box2["width"] - 36, box2["y"] + box2["height"] * 0.5, steps=8)
+            page.mouse.up()
+            page.wait_for_timeout(100)
+            page.locator("#legal_ack").check()
             page.click("[data-guest-save]")
             page.wait_for_load_state("networkidle")
             assert_screen(page, "review_confirm_390")
@@ -275,8 +350,6 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             assert desktop_footer_gap < 150, f"Desktop grid void before footer: {desktop_footer_gap}px"
 
             page.set_viewport_size({"width": 360, "height": 800})
-            assert page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth") <= 0
-            page.click("[data-text-size-toggle]")
             assert page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth") <= 0
             ctx.close()
 
