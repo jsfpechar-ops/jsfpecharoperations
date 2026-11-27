@@ -165,6 +165,7 @@ type detailView struct {
 	OpError                 string            // _property_operator.html op_error
 	ControllerError         bool              // operator_error == 'flash.error.no_such_controller'
 	SharedTimeError         string            // shared_time_error: an i18n key or ""
+	TimingError             string            // automation timing hours error i18n key or ""
 	LockTimesError          bool
 	FeeAccountError         bool
 	FeeLinkError            bool

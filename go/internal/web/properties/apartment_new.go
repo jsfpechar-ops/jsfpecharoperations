@@ -74,6 +74,7 @@ type ApartmentNewForm struct {
 	DraftControllerID int64
 	OperatorError     string            // an i18n key, or "" (apartment.form.operator.* or flash.error.no_such_controller)
 	NameError         bool              // a create refused for a blank name
+	TimesError        bool              // a create refused for missing/invalid check-in or check-out hour
 	AddressErrors     map[string]string // field name -> the message text, already in the host's language
 	Status            int               // 0 is 200; 1700b sends 400 for a refusal
 }
@@ -98,6 +99,9 @@ type apartmentNewView struct {
 	OperatorErr          string
 	ControllerCurrent    int64
 	ControllerErr        bool
+	Hours                []int
+	CheckinHourSelected  int
+	CheckoutHourSelected int
 	AddrRow1, AddrRow2   []apartmentNewAddr
 }
 
@@ -110,6 +114,22 @@ var (
 
 func (f ApartmentNewForm) view(title string) apartmentNewView {
 	v := apartmentNewView{ApartmentNewForm: f, TitleLast: title}
+	v.Hours = make([]int, 24)
+	for h := range v.Hours {
+		v.Hours[h] = h
+	}
+	pickHour := func(key string, fallback int) int {
+		for _, src := range []map[string]string{f.Draft, f.Prefill} {
+			if raw, ok := src[key]; ok && raw != "" {
+				if h, err := strconv.Atoi(strings.TrimSpace(raw)); err == nil && h >= 0 && h <= 23 {
+					return h
+				}
+			}
+		}
+		return fallback
+	}
+	v.CheckinHourSelected = pickHour("checkin_hour", 15)
+	v.CheckoutHourSelected = pickHour("checkout_hour", 10)
 	// (t('property_create.title')).rsplit(' ', 1)
 	if i := strings.LastIndex(title, " "); i >= 0 {
 		v.TitleHead, v.TitleLast = title[:i], title[i+1:]
@@ -201,8 +221,8 @@ const (
 	apartmentNewEntitiesSQL = `SELECT id, name FROM legal_entity WHERE owner_user_id IS NOT DISTINCT FROM $1 AND archived_at IS NULL ORDER BY name`
 	apartmentNewPeersSQL    = `SELECT id, COALESCE(internal_name, '') FROM apartment WHERE owner_user_id IS NOT DISTINCT FROM $1 AND archived_at IS NULL ORDER BY internal_name`
 	apartmentNewSourceSQL   = `SELECT COALESCE(internal_name, ''), legal_entity_id, data_controller_entity_id, automation_mode, submit_after_hours,
-  default_purpose, permalink_window_days, permalink_reachback_days, stay_fee_rate_czk, stay_fee_cadence, stay_fee_authority_name,
-  stay_fee_authority_address, stay_fee_authority_contact, stay_fee_payee, stay_fee_instruction, stay_fee_council_account
+  checkin_hour, checkout_hour, default_purpose, permalink_window_days, permalink_reachback_days, stay_fee_rate_czk, stay_fee_cadence,
+  stay_fee_authority_name, stay_fee_authority_address, stay_fee_authority_contact, stay_fee_payee, stay_fee_instruction, stay_fee_council_account
 FROM apartment WHERE id = $1 AND owner_user_id IS NOT DISTINCT FROM $2`
 )
 
@@ -260,10 +280,10 @@ func apartmentNewQueryInt(r *http.Request, key string) (n int64, ok bool) {
 // the 15 copy keys without the empty ones (0, NULL or blank text).
 func apartmentNewSource(ctx context.Context, pool *pgxpool.Pool, workspace, id int64, form *ApartmentNewForm) (found bool, err error) {
 	var name string
-	var legal, controller, submit, window, reach, rate *int64
+	var legal, controller, submit, checkinH, checkoutH, window, reach, rate *int64
 	var mode, purpose, cadence, authName, authAddress, authContact, payee, instruction, account *string
-	err = pool.QueryRow(ctx, apartmentNewSourceSQL, id, workspace).Scan(&name, &legal, &controller, &mode, &submit, &purpose, &window, &reach,
-		&rate, &cadence, &authName, &authAddress, &authContact, &payee, &instruction, &account)
+	err = pool.QueryRow(ctx, apartmentNewSourceSQL, id, workspace).Scan(&name, &legal, &controller, &mode, &submit, &checkinH, &checkoutH,
+		&purpose, &window, &reach, &rate, &cadence, &authName, &authAddress, &authContact, &payee, &instruction, &account)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -283,6 +303,12 @@ func apartmentNewSource(ctx context.Context, pool *pgxpool.Pool, workspace, id i
 	}
 	text("automation_mode", mode)
 	number("submit_after_hours", submit)
+	if checkinH != nil && *checkinH >= 0 && *checkinH <= 23 {
+		prefill["checkin_hour"] = strconv.FormatInt(*checkinH, 10)
+	}
+	if checkoutH != nil && *checkoutH >= 0 && *checkoutH <= 23 {
+		prefill["checkout_hour"] = strconv.FormatInt(*checkoutH, 10)
+	}
 	text("default_purpose", purpose)
 	number("permalink_window_days", window)
 	number("permalink_reachback_days", reach)

@@ -72,6 +72,21 @@
           </div>
           <input type="hidden" id="city_en" name="city_en" value="{{index .Draft "city_en"}}">
         </div>
+        <div class="grid two" style="margin-top:12px">
+          <div class="field">
+            <label for="checkin_hour">{{t "apartment.form.door_code.checkin"}}<span class="req-star" aria-hidden="true">*</span></label>
+            <select id="checkin_hour" name="checkin_hour" required aria-required="true"{{if .TimesError}} aria-invalid="true" aria-describedby="times-error"{{end}}>
+              {{range .Hours}}<option value="{{.}}"{{if eq $.CheckinHourSelected .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+            </select>
+          </div>
+          <div class="field">
+            <label for="checkout_hour">{{t "apartment.form.door_code.checkout"}}<span class="req-star" aria-hidden="true">*</span></label>
+            <select id="checkout_hour" name="checkout_hour" required aria-required="true"{{if .TimesError}} aria-invalid="true" aria-describedby="times-error"{{end}}>
+              {{range .Hours}}<option value="{{.}}"{{if eq $.CheckoutHourSelected .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+            </select>
+          </div>
+        </div>
+        {{if .TimesError}}<p class="err-text" id="times-error" role="alert">{{t "flash.error.times_required"}}</p>{{end}}
       </section>
 
       <section class="panel property-create-card" aria-labelledby="property-create-operator">

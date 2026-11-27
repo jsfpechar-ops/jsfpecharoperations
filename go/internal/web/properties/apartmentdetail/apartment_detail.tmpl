@@ -291,14 +291,15 @@
       {{if .SharedTimeError}}<p class="err-text" role="alert" data-field-error>{{t .SharedTimeError}}</p>{{end}}
       <div class="grid two">
         <div class="field"><label for="checkin_hour">{{t "apartment.form.door_code.checkin"}}</label>
-          <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour" required aria-required="true"><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkin_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
         <div class="field"><label for="checkout_hour">{{t "apartment.form.door_code.checkout"}}</label>
-          <select id="checkout_hour" name="checkout_hour" data-hour-twin="checkout_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select id="checkout_hour" name="checkout_hour" data-hour-twin="checkout_hour" required aria-required="true"><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkout_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
       </div>
+      {{if not $a.CheckinHour}}<p class="hint" data-checkin-fallback-note>{{t "apartment.form.times_fallback_hint"}}</p>{{end}}
       {{if .Door}}{{template "apartmentdetail.doorwindow" .Window}}{{end}}
     </section>
 
@@ -486,8 +487,9 @@
         <div class="field">
           <label for="submit_after_hours">{{t "automation.hours_delay"}}</label>
           <input type="number" id="submit_after_hours" name="submit_after_hours"
-                 min="0" max="48" value="{{$a.SubmitAfterHours}}">
+                 min="1" max="24" value="{{$a.SubmitAfterHours}}"{{if .TimingError}} aria-invalid="true" aria-describedby="submit_after_hours-error"{{end}}>
         </div>
+        {{if .TimingError}}<p class="err-text" id="submit_after_hours-error" role="alert" data-field-error>{{t .TimingError}}</p>{{end}}
       </div>
       <div class="field" style="max-width:320px">
         <label for="default_purpose">{{t "automation.default_purpose"}}</label>

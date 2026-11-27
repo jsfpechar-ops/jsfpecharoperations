@@ -228,7 +228,7 @@ func TestApartmentDetailPage(t *testing.T) {
 		`formaction="/apartments/130201/test-connection"`,
 		`<option value="immediate" data-hint=`, `<option value="27" selected>Employment</option>`,
 		`id="submit_after_hours" name="submit_after_hours"
-                 min="0" max="48" value="3"`,
+                 min="1" max="24" value="3"`,
 		// calendars
 		`<details class="prop-sec" id="sec-fee"`,
 		`<details class="prop-sec" id="sec-calendars"`,

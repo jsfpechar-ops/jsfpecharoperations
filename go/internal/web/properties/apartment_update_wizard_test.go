@@ -131,7 +131,7 @@ func TestApartmentUpdateWizard(t *testing.T) {
 		`<p class="err-text" role="alert">That data controller no longer exists.</p>`,
 	}, nil)
 	refused("timing hours", 201, "police", "en", map[string]string{"automation_mode": "scheduled", "submit_after_hours": "49"}, []string{
-		`<p class="err-text" role="alert">Enter the delay in whole hours, from 1 to 48. Nothing was saved.</p>`,
+		`<p class="err-text" role="alert">Enter the delay in whole hours, from 1 to 24. Nothing was saved.</p>`,
 	}, nil)
 	refused("format errors", 201, "police", "cs", map[string]string{"uby_idub": "AB", "uby_mark": "x1", "uby_name": ""}, []string{
 		`<p class="err-text" id="uby_idub-error" role="alert">IDUB má 12–14 písmen nebo číslic.</p>`,
