@@ -3,7 +3,6 @@ package maildetails_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"testing"
 	"time"
 
@@ -23,7 +22,13 @@ type recorder struct {
 }
 
 func (r *recorder) GuestDetails(ctx context.Context, pool *pgxpool.Pool, id int64, lang string, asHTML bool) (string, error) {
-	return r.inner.GuestDetails(ctx, pool, id, lang, asHTML)
+	out, err := r.inner.GuestDetails(ctx, pool, id, lang, asHTML)
+	if asHTML {
+		r.lastHTML = out
+	} else {
+		r.lastText = out
+	}
+	return out, err
 }
 
 func (r *recorder) ReceiptDetails(ctx context.Context, pool *pgxpool.Pool, id int64, lang string, asHTML bool) (string, error) {
@@ -163,18 +168,72 @@ func TestDrainReceiptWithoutStayIDCountsDecryptionFailure(t *testing.T) {
 	}
 }
 
-func TestGuestDetailsStillNoRenderer(t *testing.T) {
-	g := loadGolden(t)
+func TestDrainFillsGuestDetails(t *testing.T) {
+	g := loadGuestDetailsGolden(t)
 	pool := testPool(t)
-	id := queueRow(t, pool, "2067-guest-details", "guest_details_host", map[string]any{
-		"text": "{{guest_details}}", "guest_details_reservation_id": int64(101), "lang": "en",
-	})
-	// 2068 replaces this: once the guest list renders, this row is sent.
-	_, err := mail.Drain(context.Background(), pool, drainConfig(t, g.FernetKey, maildetails.Renderer{}), 8)
-	if !errors.Is(err, mail.ErrNoDetailsRenderer) {
-		t.Fatalf("drain: want ErrNoDetailsRenderer, got %v", err)
+	var c gdGoldenCase
+	for _, item := range g.Cases {
+		if item.Name == "full_on_dpa_1_8_en" {
+			c = item
+			break
+		}
 	}
-	if state, _ := outboxState(t, pool, id); state != "queued" {
-		t.Fatalf("state %q, want queued", state)
+	seedGuestDetailsStay(t, pool, c)
+	rec := &recorder{inner: maildetails.Renderer{Getenv: goldenEnv(g.FernetKey)}}
+	id := queueRow(t, pool, "2068-guest-details-filled", "guest_details_host", map[string]any{
+		"text": "Guests\n{{guest_details}}", "html": "<p>Guests</p>{{guest_details}}",
+		"guest_details_reservation_id": c.ReservationID, "lang": "en",
+	})
+	if _, err := mail.Drain(context.Background(), pool, drainConfig(t, g.FernetKey, rec), 8); err != nil {
+		t.Fatalf("drain: %v", err)
+	}
+	if state, _ := outboxState(t, pool, id); state != "sent" {
+		t.Fatalf("state %q, want sent", state)
+	}
+	if rec.lastText != c.ExpectText || rec.lastHTML != c.ExpectHTML {
+		t.Fatalf("filled guest details block differs\ntext: %q\nhtml: %q", rec.lastText, rec.lastHTML)
+	}
+}
+
+func TestDrainGuestDetailsDeletedStayIsSentWithGone(t *testing.T) {
+	g := loadGuestDetailsGolden(t)
+	pool := testPool(t)
+	var missing gdGoldenCase
+	for _, item := range g.Cases {
+		if item.Name == "missing_stay_en" {
+			missing = item
+			break
+		}
+	}
+	rec := &recorder{inner: maildetails.Renderer{Getenv: goldenEnv(g.FernetKey)}}
+	id := queueRow(t, pool, "2068-guest-details-deleted", "guest_details_host", map[string]any{
+		"text": "{{guest_details}}", "html": "{{guest_details}}",
+		"guest_details_reservation_id": int64(555002), "lang": "en",
+	})
+	if _, err := mail.Drain(context.Background(), pool, drainConfig(t, g.FernetKey, rec), 8); err != nil {
+		t.Fatalf("drain: %v", err)
+	}
+	if state, _ := outboxState(t, pool, id); state != "sent" {
+		t.Fatalf("state %q, want sent", state)
+	}
+	if rec.lastText != missing.ExpectText || rec.lastHTML != missing.ExpectHTML {
+		t.Fatalf("deleted stay block differs\ntext: %q\nhtml: %q", rec.lastText, rec.lastHTML)
+	}
+}
+
+func TestDrainGuestDetailsWithoutStayIDCountsDecryptionFailure(t *testing.T) {
+	g := loadGuestDetailsGolden(t)
+	pool := testPool(t)
+	id := queueRow(t, pool, "2068-guest-details-no-id", "guest_details_host", map[string]any{
+		"text": "{{guest_details}}", "lang": "en",
+	})
+	rec := &recorder{inner: maildetails.Renderer{Getenv: goldenEnv(g.FernetKey)}}
+	sum, err := mail.Drain(context.Background(), pool, drainConfig(t, g.FernetKey, rec), 8)
+	if err != nil || sum.Skipped != 1 || sum.Sent != 0 || sum.Failed != 0 {
+		t.Fatalf("drain: want one retry-scheduled attempt, got %+v %v", sum, err)
+	}
+	state, attempts := outboxState(t, pool, id)
+	if state != "queued" || attempts != 1 {
+		t.Fatalf("row must remain queued with 1 attempt: %s %d", state, attempts)
 	}
 }

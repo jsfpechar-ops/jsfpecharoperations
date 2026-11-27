@@ -1,8 +1,7 @@
 // Package doorwire implements the door-code flow's outside dependencies (the interfaces in
 // go/internal/doorcodes/deps.go) against the real database, mail outbox and push outbox.
 //
-// Each type says which Python function it replaces. Where a function is not ported yet,
-// the method returns ErrNotPorted and the doorcodes flow takes its documented fallback.
+// Each type says which Python function it replaces.
 package doorwire
 
 import (
@@ -24,9 +23,6 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
-
-// ErrNotPorted marks a Python function this package does not implement yet.
-var ErrNotPorted = errors.New("doorwire: not ported yet")
 
 // Mailer implements doorcodes.Mailer: mail_notify builders, mail.enqueue and mail.drain.
 type Mailer struct {

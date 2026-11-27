@@ -1,7 +1,7 @@
 // Package maildetails renders the send-time guest blocks of outbox mail
-// ({{receipt_details}} and, from brief 2068, {{guest_details}}). It is the Go
-// port of mail_notify.render_receipt_details and is installed as the package
-// default in mail.SetDefaultDetails at startup.
+// ({{receipt_details}} and {{guest_details}}). It is the Go port of
+// mail_notify.render_receipt_details and mail_notify.render_guest_details and
+// is installed as the package default in mail.SetDefaultDetails at startup.
 package maildetails
 
 import (
@@ -27,11 +27,6 @@ type Renderer struct {
 }
 
 var _ mail.DetailsRenderer = Renderer{}
-
-// GuestDetails is not ported yet (brief 2068).
-func (r Renderer) GuestDetails(ctx context.Context, pool *pgxpool.Pool, reservationID int64, lang string, asHTML bool) (string, error) {
-	return "", mail.ErrNoDetailsRenderer
-}
 
 // ReceiptDetails is mail_notify.render_receipt_details. A missing stay gives "".
 func (r Renderer) ReceiptDetails(ctx context.Context, pool *pgxpool.Pool, reservationID int64, lang string, asHTML bool) (string, error) {
