@@ -58,22 +58,22 @@ const shellAlertLimit = 12
 
 // actions is alerts._ACTIONS: label key and href pattern.
 var actions = map[string][2]string{
-	"ubyport_auth_failed":  {"notification.action.police_login", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
-	"apartment_setup":      {"notification.action.police_setup", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
-	"controller_missing":   {"notification.action.business", "/apartments/{apartment}?view=settings&section=property#operator-picker"},
-	"feed_error":           {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_incomplete":      {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_duplicate_uid":   {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"feed_recurring_event": {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
-	"guest_pin_rotated":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_abuse":      {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_locked_out": {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"guest_pin_challenged": {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
-	"submission_stuck":     {"notification.action.guests", "/reservations/{reservation}#guests"},
+	"ubyport_auth_failed":     {"notification.action.police_login", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
+	"apartment_setup":         {"notification.action.police_setup", "/apartments/{apartment}?view=settings&section=reporting#ubyport"},
+	"controller_missing":      {"notification.action.business", "/apartments/{apartment}?view=settings&section=property#operator-picker"},
+	"feed_error":              {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_incomplete":         {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_duplicate_uid":      {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"feed_recurring_event":    {"notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"},
+	"guest_pin_rotated":       {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_abuse":         {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_locked_out":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"guest_pin_challenged":    {"notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"},
+	"submission_stuck":        {"notification.action.guests", "/reservations/{reservation}#guests"},
 	"duplicate_guest_in_stay": {"notification.action.guests", "/reservations/{reservation}#guests"},
-	"guest_question":       {"notification.action.guest_questions", "/apartments/{apartment}/guide/questions"},
-	"stay_fee_no_pay_way":  {"notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"},
-	"filing_stalled":       {"notification.action.unreported_stays", "/apartments/{apartment}?view=bookings"},
+	"guest_question":          {"notification.action.guest_questions", "/apartments/{apartment}/guide/questions"},
+	"stay_fee_no_pay_way":     {"notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"},
+	"filing_stalled":          {"notification.action.unreported_stays", "/apartments/{apartment}?view=bookings"},
 }
 
 // foldableKinds is foldable_kinds in _host_alerts.html.

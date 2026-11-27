@@ -36,10 +36,12 @@ func guestDeadlineAnchor(stayFrom, resDateFrom string) *time.Time {
 // not apply (manual mode, or neither anchor nor submit timestamp is available).
 //
 // Check-in-anchored per-guest formula:
-//   checkInMoment = anchor date at EffectiveCheckinHour(checkinHour):00 Europe/Prague
-//   latest        = ReportingDeadline(anchor) - 6h
-//   immediate: min(max(checkInMoment, submittedAt), latest)
-//   scheduled: min(max(checkInMoment + H, submittedAt + H), latest)
+//
+//	checkInMoment = anchor date at EffectiveCheckinHour(checkinHour):00 Europe/Prague
+//	latest        = ReportingDeadline(anchor) - 6h
+//	immediate: min(max(checkInMoment, submittedAt), latest)
+//	scheduled: min(max(checkInMoment + H, submittedAt + H), latest)
+//
 // where H = submitAfterHours (default 24 when <= 0).
 func ScheduledSendAt(mode string, submitAfterHours int, checkinHour *int, submittedAt string, anchor *time.Time) (time.Time, bool) {
 	if mode == "manual" {

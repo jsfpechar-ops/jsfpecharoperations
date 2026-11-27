@@ -48,23 +48,23 @@ type Submission struct {
 
 // View is the context of reservation_detail.html.
 type View struct {
-	Reservation  Stay
-	Progress     stays.Progress
-	SendControls SendControls
-	GuestRows    []GuestRow
+	Reservation     Stay
+	Progress        stays.Progress
+	SendControls    SendControls
+	GuestRows       []GuestRow
 	CheckIn         *time.Time
 	Deadline        *time.Time
 	ScheduledSendAt string
 	Submissions     []Submission
-	ReturnTo     string
-	GuestLink    string
-	StayClaim    StayClaim
-	ClaimResend  bool
-	IsDemoStay   bool
-	HandFiling   HandFiling
-	StayInvoice  *invoices.StayInvoice
-	DoorCode     *doorcodes.Shown
-	Journey      stays.StayJourney
+	ReturnTo        string
+	GuestLink       string
+	StayClaim       StayClaim
+	ClaimResend     bool
+	IsDemoStay      bool
+	HandFiling      HandFiling
+	StayInvoice     *invoices.StayInvoice
+	DoorCode        *doorcodes.Shown
+	Journey         stays.StayJourney
 }
 
 // SendControls is the part of reporting.send_controls the stay page reads.

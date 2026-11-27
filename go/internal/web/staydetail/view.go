@@ -161,13 +161,13 @@ func Build(ctx context.Context, d Deps, ownerID, id int64, rawReturnTo string, a
 		Deadline:        deadline,
 		ScheduledSendAt: computeScheduledSendLabel(s, det.Progress.Status, isDemo, guestRows, checkIn, at),
 		Submissions:     subs,
-		ReturnTo:    returnTo,
-		GuestLink:   guestLink,
-		StayClaim:   stayClaim,
-		ClaimResend: claimResend,
-		IsDemoStay:  isDemo,
-		HandFiling:  handFiling,
-		StayInvoice: stayInvoice,
+		ReturnTo:        returnTo,
+		GuestLink:       guestLink,
+		StayClaim:       stayClaim,
+		ClaimResend:     claimResend,
+		IsDemoStay:      isDemo,
+		HandFiling:      handFiling,
+		StayInvoice:     stayInvoice,
 	}
 	if d.DoorCodes != nil {
 		v.DoorCode, err = d.DoorCodes.ViewForStay(ctx, id, s.ApartmentID)

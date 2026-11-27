@@ -179,7 +179,7 @@ func TestCollectSendableBranches(t *testing.T) {
 			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""}},
 		{name: "no submit timestamp, ignore schedule", res: map[string]any{"registration_completed_at": nil},
 			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
-			opts: CollectOptions{IgnoreSchedule: boolPtr(true)}, want: true},
+			opts:  CollectOptions{IgnoreSchedule: boolPtr(true)}, want: true},
 		{name: "delay not reached", guest: map[string]any{"filled_at": "2026-10-31T12:00:00+00:00"}},
 		{name: "before check-in held in scheduled", res: map[string]any{"date_from": "2026-12-01", "date_to": "2026-12-03"}},
 		{name: "before check-in held in immediate", apt: map[string]any{"automation_mode": "immediate"},
@@ -189,13 +189,13 @@ func TestCollectSendableBranches(t *testing.T) {
 		{name: "deadline margin pulls send earlier", now: time.Date(2026, 10, 30, 17, 0, 0, 0, time.UTC),
 			res: map[string]any{"date_from": "2026-10-28", "date_to": "2026-10-30"}, want: true},
 		{name: "missing submit stamp not due before deadline cap",
-			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			res:   map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
 			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
-			now: time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)},
+			now:   time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)},
 		{name: "missing submit stamp due at deadline cap",
-			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			res:   map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
 			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
-			now: time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC), want: true},
+			now:   time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC), want: true},
 	}
 	for _, c := range cases {
 		c := c

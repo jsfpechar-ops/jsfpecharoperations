@@ -16,9 +16,9 @@ func TestApartmentCreateRequiresTimesAndDefaultsScheduled24h(t *testing.T) {
 
 	// 1. Missing checkin_hour / checkout_hour must be refused with HTTP 400.
 	missingTimes := map[string]string{
-		"internal_name": "No Times Flat",
+		"internal_name":   "No Times Flat",
 		"legal_entity_id": "21",
-		"addr_street": "Dlouha", "addr_house_no": "5", "addr_zip": "11000", "addr_obec": "Praha",
+		"addr_street":     "Dlouha", "addr_house_no": "5", "addr_zip": "11000", "addr_obec": "Praha",
 	}
 	rec := apartmentCreatePost(t, mux, g.CSRFNonce, 2, 0, "en", true, missingTimes)
 	if rec.Code != http.StatusBadRequest {
@@ -30,9 +30,9 @@ func TestApartmentCreateRequiresTimesAndDefaultsScheduled24h(t *testing.T) {
 
 	// 2. Valid checkin_hour=16, checkout_hour=11 persists them and defaults to scheduled + 24 h.
 	valid := map[string]string{
-		"internal_name": "Scheduled Default Flat",
+		"internal_name":   "Scheduled Default Flat",
 		"legal_entity_id": "21",
-		"addr_street": "Dlouha", "addr_house_no": "5", "addr_zip": "11000", "addr_obec": "Praha",
+		"addr_street":     "Dlouha", "addr_house_no": "5", "addr_zip": "11000", "addr_obec": "Praha",
 		"checkin_hour": "16", "checkout_hour": "11",
 	}
 	before := apartmentCreateMaxID(t, pool)
