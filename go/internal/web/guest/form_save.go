@@ -284,9 +284,6 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		savedID = ins.id
 		if savedID == 0 {
-			if ins.countSaved {
-				_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
-			}
 			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
@@ -313,25 +310,19 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if err := auditGuestFormSaved(ctx, d.pool, savedID, resID, cfg.ownerUserID, lang, d.now); err != nil {
 		return err
 	}
-	_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
-	runCompletion(ctx, d.hooks, res.apartmentID, resID)
 	rememberOwnedGuestIDs(w, d.getenv, append(ownedGuestIDs(r, d.getenv), savedID))
-	// Python: continue to the next guest while some are missing, else the stay
-	// link; with nothing missing and fee rails, jump to #fee-pay.
+	// 2096: continue to the next guest while some are missing, else land on the
+	// stay Review & Confirm summary screen (confirm endpoint fires completion
+	// hooks and jumps to #fee-pay once confirmed).
 	var missing *int
 	if fresh, okFresh := formPagesReservation(ctx, d.pool, apt, resID, r); okFresh {
 		missing = formPagesProgress(ctx, d.pool, fresh).remaining
 	}
-	tail, frag := "", ""
+	tail := ""
 	if existing == nil && missing != nil && *missing > 0 {
 		tail = "/new"
-	} else if missing != nil && *missing == 0 {
-		fee := stayClaimDeps{pool: d.pool, getenv: d.getenv, now: d.now}.loadFeePanel(ctx, resID, res.apartmentID, "")
-		if fee != nil && len(fee.Rails) > 0 {
-			frag = "#fee-pay"
-		}
 	}
-	loc := GuestLink(token, resID, tail+LangQuery(lang, "&saved=1")+frag)
+	loc := GuestLink(token, resID, tail+LangQuery(lang, "&saved=1"))
 	WithLang(w, d.getenv, lang)
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil

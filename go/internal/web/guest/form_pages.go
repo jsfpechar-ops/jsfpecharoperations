@@ -139,6 +139,7 @@ type formView struct {
 	DatesLink                string
 	HideBack                 bool
 	DupWarnings              []dupWarning
+	AlreadyAddedNames        []string
 	PersonNumber             int
 	ExpectedPeople           int
 	StayFromLabel            string
@@ -660,6 +661,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	}
 	if guest != nil {
 		view.GuestID = guest.id
+	}
+	if !editing && personNumber > 1 {
+		view.AlreadyAddedNames = loadOwnedGuestNames(ctx, d.pool, res.id, ownedGuestIDs(r, d.getenv))
 	}
 	if prog.expected != nil {
 		view.ExpectedPeople = *prog.expected

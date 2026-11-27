@@ -797,11 +797,8 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 					t.Fatalf("stored photo does not decrypt to a JPEG (ok=%v)", ok)
 				}
 			}
-			if c.wantHook {
-				if hooks.onComplete != 1 || hooks.notify != 1 {
-					t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
-				}
-			} else if hooks.onComplete != 0 || hooks.notify != 0 {
+			// 2096: individual guest form save defers completion hooks until confirm-registration.
+			if hooks.onComplete != 0 || hooks.notify != 0 {
 				t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
 			}
 		})
@@ -961,8 +958,8 @@ func TestGuestSavePassportPhotoExistingGuestHTTP(t *testing.T) {
 		if stampAt != prevPhotoStamp {
 			t.Fatalf("passport_photo_at = %q, want %q", stampAt, prevPhotoStamp)
 		}
-		if hooks.onComplete != 1 || hooks.notify != 1 {
-			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		if hooks.onComplete != 0 || hooks.notify != 0 {
+			t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
 		}
 	})
 
@@ -1032,8 +1029,8 @@ func TestGuestSavePassportPhotoExistingGuestHTTP(t *testing.T) {
 		if stampAt != nowS {
 			t.Fatalf("passport_photo_at = %q, want %q", stampAt, nowS)
 		}
-		if hooks.onComplete != 1 || hooks.notify != 1 {
-			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		if hooks.onComplete != 0 || hooks.notify != 0 {
+			t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
 		}
 	})
 
@@ -1049,8 +1046,8 @@ func TestGuestSavePassportPhotoExistingGuestHTTP(t *testing.T) {
 		if passportphotos.Has(dir, guestID) {
 			t.Fatal("host-verified guest unexpectedly has photo on disk")
 		}
-		if hooks.onComplete != 1 || hooks.notify != 1 {
-			t.Fatalf("completion hooks = (%d, %d), want (1, 1)", hooks.onComplete, hooks.notify)
+		if hooks.onComplete != 0 || hooks.notify != 0 {
+			t.Fatalf("completion hooks = (%d, %d), want (0, 0)", hooks.onComplete, hooks.notify)
 		}
 	})
 }
@@ -1925,8 +1922,8 @@ func TestGuestSaveChildSigner(t *testing.T) {
 			t.Fatalf("adult want 303, got %d: %s", recAdult.Code, recAdult.Body.String())
 		}
 		adultID := latestGuestID(t, se.resID)
-		if se.hooks.onComplete != 1 {
-			t.Fatalf("expected runCompletion hook to fire once, got %d", se.hooks.onComplete)
+		if se.hooks.onComplete != 0 {
+			t.Fatalf("expected runCompletion hook deferred until confirm-registration, got %d", se.hooks.onComplete)
 		}
 
 		// Unsigned owned active child linked.

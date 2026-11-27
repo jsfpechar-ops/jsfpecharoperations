@@ -71,6 +71,9 @@
   {{if .JustSaved}}
   <p class="hint g-saved-strip" role="status">{{.T "person_saved"}}</p>
   {{end}}
+  {{if .AlreadyAddedNames}}
+  <p class="hint g-already-added" data-already-added>{{.T "already_added"}}: {{range $i, $n := .AlreadyAddedNames}}{{if $i}}, {{end}}{{$n}}{{end}}</p>
+  {{end}}
   <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>

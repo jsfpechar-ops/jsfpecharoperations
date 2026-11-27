@@ -62,15 +62,16 @@ type scApt struct {
 }
 
 type scStay struct {
-	id          int64
-	apartmentID int64
-	status      string
-	source      string
-	dateFrom    string
-	dateTo      string
-	override    *int64
-	declared    *int64
-	leadReduced *int64
+	id                      int64
+	apartmentID             int64
+	status                  string
+	source                  string
+	dateFrom                string
+	dateTo                  string
+	override                *int64
+	declared                *int64
+	leadReduced             *int64
+	registrationCompletedAt string
 }
 
 type scClaim struct {
@@ -514,9 +515,9 @@ func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, key string) (*scAp
 func loadReservation(ctx context.Context, pool *pgxpool.Pool, resID, aptID int64) (*scStay, error) {
 	var s scStay
 	err := pool.QueryRow(ctx, `SELECT id, apartment_id, status, COALESCE(source,''), COALESCE(date_from::text,''), COALESCE(date_to::text,''),
-		expected_guests_override, declared_guests, lead_reduced_guests
+		expected_guests_override, declared_guests, lead_reduced_guests, COALESCE(registration_completed_at, '')
 		FROM reservation WHERE id = $1 AND apartment_id = $2 AND archived_at IS NULL`,
-		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateFrom, &s.dateTo, &s.override, &s.declared, &s.leadReduced)
+		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateFrom, &s.dateTo, &s.override, &s.declared, &s.leadReduced, &s.registrationCompletedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

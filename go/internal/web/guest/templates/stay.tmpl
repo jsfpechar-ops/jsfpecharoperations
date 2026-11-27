@@ -34,6 +34,31 @@
       <button class="g-btn" type="submit">{{.T "party_confirm"}}</button>
     </form>
   </div>
+{{else if .NeedsConfirm}}
+  <div class="g-card" id="review-confirm">
+    <h2>{{.T "review_confirm_title"}}</h2>
+    <p class="g-intro">{{.T "review_confirm_body"}}</p>
+    {{if .DupWarnings}}
+      <div class="g-host-note" role="note" data-dup-warning style="margin:12px 0">
+        <strong>{{.T "dup_warning_title"}}</strong>
+        {{range .DupWarnings}}
+          <p style="margin:6px 0 0">{{.Name}}: {{$.T "dup_warning_body" "what" .What}}</p>
+        {{end}}
+      </div>
+    {{end}}
+    <form method="post" action="{{.ConfirmURL}}">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+      <button class="g-btn" type="submit" data-confirm-registration>{{.T "review_confirm_button"}}</button>
+    </form>
+    {{if .CanRaiseParty}}
+      <form method="post" action="{{.AnotherURL}}">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+        <p class="g-quiet-action-row">
+          <button class="g-quiet-action" type="submit">{{.T "add_another"}}</button>
+        </p>
+      </form>
+    {{end}}
+  </div>
 {{else if and .HasRemaining (le .Remaining 0)}}
   <div class="g-card">
     <div class="g-big-ok">
@@ -92,7 +117,7 @@
   {{end}}
 {{end}}
 
-{{if .DupWarnings}}
+{{if and .DupWarnings (not .NeedsConfirm)}}
   <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
     <strong>{{.T "dup_warning_title"}}</strong>
     {{range .DupWarnings}}
@@ -102,7 +127,7 @@
 {{end}}
 
 {{range .Mine}}
-  <details class="g-card g-summary">
+  <details class="g-card g-summary"{{if $.NeedsConfirm}} open{{end}}>
     <summary class="g-summary-fold">{{if .Name}}{{.Name}}{{else}}{{$.T "person"}} {{.Index}}{{end}} &middot; {{if .Complete}}{{$.T "summary_fold_saved"}} <span aria-hidden="true"><svg class="ui-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="check"><path d="M20 6 9 17l-5-5"/></svg></span>{{else}}{{$.T "not_filled"}}{{end}}</summary>
     <div class="g-summary-body">
       <h2>{{$.T "summary_title"}}</h2>

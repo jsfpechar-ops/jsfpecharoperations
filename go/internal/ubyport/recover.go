@@ -252,7 +252,7 @@ func RefreshRegistrationCompletedAt(ctx context.Context, pool *pgxpool.Pool, res
 	formsSettled := len(guests) > 0 && allComplete && quiet
 	complete := declaredFilled || formsSettled
 
-	if complete && existing == nil {
+	if formsSettled && existing == nil {
 		if _, err := pool.Exec(ctx,
 			`UPDATE reservation SET registration_completed_at = $1, updated_at = $2
 			  WHERE id = $3 AND registration_completed_at IS NULL`,
