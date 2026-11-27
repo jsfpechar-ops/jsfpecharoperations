@@ -248,12 +248,26 @@ def test_go_guest_elderly_ux_flow_geometry_and_a11y():
             page.wait_for_load_state("networkidle")
             assert_screen(page, "all_done_390")
 
-            # Desktop 1280px & narrow 360px overflow checks.
-            page.set_viewport_size({"width": 1280, "height": 900})
+            # Tablet 768px & Desktop 1280px & narrow 360px responsive layout checks.
             edit_href = page.locator('a[href*="/edit/"]').first.get_attribute("href")
+            page.set_viewport_size({"width": 768, "height": 1024})
             page.goto(f"{base_http}{edit_href}")
             page.wait_for_load_state("networkidle")
+            assert_screen(page, "tablet_768")
+            tablet_card_w = page.evaluate(
+                "() => Math.round(document.querySelector('.g-card:not([hidden])').getBoundingClientRect().width)"
+            )
+            assert tablet_card_w <= 650, f"Tablet form stretched too wide: {tablet_card_w}px"
+
+            page.set_viewport_size({"width": 1280, "height": 900})
+            page.wait_for_timeout(100)
             assert_screen(page, "desktop_1280")
+            desktop_footer_gap = page.evaluate("""() => {
+              const host = document.getElementById('host-contact');
+              const foot = document.querySelector('.g-foot');
+              return Math.round(foot.getBoundingClientRect().top - host.getBoundingClientRect().bottom);
+            }""")
+            assert desktop_footer_gap < 150, f"Desktop grid void before footer: {desktop_footer_gap}px"
 
             page.set_viewport_size({"width": 360, "height": 800})
             assert page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth") <= 0

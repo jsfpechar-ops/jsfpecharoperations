@@ -294,4 +294,41 @@ html.g-text-lg .g-pin-cell { height: 70px; font-size: 30px; }
   html.g-text-lg .g-head { flex-wrap: wrap; }
   html.g-text-lg .g-head-controls { margin-left: auto; }
 }
+
+/* --- Responsive layout tiers: Tablet (601-1019px) & Desktop (>=1020px) - */
+@media (min-width: 601px) {
+  .g-stepper { max-width: 320px; }
+  .g-sign canvas { height: 220px; }
+}
+
+@media (min-width: 601px) and (max-width: 1019px) {
+  .g-wrap,
+  .g-checkin-page { max-width: 680px; padding: 24px 28px 72px; }
+  .g-card { padding: 26px 26px; }
+}
+
+@media (min-width: 1020px) {
+  .g-checkin-page { max-width: 1040px; padding: 28px 28px 72px; }
+  /* Override guest.css gap:44px row-gap so grid-row:1/span 30 does not create
+     a ~1200px empty void at the bottom of desktop pages. */
+  .g-checkin-page main {
+    grid-template-columns: 300px minmax(0, 680px);
+    justify-content: center;
+    column-gap: 36px;
+    row-gap: 0;
+  }
+  .g-checkin-page main > .g-checkin-rail { grid-row: 1 / span 6; }
+  .g-checkin-page main > #host-contact { margin-top: 18px; }
+  .g-checkin-stay { border: 1.5px solid var(--g-line); padding: 18px; }
+  .g-checkin-stay-body strong { font-size: 16.5px; }
+  .g-checkin-step { flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 2px; font-size: 15px; }
+  .g-checkin-step i { flex: 0 0 26px; width: 26px; height: 26px; font-size: 13.5px; }
+  .g-checkin-step-edit {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 36px; padding: 4px 12px; border: 1.5px solid var(--brand-action);
+    border-radius: var(--g-pill); background: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none;
+  }
+  .g-checkin-step-edit:hover { background: var(--g-accent-soft); }
+  .g-card { padding: 28px 28px; }
+}
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
