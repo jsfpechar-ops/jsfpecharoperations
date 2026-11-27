@@ -39,6 +39,7 @@ type ApartmentRow struct {
 	Ref              ApartmentRef
 	AutomationMode   string
 	SubmitAfterHours int
+	CheckinHour      *int
 	Fields           map[string]string
 }
 
@@ -74,6 +75,10 @@ func LoadApartment(ctx context.Context, pool *pgxpool.Pool, id int64) (*Apartmen
 		AutomationMode:   fields["automation_mode"],
 		SubmitAfterHours: int(jsonInt(m, "submit_after_hours")),
 		Fields:           fields,
+	}
+	if ch := jsonIntPtr(m, "checkin_hour"); ch != nil {
+		v := int(*ch)
+		ap.CheckinHour = &v
 	}
 	ap.Ref = ApartmentRef{
 		ID:            id,
@@ -128,6 +133,7 @@ type collectGuest struct {
 	stayFrom     string
 	stayTo       string
 	updated      string
+	submittedRef string
 	restrictedAt string
 	submissionID *int64
 	receiptID    *int64
@@ -238,15 +244,23 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 			continue
 		}
 		if !ignoreSchedule {
-			anchor, cached := anchors[c.resID]
-			if !cached {
-				anchor, err = reservationDeadlineAnchor(ctx, pool, c.resID, st.dateFrom)
-				if err != nil {
-					return nil, err
+			anchor := guestDeadlineAnchor(c.stayFrom, st.dateFrom)
+			if anchor == nil {
+				var cached bool
+				anchor, cached = anchors[c.resID]
+				if !cached {
+					anchor, err = reservationDeadlineAnchor(ctx, pool, c.resID, st.dateFrom)
+					if err != nil {
+						return nil, err
+					}
+					anchors[c.resID] = anchor
 				}
-				anchors[c.resID] = anchor
 			}
-			if !DueForAutomaticSend(ap.AutomationMode, ap.SubmitAfterHours, st.completed, anchor, now) {
+			submittedRef := c.submittedRef
+			if submittedRef == "" {
+				submittedRef = st.completed
+			}
+			if !DueForAutomaticSend(ap.AutomationMode, ap.SubmitAfterHours, ap.CheckinHour, submittedRef, anchor, now) {
 				continue
 			}
 		}
@@ -369,32 +383,9 @@ func reservationDeadlineAnchor(ctx context.Context, pool *pgxpool.Pool, resID in
 // stay is still due once the deadline cap (deadline minus 6h) has passed, so
 // already-registered guests are filed in time. A stay with no deadline anchor
 // still waits for completion.
-func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, anchor *time.Time, now time.Time) bool {
-	if mode == "manual" {
-		return false
-	}
-	var latest time.Time
-	hasLatest := false
-	if anchor != nil {
-		latest = ReportingDeadline(*anchor).Add(-collectMarginHours * time.Hour)
-		hasLatest = true
-	}
-	completed, ok := parseStoredUTC(completedAt)
-	if completedAt == "" || !ok {
-		return hasLatest && !now.Before(latest)
-	}
-	hours := submitAfterHours
-	if hours == 0 {
-		hours = 24 // "submit_after_hours or 24": 0 and NULL both mean 24
-	}
-	if mode == "immediate" {
-		hours = 0
-	}
-	sendAt := completed.Add(time.Duration(hours) * time.Hour)
-	if hasLatest && latest.Before(sendAt) {
-		sendAt = latest
-	}
-	return !now.Before(sendAt)
+func DueForAutomaticSend(mode string, submitAfterHours int, checkinHour *int, submittedAt string, anchor *time.Time, now time.Time) bool {
+	sendAt, ok := ScheduledSendAt(mode, submitAfterHours, checkinHour, submittedAt, anchor)
+	return ok && !now.Before(sendAt)
 }
 
 // ReportingDeadline is deadlines.reporting_deadline as a real instant: the
@@ -455,7 +446,8 @@ func LoadGuests(ctx context.Context, pool *pgxpool.Pool, scope GuestScope, decry
 		COALESCE(g.res_street,''), COALESCE(g.res_street_enc,''),
 		COALESCE(g.res_city,''), COALESCE(g.res_city_enc,''),
 		COALESCE(g.signature_png,''), COALESCE(g.signature_png_enc,''),
-		g.submitted_at, g.receipt_submission_id, COALESCE(g.updated_at,'')
+		g.submitted_at, g.receipt_submission_id, COALESCE(g.updated_at,''),
+		COALESCE(NULLIF(g.filled_at,''), NULLIF(g.updated_at,''), NULLIF(g.created_at,''), '')
 		FROM guest g JOIN reservation r ON r.id = g.reservation_id`
 	var args []any
 	if scope.ReservationID != 0 {
@@ -484,7 +476,7 @@ func LoadGuests(ctx context.Context, pool *pgxpool.Pool, scope GuestScope, decry
 			&c.lastErrors, &c.attempts, &c.manualFiled, &c.restrictedAt, &c.stayFrom, &c.stayTo,
 			&surname, &first, &resCountry, &purpose, &note,
 			&docP, &docE, &visaP, &visaE, &birthP, &birthE, &streetP, &streetE, &cityP, &cityE,
-			&sigP, &sigE, &c.submittedAt, &c.receiptID, &c.updated); err != nil {
+			&sigP, &sigE, &c.submittedAt, &c.receiptID, &c.updated, &c.submittedRef); err != nil {
 			grows.Close()
 			return nil, err
 		}

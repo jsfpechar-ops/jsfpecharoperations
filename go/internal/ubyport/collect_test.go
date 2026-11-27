@@ -83,18 +83,19 @@ func collectAddStay(t *testing.T, pool *pgxpool.Pool, aptID int64, res, guest ma
 	var resID, guestID int64
 	uid := fmt.Sprintf("uid-%d", time.Now().UnixNano())
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO reservation (apartment_id, uid, date_from, date_to, created_at, updated_at) VALUES ($1, $2, '2026-12-01', '2026-12-03', $3, $3) RETURNING id`,
+		`INSERT INTO reservation (apartment_id, uid, date_from, date_to, created_at, updated_at) VALUES ($1, $2, '2026-10-30', '2026-11-02', $3, $3) RETURNING id`,
 		aptID, uid, ts).Scan(&resID); err != nil {
 		t.Fatal(err)
 	}
-	r := map[string]any{"date_from": "2026-12-01", "date_to": "2026-12-03", "registration_completed_at": "2026-10-30T10:00:00+00:00"}
+	r := map[string]any{"date_from": "2026-10-30", "date_to": "2026-11-02", "registration_completed_at": "2026-10-30T10:00:00+00:00"}
 	for k, v := range res {
 		r[k] = v
 	}
 	collectSet(t, pool, "reservation", resID, r)
+	const gts = "2026-10-30T10:00:00+00:00"
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO guest (reservation_id, created_at, updated_at) VALUES ($1, $2, $2) RETURNING id`,
-		resID, ts).Scan(&guestID); err != nil {
+		`INSERT INTO guest (reservation_id, filled_at, created_at, updated_at) VALUES ($1, $2, $2, $2) RETURNING id`,
+		resID, gts).Scan(&guestID); err != nil {
 		t.Fatal(err)
 	}
 	g := collectValidGuest(t)
@@ -174,19 +175,26 @@ func TestCollectSendableBranches(t *testing.T) {
 		{name: "manual mode waits for host", apt: map[string]any{"automation_mode": "manual"}},
 		{name: "manual mode host send", apt: map[string]any{"automation_mode": "manual"},
 			opts: CollectOptions{IgnoreAutomation: true}, want: true},
-		{name: "no completion", res: map[string]any{"registration_completed_at": nil}},
-		{name: "no completion, ignore schedule", res: map[string]any{"registration_completed_at": nil},
+		{name: "no submit timestamp", res: map[string]any{"registration_completed_at": nil},
+			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""}},
+		{name: "no submit timestamp, ignore schedule", res: map[string]any{"registration_completed_at": nil},
+			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
 			opts: CollectOptions{IgnoreSchedule: boolPtr(true)}, want: true},
-		{name: "delay not reached", res: map[string]any{"registration_completed_at": "2026-10-31T12:00:00+00:00"}},
+		{name: "delay not reached", guest: map[string]any{"filled_at": "2026-10-31T12:00:00+00:00"}},
+		{name: "before check-in held in scheduled", res: map[string]any{"date_from": "2026-12-01", "date_to": "2026-12-03"}},
+		{name: "before check-in held in immediate", apt: map[string]any{"automation_mode": "immediate"},
+			res: map[string]any{"date_from": "2026-12-01", "date_to": "2026-12-03"}},
 		{name: "immediate", apt: map[string]any{"automation_mode": "immediate"},
-			res: map[string]any{"registration_completed_at": "2026-11-01T09:59:00+00:00"}, want: true},
+			guest: map[string]any{"filled_at": "2026-11-01T09:59:00+00:00"}, want: true},
 		{name: "deadline margin pulls send earlier", now: time.Date(2026, 10, 30, 17, 0, 0, 0, time.UTC),
 			res: map[string]any{"date_from": "2026-10-28", "date_to": "2026-10-30"}, want: true},
-		{name: "incomplete stay not due before deadline cap",
+		{name: "missing submit stamp not due before deadline cap",
 			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
 			now: time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)},
-		{name: "incomplete stay due at deadline cap",
+		{name: "missing submit stamp due at deadline cap",
 			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			guest: map[string]any{"filled_at": "", "updated_at": "", "created_at": ""},
 			now: time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC), want: true},
 	}
 	for _, c := range cases {
@@ -235,8 +243,8 @@ func TestCollectSendableDecryptsAndOrders(t *testing.T) {
 	}
 	aptID := collectNewApt(t, pool, nil)
 	// The later stay is created first: order must follow stay start, then guest id.
-	late := collectAddStay(t, pool, aptID, map[string]any{"date_from": "2026-12-05", "date_to": "2026-12-07"}, nil)
-	early := collectAddStay(t, pool, aptID, nil, map[string]any{"doc_number": "", "doc_number_enc": token})
+	late := collectAddStay(t, pool, aptID, map[string]any{"date_from": "2026-10-30", "date_to": "2026-11-02"}, nil)
+	early := collectAddStay(t, pool, aptID, map[string]any{"date_from": "2026-10-29", "date_to": "2026-11-01"}, map[string]any{"doc_number": "", "doc_number_enc": token})
 	opts := CollectOptions{Decrypt: dec, Now: func() time.Time { return collectNowTime }}
 	got, err := CollectSendable(context.Background(), pool, aptID, opts)
 	if err != nil {
@@ -302,32 +310,32 @@ func TestDueForAutomaticSendDeadlineCap(t *testing.T) {
 	beforeCap := time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)
 	afterCap := time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC)
 
-	if DueForAutomaticSend("scheduled", 24, "", &checkIn, beforeCap) {
+	if DueForAutomaticSend("scheduled", 24, nil, "", &checkIn, beforeCap) {
 		t.Fatal("incomplete stay is not due before the cap")
 	}
-	if !DueForAutomaticSend("scheduled", 24, "", &checkIn, afterCap) {
+	if !DueForAutomaticSend("scheduled", 24, nil, "", &checkIn, afterCap) {
 		t.Fatal("incomplete stay is due at the cap")
 	}
-	if !DueForAutomaticSend("immediate", 24, "", &checkIn, afterCap) {
+	if !DueForAutomaticSend("immediate", 24, nil, "", &checkIn, afterCap) {
 		t.Fatal("incomplete stay with no expected count is due at the cap")
 	}
-	if DueForAutomaticSend("manual", 24, "", &checkIn, afterCap) {
+	if DueForAutomaticSend("manual", 24, nil, "", &checkIn, afterCap) {
 		t.Fatal("manual mode is never due")
 	}
-	if DueForAutomaticSend("immediate", 24, "", nil, afterCap) {
+	if DueForAutomaticSend("immediate", 24, nil, "", nil, afterCap) {
 		t.Fatal("a stay without a deadline anchor still waits for completion")
 	}
 
 	completed := "2026-11-10T08:00:00+00:00"
 	beforeDelay := time.Date(2026, 11, 11, 7, 59, 0, 0, time.UTC)
 	atDelay := time.Date(2026, 11, 11, 8, 0, 0, 0, time.UTC)
-	if DueForAutomaticSend("scheduled", 24, completed, &checkIn, beforeDelay) {
+	if DueForAutomaticSend("scheduled", 24, nil, completed, &checkIn, beforeDelay) {
 		t.Fatal("completed stay waits for its delay when that is before the cap")
 	}
-	if !DueForAutomaticSend("scheduled", 24, completed, &checkIn, atDelay) {
+	if !DueForAutomaticSend("scheduled", 24, nil, completed, &checkIn, atDelay) {
 		t.Fatal("completed stay is due when its delay elapses")
 	}
-	if !DueForAutomaticSend("scheduled", 48, completed, &checkIn, afterCap) {
+	if !DueForAutomaticSend("scheduled", 48, nil, completed, &checkIn, afterCap) {
 		t.Fatal("completed stay is pulled forward to the cap when delay is later")
 	}
 }
