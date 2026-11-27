@@ -121,7 +121,7 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(comfy_world):
             const statusXs = [...document.querySelectorAll('.ov-table .stay-rep-status')].map(
                 el => Math.round(el.getBoundingClientRect().left)
             );
-            const okPills = [...document.querySelectorAll('.ov-table .stay-rep-status .pill.p-ok')].map(
+            const okPills = [...document.querySelectorAll('.ov-table .stay-rep-status .stay-journey-summary[data-tone="done"]')].map(
                 el => el.innerText.trim()
             );
             const swRect = sw ? sw.getBoundingClientRect() : null;
@@ -151,7 +151,7 @@ def test_comfy_ux_rigorous_geometry_and_design_invariants(comfy_world):
         assert desk_dash["todayAboveCalendar"], "Today section must sit above Calendar on desktop"
         assert desk_dash["metaBarJustify"] == "space-between" and desk_dash["metaCount"] >= 3, desk_dash
         assert len(desk_dash["statusXs"]) >= 2 and len(set(desk_dash["statusXs"])) == 1, desk_dash
-        assert desk_dash["okPills"] == ["Reported"], desk_dash
+        assert desk_dash["okPills"] and all("Filed" in p or "house book" in p for p in desk_dash["okPills"]), desk_dash
         assert desk_dash["tableJourneys"] >= 1, desk_dash
 
         # Verify clicking a Gantt bar navigates straight to that stay's detail page.
