@@ -100,7 +100,7 @@ func buildPropertyRails(apts []apartmentRow, rows []stays.Row, today time.Time) 
 			if len(rail.Cards) < maxCardsPerRail {
 				rail.Cards = append(rail.Cards, railCard{
 					Row:    r,
-					Label:  stayLabel(r.Reservation),
+					Label:  rowGuestLabel(r),
 					Nights: todayNights(r.Reservation),
 					Kind:   kind,
 					Urgent: urg,

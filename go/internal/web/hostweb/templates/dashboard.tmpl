@@ -1,5 +1,5 @@
 {{define "dashboard.title"}}{{end}}
-{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261127-2097"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-notifications.css?v=20261126-2102"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261126-2101"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-journey.css?v=20261127-2097">{{end}}
+{{define "dashboard.head"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/comfy.css?v=20261126-2088"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-responsive.css?v=20261126-2093"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-polish.css?v=20261127-2097"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-notifications.css?v=20261126-2102"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-phone.css?v=20261127-2097"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-journey.css?v=20261127-2097"><link rel="stylesheet" data-turbo-track="reload" href="/static/comfy-dashboard.css?v=20261127-2097">{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
@@ -59,7 +59,7 @@
 {{else}}<p class="ui-empty">{{t "dashboard.empty.no_feed"}} <a href="/apartments/{{(index $d.Apartments 0).ID}}?view=bookings#calendars">{{t "dashboard.empty.connect_calendar"}}</a></p>
 {{end}}{{end}}
 <section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
-  <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}{{if $d.NyLines}} <span class="ui-badge ui-badge-action">{{len $d.NyLines}}</span>{{end}}</h2>
+  <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}{{if $d.NyLines}} <span class="ov-ny-badge">{{len $d.NyLines}}</span>{{end}}</h2>
   {{- if $d.NyLines}}
   <ul class="needs-you-list">
     {{- range $i, $line := $d.NyLines}}{{if lt $i 3}}{{template "dash.ny_row" (kv "line" $line "first" (eq $i 0))}}{{end}}{{end}}
@@ -76,7 +76,14 @@
   {{- end}}
 </section>
 
-<div class="quiet ov-month ph-hide" data-dashboard-month><span>{{t "dashboard.month.label"}}</span> <span class="ov-mi"><b>{{$d.MonthGuests}}</b> {{tp "dashboard.month.guests" $d.MonthGuests}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthNights}}</b> {{tp "dashboard.month.nights" $d.MonthNights}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthReported}}</b> {{tp "dashboard.month.reported" $d.MonthReported}}</span></div>
+<div class="ov-month-bar ph-hide" data-dashboard-month>
+  <span class="ov-month-kicker">{{t "dashboard.month.label"}}</span>
+  <div class="ov-month-stats">
+    <div class="ov-month-stat"><b>{{$d.MonthGuests}}</b><span>{{tp "dashboard.month.guests" $d.MonthGuests}}</span></div>
+    <div class="ov-month-stat"><b>{{$d.MonthNights}}</b><span>{{tp "dashboard.month.nights" $d.MonthNights}}</span></div>
+    <div class="ov-month-stat"><b>{{$d.MonthReported}}</b><span>{{tp "dashboard.month.reported" $d.MonthReported}}</span></div>
+  </div>
+</div>
 
 <div class="prop-rails ph-only{{if eq (len $d.PropertyRails) 1}} prop-rails--single{{end}}" data-prop-rails data-prop-count="{{len $d.PropertyRails}}">
 {{- range $d.PropertyRails}}
@@ -89,9 +96,11 @@
     <div class="prop-rail-track" data-prop-rail-track>
       {{- range .Cards}}
       <a class="card prop-rail-card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
-        <span class="prop-rail-tag" data-kind="{{.Kind}}">{{if eq .Kind "today"}}{{t "calendar.arrival"}}{{else if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "in_house"}}{{t "dashboard.rail.in_house"}}{{else}}{{t "dashboard.rail.upcoming"}}{{end}}</span>
-        <span class="prop-rail-av" aria-hidden="true">{{dash_first .Label}}</span>
-        <span class="prop-rail-name">{{.Label}}</span>
+        <div class="prop-rail-top">
+          <span class="prop-rail-av" aria-hidden="true">{{dash_first .Label}}</span>
+          <span class="prop-rail-name">{{.Label}}</span>
+          <span class="prop-rail-tag" data-kind="{{.Kind}}">{{if eq .Kind "today"}}{{t "calendar.arrival"}}{{else if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "in_house"}}{{t "dashboard.rail.in_house"}}{{else}}{{t "dashboard.rail.upcoming"}}{{end}}</span>
+        </div>
         <div class="prop-rail-meta">{{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}}{{if gt (dash_guests .Row.Progress) 0}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}{{end}}</div>
         <div class="prop-rail-foot">{{if .Row.Journey.Steps}}{{journey_strip $d.Lang .Row.Journey}}{{else}}{{template "dash.pill" .Row}}{{end}}</div>
       </a>
@@ -113,28 +122,31 @@
 </div>
 
 <div class="ov-work-head ph-hide">
-  <h2 class="sec">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7"}}{{else}}{{t "dashboard.today.title"}}{{end}}</h2>
-  <nav class="ov-window-switch" aria-label="{{t "dashboard.today.title"}}" data-window-switch>
+  <h2 class="sec">{{t "dashboard.window.heading"}}</h2>
+  <nav class="ov-window-switch" aria-label="{{t "dashboard.window.heading"}}" data-window-switch>
     <a class="ov-window-tab{{if eq $d.DesktopWindow "today"}} is-active{{end}}" href="/?window=today"{{if eq $d.DesktopWindow "today"}} aria-current="page"{{end}}>{{t "dashboard.window.today"}}</a>
     <a class="ov-window-tab{{if eq $d.DesktopWindow "next7"}} is-active{{end}}" href="/?window=next7"{{if eq $d.DesktopWindow "next7"}} aria-current="page"{{end}}>{{t "dashboard.window.next7"}}</a>
   </nav>
 </div>
-<div class="card ov-table ph-hide" data-dashboard-refresh="work"><table><thead><tr><th>{{t "archive.col.guest"}}</th><th>{{t "stay_fees.col.property"}}</th><th>{{t "host.stay_dates"}}</th><th>{{t "filter.status"}}</th><th></th></tr></thead><tbody>
+<div class="card ov-table ph-hide" data-dashboard-refresh="work"><table><thead><tr><th>{{t "archive.col.guest"}}</th><th>{{t "stay_fees.col.property"}}</th><th>{{t "host.stay_dates"}}</th><th>{{t "filter.status"}}</th><th class="ov-col-chev"><span class="sr-only">{{t "common.open"}}</span></th></tr></thead><tbody>
 {{- range $d.DesktopRows}}
   <tr class="dashboard-row clickable-row{{if eq .Row.Progress.Cell.Level "overdue"}} is-overdue{{end}}" data-stay-id="{{.Row.Reservation.ID}}" data-href="/reservations/{{.Row.Reservation.ID}}?return_to=/" tabindex="0" role="link">
-    <td class="dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{.Row.Reservation.ID}}?return_to=/">{{dash_label .Row.Reservation}}</a>
+    <td class="dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{.Row.Reservation.ID}}?return_to=/">{{dash_guest_label .Row}}</a>
       <small>{{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</small></td>
     <td>{{property_identity .Row.Reservation.ApartmentID .Row.Reservation.InternalName true}}</td>
-    <td>{{if .Arriving}}{{t "calendar.arrival"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{else}} · {{tp "dashboard.today.nights" .Nights}}{{end}}{{else}}{{t "calendar.departure"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{end}}{{end}}</td>
+    <td class="ov-cell-dates">{{if .Arriving}}{{t "calendar.arrival"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{else}} · {{tp "dashboard.today.nights" .Nights}}{{end}}{{else}}{{t "calendar.departure"}}{{if not .InToday}} · {{stay_range $d.Lang .Row.Reservation.DateFrom .Row.Reservation.DateTo}}{{end}}{{end}}</td>
     <td class="dashboard-row-task">{{if .Row.Journey.Steps}}<div class="stay-rep-grid">{{journey_strip $d.Lang .Row.Journey}}<div class="stay-rep-status">{{journey_summary $d.Lang .Row.Journey}}</div></div>{{else}}<div class="stay-rep-status">{{template "dash.pill" .Row}}</div>{{end}}</td>
-    <td class="dots dashboard-row-actions"></td>
+    <td class="dots dashboard-row-actions">{{icon "chevron-right" 16 "ov-row-chev"}}</td>
   </tr>
 {{- else}}
-  <tr><td colspan="5">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7_empty"}}{{else}}{{t "dashboard.today.empty"}}{{end}}</td></tr>
+  <tr class="ov-empty-row"><td colspan="5">{{if eq $d.DesktopWindow "next7"}}{{t "dashboard.window.next7_empty"}}{{else}}{{t "dashboard.today.empty"}}{{end}}</td></tr>
 {{- end}}
 </tbody></table></div>
 
-<h2 class="ov-cal-block ov-cal-heading">{{t "calendar.calendar"}}</h2>
+<div class="ov-cal-head ov-cal-block ph-hide">
+  <h2 class="sec ov-cal-heading">{{t "calendar.calendar"}}</h2>
+  <a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a>
+</div>
 <div class="scroll-x ov-cal-block">
 <div class="card cal ov-section">
   <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
@@ -143,7 +155,6 @@
   {{- end}}
 </div>
 </div>
-<p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a></p>
 {{- end}}
 {{end}}
 {{end}}

@@ -32,6 +32,7 @@ var dashStrings = hw.Load(dashJSON)
 // stay (label, guest count, date range, demo and missing-guest state).
 var dashFuncs = template.FuncMap{
 	"dash_label":          dashLabel,
+	"dash_guest_label":    rowGuestLabel,
 	"dash_guests":         dashGuests,
 	"dash_first":          dashFirst,
 	"dash_range":          fmtDateRange,
@@ -92,6 +93,33 @@ func fmtInt64(v int64) string {
 
 // dashLabel is the stay's name as the list prints it.
 func dashLabel(r stays.Reservation) string { return stayLabel(r) }
+
+// rowGuestLabel returns the guest-facing label for a dashboard row or rail card,
+// preferring the lead guest's name or reservation summary so we never duplicate
+// the property name right next to the Property column.
+func rowGuestLabel(r stays.Row) string {
+	for _, g := range r.Progress.Guests {
+		name := strings.TrimSpace(strings.TrimSpace(g.FirstName) + " " + strings.TrimSpace(g.Surname))
+		if name != "" {
+			return name
+		}
+	}
+	if s := strings.TrimSpace(r.Reservation.Summary); s != "" && !blockedLabel(s) {
+		return s
+	}
+	switch strings.ToLower(strings.TrimSpace(r.Reservation.Source)) {
+	case "airbnb":
+		return "Airbnb"
+	case "booking":
+		return "Booking.com"
+	case "vrbo":
+		return "Vrbo"
+	case "expedia":
+		return "Expedia"
+	default:
+		return stayLabel(r.Reservation)
+	}
+}
 
 // dashGuests is progress.expected when set, otherwise the guests on the stay.
 func dashGuests(p stays.Progress) int {
