@@ -64,9 +64,14 @@ PINNED_GO_STATUS_FILES = frozenset({
     "go/internal/payments/booking_webhook_host.go",
     "go/internal/web/booking/checkout.go",
     "go/internal/web/booking/cancel_pdfs.go",
+    # links invoice_id only; never touches status
+    "go/internal/web/invoices/site_booking.go",
     # mail job step expire_requests: requested -> expired only (same move as booking_site.set_status)
     "go/internal/mailjob/holds.go",
 })
+PINNED_GO_INVOICE_ANCHORS = [
+    "UPDATE site_booking SET invoice_id = $1, updated_at = $2 WHERE id = $3 AND invoice_id IS NULL",
+]
 PINNED_GO_CANCEL_ANCHORS = [
     'sql := "UPDATE site_booking SET status = $1, updated_at = $2"',
     'setBookingStatus(ctx, db, bookingID, "cancelled"',
@@ -235,6 +240,16 @@ def test_go_booking_cancel_status_pins_are_present():
     text = (REPO / "go/internal/web/booking/cancel_pdfs.go").read_text(encoding="utf-8")
     for anchor in PINNED_GO_CANCEL_ANCHORS:
         assert anchor in text, anchor
+
+
+def test_go_site_booking_invoice_does_not_write_status():
+    text = (REPO / "go/internal/web/invoices/site_booking.go").read_text(encoding="utf-8")
+    for anchor in PINNED_GO_INVOICE_ANCHORS:
+        assert anchor in text, anchor
+    updates = re.findall(r"UPDATE\s+site_booking\s+SET\s+[^\n`\"]+", text, re.I)
+    assert len(updates) == len(PINNED_GO_INVOICE_ANCHORS), updates
+    for stmt in updates:
+        assert not re.search(r"\bstatus\s*=", stmt, re.I), stmt
 
 
 def test_go_and_migrations_do_not_write_site_booking_status():
