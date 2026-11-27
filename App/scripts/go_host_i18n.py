@@ -44,8 +44,10 @@ def read_keys(path: Path) -> list[str]:
     return keys
 
 
-def expand(keys: list[str], all_strings: dict[str, dict[str, str]]) -> list[str]:
+def expand(keys: list[str], all_strings: dict[str, dict[str, str]] | None = None) -> list[str]:
     """The listed keys, each "prefix.*" line replaced by every key with that prefix."""
+    if all_strings is None:
+        all_strings = merged_strings()
     out = []
     for key in keys:
         if key.endswith(".*"):
@@ -56,7 +58,9 @@ def expand(keys: list[str], all_strings: dict[str, dict[str, str]]) -> list[str]
     return out
 
 
-def render(keys: list[str], all_strings: dict[str, dict[str, str]]) -> str:
+def render(keys: list[str], all_strings: dict[str, dict[str, str]] | None = None) -> str:
+    if all_strings is None:
+        all_strings = merged_strings()
     keys = expand(keys, all_strings)
     catalog = {}
     for lang, strings in all_strings.items():
