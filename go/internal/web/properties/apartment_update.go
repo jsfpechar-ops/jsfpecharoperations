@@ -6,16 +6,10 @@ package properties
 // (rule 1). App/scripts/go_apartment_update_golden.py records what the Python
 // route writes and answers; apartment_update_test.go replays it.
 //
-// Answered 501 with the Caddy fallback header (notPorted), always before
-// anything is written:
-//   - a setup_step other than property or police (calendar, guest_link or a
-//     value that is not a step: no wizard form posts them here), and a save
-//     without setup_step whose return_to is under /apartments/{id}/setup/
-//     (refuse_fee_save draws the retired stay_fee wizard page for it);
-//   - stay_fee and door_lock wizard saves that refuse and re-render (2031);
-//   - a non-ASCII digit or a 64-bit overflow in a number, and a
-//     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
-//     str.isdigit() and date.fromisoformat() read more than this port does);
+// Unhandled inputs (non-ASCII digits in numeric/hour fields, or a
+// stay_fee_rate_from that is not YYYY-MM-DD) redirect back with
+// flash.error.not_saved_here before writing; retired setup steps redirect to
+// /apartments/{id}/setup/done.
 //
 // A refusal Python answers by drawing the page again (_refuse_apartment_save,
 // refuse_fee_save, operator_refresh) is refuseApartmentSave (brief 1702c2).
@@ -228,10 +222,6 @@ func detailDraftField(a *detailApt, name string) *string {
 // apartmentUpdateNotPorted names the first posted branch this port leaves to
 // Python, or "".
 func apartmentUpdateNotPorted(r *http.Request, id int64) string {
-	switch step := formStr(r, "setup_step"); {
-	case step == "stay_fee", step == "door_lock":
-		return "a setup_step that re-renders on refusal"
-	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
 			return "the form field " + key

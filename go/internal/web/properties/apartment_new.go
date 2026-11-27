@@ -255,7 +255,7 @@ var apartmentNewIntRE = regexp.MustCompile(`^[+-]?[0-9]+(?:_[0-9]+)*$`)
 // apartmentNewQueryInt is admin_helpers.query_int: the stripped last value of
 // the key as an int, 0 for none or a value int() rejects. ok is false for a
 // value this port does not judge (a non-ASCII digit string, or one past 64
-// bits); the caller then answers 501 with the Caddy fallback header.
+// bits); the caller then answers with the branded host 404 page.
 func apartmentNewQueryInt(r *http.Request, key string) (n int64, ok bool) {
 	raw := pyStrip(queryLast(r, key))
 	if raw == "" {

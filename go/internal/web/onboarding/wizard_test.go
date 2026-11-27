@@ -2,8 +2,8 @@ package onboarding
 
 // Unit tests of the wizard helpers that the golden cannot pin (brief 1599):
 // the slug the wizard creates (Python's code is random), the lock switch
-// under billing, the operator's first name, the date filters, the 501 of a
-// page that is not ported yet and the template keys.
+// under billing, the operator's first name, the date filters, wizard template
+// coverage and the template keys.
 
 import (
 	"context"
@@ -142,29 +142,21 @@ func TestWizardDateFilters(t *testing.T) {
 	}
 }
 
-func TestWizardStepWithoutPageIs501(t *testing.T) {
-	s := &wizardServer{getenv: func(k string) string {
-		if k == "UBYHOST_SECRET_KEY" {
-			return "wizard-notported-test-secret-0123456789ab"
+func TestWizardEveryStepHasTemplate(t *testing.T) {
+	for _, step := range append(append([]string{}, Steps...), "done") {
+		if _, ok := wizardPages[step]; !ok {
+			t.Errorf("missing wizard template for step %q", step)
 		}
-		return ""
-	}}
+	}
+	s := &wizardServer{}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apartments/1/setup/x", nil)
-	req.Header.Set("Accept", "text/html")
 	s.wizardRender(rec, req, nil, testNow, 0, &wizardView{Step: "not-a-page", Apt: &wizardApt{}})
-	if rec.Code != http.StatusNotImplemented {
-		t.Fatalf("status %d", rec.Code)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status %d, want 500 (never 501)", rec.Code)
 	}
-	if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-		t.Fatal("expected Not-Ported header")
-	}
-	body := rec.Body.String()
-	if !strings.Contains(body, "This action is not available yet") || !strings.Contains(body, "support@ubyhost.com") {
-		t.Fatalf("unexpected body: %.200s", body)
-	}
-	if strings.Contains(body, "Not implemented in Go yet") {
-		t.Fatal("raw 501 text leaked")
+	if rec.Header().Get("X-Ubyhost-Not-Ported") != "" {
+		t.Fatal("unexpected X-Ubyhost-Not-Ported header")
 	}
 }
 

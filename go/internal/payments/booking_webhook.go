@@ -9,11 +9,7 @@ package payments
 // rows, audit lines and outbox mails as Python (golden test:
 // booking_webhook_test.go, fixture from App/scripts/booking_webhook_golden.py).
 //
-// Known gaps, deliberately not ported:
-//   - booking_invoice.ensure (best effort in Python after the mails; needs the
-//     invoice PDF code Go does not have). The invoice is then issued when the
-//     guest first opens /p/{slug}/b/{id}/{token}/invoice.pdf (Python route),
-//     with that day as its issue date.
+// Known gaps:
 //   - guest_slug.ensure minting a slug: when the apartment has a permalink
 //     token but no current slug, Go links /l/<token>/<reservation> (the token
 //     keeps working); Python would create the slug first.
@@ -45,6 +41,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/invoices"
 )
 
 //go:embed booking_i18n.json
@@ -122,15 +119,24 @@ type bookingField struct {
 // BookingWebhook handles booking events. Stripe is used for the clash refund
 // only; tests point Stripe.APIBase at httptest. Building it touches nothing.
 type BookingWebhook struct {
-	Pool   *pgxpool.Pool
-	Getenv func(string) string
-	Now    func() time.Time
-	Stripe *StripeOnboarder
+	Pool          *pgxpool.Pool
+	Getenv        func(string) string
+	Now           func() time.Time
+	Stripe        *StripeOnboarder
+	EnsureInvoice func(ctx context.Context, bookingID int64) (int64, bool, error)
 }
 
 // NewBookingWebhook returns the production handler. It does not use the pool.
 func NewBookingWebhook(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) *BookingWebhook {
-	return &BookingWebhook{Pool: pool, Getenv: getenv, Now: now, Stripe: NewStripeOnboarder(pool, getenv, now)}
+	return &BookingWebhook{
+		Pool:   pool,
+		Getenv: getenv,
+		Now:    now,
+		Stripe: NewStripeOnboarder(pool, getenv, now),
+		EnsureInvoice: func(ctx context.Context, bookingID int64) (int64, bool, error) {
+			return invoices.EnsureSiteBooking(ctx, pool, bookingID, now())
+		},
+	}
 }
 
 // Process is stripe_connect.process_event for a booking event: a seen event id
@@ -321,7 +327,6 @@ func (b *BookingWebhook) confirm(ctx context.Context, bk *siteBooking, intent st
 		if fresh == nil {
 			fresh = bk
 		}
-		// booking_invoice.ensure is not ported (known gap, see the file comment).
 		if err := b.mailConfirmed(ctx, tx, fresh, reservationID, secret); err != nil {
 			return err
 		}
@@ -331,6 +336,12 @@ func (b *BookingWebhook) confirm(ctx context.Context, bk *siteBooking, intent st
 	}
 	if clash {
 		return b.refundClash(ctx, bk, intent)
+	}
+	// Best effort: the booking is already confirmed and mailed (booking_webhook.py:97-102).
+	if b.EnsureInvoice != nil {
+		if _, _, err := b.EnsureInvoice(ctx, bk.id); err != nil {
+			log.Printf("site booking %d: invoice failed: %v", bk.id, err)
+		}
 	}
 	return nil
 }

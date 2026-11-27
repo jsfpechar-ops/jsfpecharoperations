@@ -1,17 +1,10 @@
 package properties
 
-// The two list pages of the property settings area (brief 1302): GET
-// /entities (admin.py entities ~858 and _entities_page ~903, the list without
-// an open editor) and GET /apartments for a workspace with no live property
-// (apartments_list ~1344, the empty state). The bodies are
-// templates/lists.tmpl, rendered inside the host layout (hostweb/layout).
-//
-// What is not ported answers 501 instead of showing a different page:
-//   - /entities?edit=N: the business editor with Invoice details (billing);
-//   - /entities when the workspace has an open alert: _host_alerts.html is
-//     inside the page body and is ported with brief 1381;
-//   - /apartments with a live property: ported in apartments_list_data.go
-//     (setup chips, guest link, phone cards).
+// The two list pages of the property settings area: GET /entities (including
+// the open business editor ?edit=N and ARES lookup in entity_editor.go) and
+// GET /apartments (both empty state and live property rows in
+// apartments_list_data.go). The bodies are templates/lists.tmpl, rendered
+// inside the host layout (hostweb/layout).
 
 import (
 	"context"
@@ -26,7 +19,6 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
 // RegisterLists adds GET /entities and GET /apartments. It only builds
@@ -42,13 +34,6 @@ func RegisterLists(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv fun
 	} {
 		mux.Handle("GET "+route.path, wrap(route.path, route.h))
 	}
-}
-
-// notPorted answers a branch Go does not render yet with a host page in the
-// light-mode layout (501). Caddy has no Python fallback, so every call is
-// user-visible (brief 2029).
-func notPorted(w http.ResponseWriter, r *http.Request, env layout.Env, host *session.Host, what string) {
-	layout.NotPortedPage(w, r, env, host, "settings", what)
 }
 
 // queryLast is Starlette's query_params.get: the last value of a key.
