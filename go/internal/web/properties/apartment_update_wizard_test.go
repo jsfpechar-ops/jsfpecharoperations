@@ -138,6 +138,13 @@ func TestApartmentUpdateWizard(t *testing.T) {
 		`<p class="err-text" id="uby_mark-error" role="alert">Zkratka má 5 nebo 6 písmen či číslic přidělených policií, např. AAKLI.</p>`,
 		`name="uby_mark" value="x1"`,
 	}, []string{`id="uby_name-error"`})
+	refused("police UBY-WS_ mark mismatch", 201, "police", "cs", map[string]string{
+		"uby_ws_user": "UBY-WS_MLJNO",
+		"uby_mark":    "WRONG",
+	}, []string{
+		`<p class="err-text" id="uby_mark-error" role="alert">Zkratka musí odpovídat části za UBY-WS_ v přihlašovacím jménu.</p>`,
+		`name="uby_mark" value="WRONG"`,
+	}, nil)
 
 	// Police step saved: the abbreviation upper-cased, the password encrypted,
 	// the refused-login alert resolved, the automation choice kept; no
