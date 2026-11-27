@@ -179,6 +179,5 @@ Write `docs/tasks/2091-report.md` (600 tokens at most) and set `Status: review`.
 
 ## Owner steps
 
-1. Confirm the `24` h default (vs `72` h — see plan §3 for the D3 + `<24h` watchdog collision) before launching Haiku.
-2. After CI is green on PR, merge with `scripts/merge-pr-on-green.sh <PR>`.
-3. After deploy, run one Gate 2 spot-check in `UBYHOST_UBYPORT_ENV=test` verifying a future-dated stay does not send early and an arrived stay files with Doručenka PDF.
+1. After CI is green on PR, merge with `scripts/merge-pr-on-green.sh <PR>`.
+2. After deploy, run one Gate 2 spot-check in `UBYHOST_UBYPORT_ENV=test` verifying a future-dated stay does not send early and an arrived stay files with Doručenka PDF.
