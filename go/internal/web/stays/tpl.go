@@ -18,6 +18,8 @@ var tplFuncs = map[string]any{
 	"source_label":    sourceLabel,
 	"journey_step":    journeyStep,
 	"journey_strip":   RenderJourneyStrip,
+	"journey_summary": RenderJourneySummary,
+	"journey_legend":  RenderJourneyLegend,
 	"lead_name":       leadName,
 	"shown_name":      shownName,
 	"stay_label":      stayLabel,

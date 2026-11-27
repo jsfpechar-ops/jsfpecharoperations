@@ -23,6 +23,7 @@ type listProg struct {
 	guests     int
 	filled     int
 	expected   *int
+	reported   int
 	status     string
 	complete   []progGuest
 	reportable []progGuest
@@ -59,6 +60,9 @@ func listProgress(s listStay, guests []progGuest, today time.Time) listProg {
 		}
 		if g.submitState == "sent" {
 			sent++
+			if validation.GuestIsReportable(g.nationality) {
+				res.reported++
+			}
 		}
 		if g.submitState == "error" || g.submitState == "blocked" {
 			failed++
@@ -186,6 +190,7 @@ func buildProgress(s listStay, guests []progGuest, at time.Time) Progress {
 	anchor, hasAnchor := listAnchor(s, guests)
 	out := Progress{
 		Filled: p.filled, Expected: p.expected, Incomplete: p.guests - p.filled,
+		ReportedCount: p.reported, ReportableCount: len(p.reportable),
 		Status: p.status, Guests: displayGuests(guests), Anchor: anchor, HasAnchor: hasAnchor,
 	}
 	if p.expected != nil {
@@ -244,4 +249,64 @@ func sendControls(res Reservation, automationMode string, p listProg, guests []p
 	autoImmediate := mode == "immediate"
 	canSend := sendable && hasPending
 	return Controls{SendEnabled: canSend && !autoImmediate}
+}
+
+// scheduledSendCompact computes the earliest planned automatic UbyPort send
+// time in Europe/Prague ("02.01. 15:04") for an active unfiled stay on a
+// scheduled/immediate property, or "" when automatic sending does not apply.
+func scheduledSendCompact(res Reservation, prog Progress, sig JourneySignal, guests []progGuest, at time.Time) string {
+	if isDemo(res.InternalName, res.Source) || (res.Status != "" && res.Status != "active") {
+		return ""
+	}
+	if prog.Status == "reported" || prog.Status == "not_required" || !prog.HasAnchor {
+		return ""
+	}
+	mode := sig.AutomationMode
+	if mode == "" {
+		mode = res.AutomationMode
+	}
+	if mode != "scheduled" && mode != "immediate" {
+		return ""
+	}
+	hours := 24
+	if res.SubmitAfterHours != nil && *res.SubmitAfterHours > 0 {
+		hours = int(*res.SubmitAfterHours)
+	}
+	u := at.UTC()
+	today := time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)
+	var earliest time.Time
+	found := false
+	for _, g := range guests {
+		if !validation.GuestIsReportable(g.nationality) {
+			continue
+		}
+		if g.submitState == "sent" || g.submitState == "not_required" {
+			continue
+		}
+		if !guestFiledByHand(g) && !validation.GuestIsComplete(g.row, res.DateFrom, res.DateTo, today) {
+			continue
+		}
+		anchor := prog.Anchor
+		if g.row.StayFrom != "" {
+			if t, ok := validation.ParseISODate(g.row.StayFrom); ok {
+				anchor = t
+			}
+		}
+		ref := g.submittedRef
+		if ref == "" {
+			ref = at.UTC().Format(time.RFC3339)
+		}
+		sendAt, ok := ubyport.ScheduledSendAt(mode, hours, sig.CheckinHour, ref, &anchor)
+		if !ok {
+			continue
+		}
+		if !found || sendAt.Before(earliest) {
+			earliest = sendAt
+			found = true
+		}
+	}
+	if !found {
+		return ""
+	}
+	return earliest.Format("02.01. 15:04")
 }

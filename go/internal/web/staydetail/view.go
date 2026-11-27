@@ -179,6 +179,15 @@ func Build(ctx context.Context, d Deps, ownerID, id int64, rawReturnTo string, a
 	if err != nil {
 		return View{}, false, err
 	}
-	v.Journey = stays.BuildJourney(s.Reservation, det.Progress, sigs[id], pragueToday(at))
+	progForJourney := det.Progress
+	if v.ScheduledSendAt != "" {
+		// Format compactly ("02.01. 15:04") when full "02.01.2006 15:04" is present.
+		if t, parseErr := time.Parse("02.01.2006 15:04", v.ScheduledSendAt); parseErr == nil {
+			progForJourney.ScheduledSendLabel = t.Format("02.01. 15:04")
+		} else {
+			progForJourney.ScheduledSendLabel = v.ScheduledSendAt
+		}
+	}
+	v.Journey = stays.BuildJourney(s.Reservation, progForJourney, sigs[id], pragueToday(at))
 	return v, true, nil
 }

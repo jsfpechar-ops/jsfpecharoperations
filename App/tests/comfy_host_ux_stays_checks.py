@@ -42,8 +42,8 @@ def assert_stays_and_detail_phone(page: Page, base: str, stay_red: int) -> None:
     assert detail_phone["barBelowHeader"], "journey checklist must sit below the back button/header"
     assert detail_phone["policeIcon"] == "police", detail_phone
     assert not detail_phone["hasRequestPayment"], "retired Request payment link must be removed"
-    assert [s["step"] for s in detail_phone["steps"]] == ["link", "form", "code", "police"], detail_phone
-    assert [s["tone"] for s in detail_phone["steps"]] == ["progress", "progress", "bad", "bad"], detail_phone
+    assert [s["step"] for s in detail_phone["steps"]] == ["email", "opened", "form", "code", "police"], detail_phone
+    assert [s["tone"] for s in detail_phone["steps"]] == ["done", "progress", "progress", "bad", "bad"], detail_phone
 
 
 def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> None:
@@ -52,7 +52,7 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
         """() => {
         const statuses = [...document.querySelectorAll('.stays-desk .stay-rep-status')];
         const statusXs = statuses.map(el => Math.round(el.getBoundingClientRect().left));
-        const okPills = [...document.querySelectorAll('.stays-desk .stay-rep-status .pill.p-ok')].map(el => ({
+        const okPills = [...document.querySelectorAll('.stays-desk .stay-rep-status .stay-journey-summary[data-tone="done"]')].map(el => ({
             text: el.innerText.trim(),
             title: el.getAttribute('title') || '',
         }));
@@ -88,7 +88,7 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
     assert len(stays_desk["statusXs"]) >= 5 and len(set(stays_desk["statusXs"])) == 1, (
         f"Reporting status column must align vertically like Excel columns: {stays_desk}"
     )
-    assert stays_desk["okPills"] and all(p["text"] == "Reported" for p in stays_desk["okPills"]), stays_desk
+    assert stays_desk["okPills"] and all("Filed" in p["text"] or "house book" in p["text"] for p in stays_desk["okPills"]), stays_desk
     assert all(ic == "police" for ic in stays_desk["polIcons"]) and stays_desk["polIcons"], stays_desk
     assert all(d <= 1 for d in stays_desk["dateAlignDiffs"]), stays_desk
     assert stays_desk["headBtnCount"] == 1 and stays_desk["hasStaysSearch"], stays_desk
@@ -121,7 +121,7 @@ def assert_stays_and_detail_desktop(page: Page, base: str, stay_red: int) -> Non
         };
     }"""
     )
-    assert detail_desk["docOverflow"] <= 0 and detail_desk["stepCount"] == 4 and detail_desk["rowCount"] == 1, detail_desk
+    assert detail_desk["docOverflow"] <= 0 and detail_desk["stepCount"] == 5 and detail_desk["rowCount"] == 1, detail_desk
     assert detail_desk["barBelowHead"], "journey checklist must sit below the #now header on desktop"
     assert detail_desk["hasCollapsibleIssues"], "multi-field missing details must collapse into a disclosure pill"
     assert ":" in detail_desk["issuesSummaryText"] and "+" in detail_desk["issuesSummaryText"], detail_desk

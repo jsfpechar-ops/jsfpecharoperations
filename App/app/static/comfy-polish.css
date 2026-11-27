@@ -43,32 +43,50 @@ body.v2 .stays-desk tbody td.row-actions {
 
 .stay-rep-grid {
   display: grid;
-  grid-template-columns: 144px minmax(112px, 1fr);
+  grid-template-columns: 158px minmax(116px, 1fr);
   align-items: start;
-  column-gap: 12px;
+  column-gap: 10px;
 }
 
 .stay-rep-grid .stay-journey {
   display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 5px;
-  width: 144px;
+  gap: 3px;
+  width: 158px;
   min-height: 24px;
 }
 
 .stay-rep-grid .stay-journey-step {
   box-sizing: border-box;
-  width: 26px;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
   padding: 0;
   justify-content: center;
   flex-shrink: 0;
 }
 
 .stay-rep-grid .stay-journey-step[data-step="form"] {
-  width: 50px;
+  width: 46px;
   padding: 0 4px;
   font-variant-numeric: tabular-nums;
+}
+
+.stay-rep-grid .stay-journey-step[data-step="police"] {
+  min-width: 24px;
+  width: auto;
+  padding: 0 4px;
+}
+
+@media (max-width: 1180px) {
+  .stay-rep-grid {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+  .stay-rep-grid .stay-journey {
+    width: auto;
+  }
 }
 
 .stay-rep-status {

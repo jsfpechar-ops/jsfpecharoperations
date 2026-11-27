@@ -14,17 +14,20 @@ type Guest struct {
 
 // Progress is reporting.reservation_progress for one stay row.
 type Progress struct {
-	Filled        int
-	Expected      *int
-	Incomplete    int
-	Status        string
-	Guests        []Guest
-	NotRegistered *int
-	HasCell       bool
-	Cell          layout.DeadlineCell
-	Anchor        time.Time
-	HasAnchor     bool
-	Unreadable    bool
+	Filled             int
+	Expected           *int
+	Incomplete         int
+	ReportedCount      int
+	ReportableCount    int
+	ScheduledSendLabel string
+	Status             string
+	Guests             []Guest
+	NotRegistered      *int
+	HasCell            bool
+	Cell               layout.DeadlineCell
+	Anchor             time.Time
+	HasAnchor          bool
+	Unreadable         bool
 }
 
 // Controls is reporting.send_controls (subset used on the list page).
