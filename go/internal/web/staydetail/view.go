@@ -17,7 +17,8 @@ import (
 )
 
 const guestExtrasSQL = `SELECT id, COALESCE(doc_type,''), COALESCE(entered_by,''), COALESCE(last_errors,''),
-       COALESCE(restricted_at,''), COALESCE(manual_marked_at,''), COALESCE(manual_reference,'')
+       COALESCE(restricted_at,''), COALESCE(manual_marked_at,''), COALESCE(manual_reference,''),
+       COALESCE(NULLIF(filled_at,''), NULLIF(updated_at,''), NULLIF(created_at,''), '')
   FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`
 
 const submissionsSQL = `SELECT id, COALESCE(created_at,''), COALESCE(state,''), COALESCE(pseudo_stamp,''),
@@ -29,7 +30,7 @@ const submissionsSQL = `SELECT id, COALESCE(created_at,''), COALESCE(state,''), 
   ) AND apartment_id = $3 ORDER BY created_at DESC`
 
 type guestExtra struct {
-	docType, enteredBy, lastErrors, restrictedAt, manualMarkedAt, manualReference string
+	docType, enteredBy, lastErrors, restrictedAt, manualMarkedAt, manualReference, submittedRef string
 }
 
 func loadGuestExtras(ctx context.Context, pool *pgxpool.Pool, reservationID int64) (map[int64]guestExtra, error) {
@@ -42,7 +43,7 @@ func loadGuestExtras(ctx context.Context, pool *pgxpool.Pool, reservationID int6
 	for rows.Next() {
 		var id int64
 		var e guestExtra
-		if err := rows.Scan(&id, &e.docType, &e.enteredBy, &e.lastErrors, &e.restrictedAt, &e.manualMarkedAt, &e.manualReference); err != nil {
+		if err := rows.Scan(&id, &e.docType, &e.enteredBy, &e.lastErrors, &e.restrictedAt, &e.manualMarkedAt, &e.manualReference, &e.submittedRef); err != nil {
 			return nil, err
 		}
 		out[id] = e
@@ -98,6 +99,7 @@ func Build(ctx context.Context, d Deps, ownerID, id int64, rawReturnTo string, a
 				RestrictedAt:    ex.restrictedAt,
 				ManualMarkedAt:  ex.manualMarkedAt,
 				ManualReference: ex.manualReference,
+				SubmittedRef:    ex.submittedRef,
 			},
 			Issues:   validation.GuestIssues(g.Row, s.DateFrom, s.DateTo, today),
 			Complete: validation.GuestIsComplete(g.Row, s.DateFrom, s.DateTo, today),
@@ -154,10 +156,11 @@ func Build(ctx context.Context, d Deps, ownerID, id int64, rawReturnTo string, a
 			SendHintKey:  det.SendHintKey,
 			PendingCount: det.PendingCount,
 		},
-		GuestRows:   guestRows,
-		CheckIn:     checkIn,
-		Deadline:    deadline,
-		Submissions: subs,
+		GuestRows:       guestRows,
+		CheckIn:         checkIn,
+		Deadline:        deadline,
+		ScheduledSendAt: computeScheduledSendLabel(s, det.Progress.Status, isDemo, guestRows, checkIn, at),
+		Submissions:     subs,
 		ReturnTo:    returnTo,
 		GuestLink:   guestLink,
 		StayClaim:   stayClaim,

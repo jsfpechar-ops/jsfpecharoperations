@@ -34,7 +34,7 @@ type GuestRow struct {
 // Guest is a guest row as the stay template reads it.
 type Guest struct {
 	stays.StayGuest
-	DocType, EnteredBy, LastErrors, RestrictedAt, ManualMarkedAt, ManualReference string
+	DocType, EnteredBy, LastErrors, RestrictedAt, ManualMarkedAt, ManualReference, SubmittedRef string
 }
 
 // Submission is one row of the stay's report list.
@@ -52,9 +52,10 @@ type View struct {
 	Progress     stays.Progress
 	SendControls SendControls
 	GuestRows    []GuestRow
-	CheckIn      *time.Time
-	Deadline     *time.Time
-	Submissions  []Submission
+	CheckIn         *time.Time
+	Deadline        *time.Time
+	ScheduledSendAt string
+	Submissions     []Submission
 	ReturnTo     string
 	GuestLink    string
 	StayClaim    StayClaim

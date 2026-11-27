@@ -546,8 +546,8 @@ func (v *detailView) derive(lang string) {
 		"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
 	boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 	v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
-	v.AutomationModes = []string{"manual", "scheduled", "immediate"}
-	v.AutomationShown = "manual"
+	v.AutomationModes = []string{"scheduled", "immediate", "manual"}
+	v.AutomationShown = "scheduled"
 	for _, m := range v.AutomationModes {
 		if a.AutomationMode == m {
 			v.AutomationShown = m
@@ -601,8 +601,8 @@ func (v *detailView) derive(lang string) {
 				"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
 			boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 			v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
-			v.AutomationModes = []string{"manual", "scheduled", "immediate"}
-			v.AutomationShown = "manual"
+			v.AutomationModes = []string{"scheduled", "immediate", "manual"}
+			v.AutomationShown = "scheduled"
 			for _, m := range v.AutomationModes {
 				if a.AutomationMode == m {
 					v.AutomationShown = m
@@ -720,6 +720,23 @@ func (v *detailView) HourSelected(name string, h int) bool {
 		hour = v.A.CheckoutHour
 	}
 	return hour != nil && *hour == int64(h)
+}
+
+// AutomationHoursField renders the inline delay input nested inside the
+// "scheduled" choice card on Property settings (Task 2093).
+func (v *detailView) AutomationHoursField() template.HTML {
+	val := strconv.FormatInt(v.A.SubmitAfterHours, 10)
+	if v.A.SubmitAfterHours < 1 || v.A.SubmitAfterHours > 24 {
+		val = "24"
+	}
+	extra := ""
+	if v.TimingError != "" {
+		extra = ` aria-invalid="true" aria-describedby="submit_after_hours-error"`
+	}
+	return template.HTML(`<div class="field inline-hours"><label for="submit_after_hours">` +
+		html.EscapeString(detailT(v.Lang, "automation.hours_delay")) +
+		`</label><input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="24" value="` +
+		html.EscapeString(val) + `"` + extra + `></div>`)
 }
 
 // FacilityHelp is facility_help of _police_fields.html: the hint and the
