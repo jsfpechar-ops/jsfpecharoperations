@@ -154,6 +154,34 @@ func CorrectSiteBookingPartial(ctx context.Context, pool *pgxpool.Pool, invoiceI
 	return cancelIssuedInvoice(ctx, pool, invoiceID, reason, "", now, true, refundCZK)
 }
 
+// AdjustAfterRefund is booking_cancel._storno_invoice / _correct_invoice_partial:
+// after a Stripe refund succeeded, issue a VAT storno (full refund) or a
+// corrective credit note (partial). Failures are audited and never returned,
+// so they cannot undo the refund.
+func AdjustAfterRefund(ctx context.Context, pool *pgxpool.Pool, bookingID int64, refundCZK int, now time.Time) {
+	var invoiceID *int64
+	var totalCZK, ownerUserID int
+	err := pool.QueryRow(ctx, `SELECT invoice_id, total_czk, owner_user_id FROM site_booking WHERE id = $1`, bookingID).
+		Scan(&invoiceID, &totalCZK, &ownerUserID)
+	if err != nil || invoiceID == nil || *invoiceID == 0 {
+		return
+	}
+	reason := SiteBookingCancelReason("cs")
+	var adjErr error
+	if refundCZK >= totalCZK {
+		_, adjErr = StornoSiteBooking(ctx, pool, *invoiceID, reason, now)
+	} else {
+		_, adjErr = CorrectSiteBookingPartial(ctx, pool, *invoiceID, refundCZK, reason, now)
+	}
+	if adjErr != nil {
+		log.Printf("site booking %d: no invoice adjustment (%v)", bookingID, adjErr)
+		_, _ = pool.Exec(ctx,
+			`INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1, '', $2, $3, $4)`,
+			stamp(now), "site_invoice_needs_correction",
+			fmt.Sprintf("id=%d reason=%v", bookingID, adjErr), ownerUserID)
+	}
+}
+
 func cancelIssuedInvoice(ctx context.Context, pool *pgxpool.Pool, id int64, reason, correctionDate string, now time.Time, partial bool, refundCZK int) (int64, error) {
 	original, err := scanInvoice(pool.QueryRow(ctx, `SELECT `+invoiceColumns+` FROM invoice WHERE id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && original.Kind != "invoice") {

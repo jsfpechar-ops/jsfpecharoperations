@@ -18,6 +18,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/invoices"
 )
 
 const (
@@ -244,6 +245,7 @@ func (b *BookingWebhook) hostCancel(ctx context.Context, bk *siteBooking, byHost
 			fmt.Sprintf("id=%d amount=%d", bk.id, amount), owner); err != nil {
 			log.Printf("host cancel %d: refund audit: %v", bk.id, err)
 		}
+		invoices.AdjustAfterRefund(ctx, b.Pool, bk.id, amount, b.Now())
 	}
 	if err := b.mailCancelled(ctx, bk, amount, byHost); err != nil {
 		log.Printf("host cancel %d: mail: %v", bk.id, err)

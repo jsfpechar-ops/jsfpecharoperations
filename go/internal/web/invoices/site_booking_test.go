@@ -167,3 +167,66 @@ func TestEnsureSiteBookingSkipsGracefully(t *testing.T) {
 		t.Fatalf("audit detail = %q, want reason=no_entity", detail)
 	}
 }
+
+func TestAdjustAfterRefundIssuesStornoOnFullRefund(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	now := time.Date(2026, 7, 15, 12, 0, 0, 0, time.UTC)
+	bookingID, _ := seedSiteBookingFixture(t, pool, true, "Prague 1, Na Prikope 1", "paid")
+	invID, ok, err := EnsureSiteBooking(ctx, pool, bookingID, now)
+	if err != nil || !ok || invID == 0 {
+		t.Fatalf("EnsureSiteBooking: id=%d ok=%v err=%v", invID, ok, err)
+	}
+
+	AdjustAfterRefund(ctx, pool, bookingID, 5000, now)
+
+	var kind string
+	var totalHaler int64
+	var corrID int64
+	if err := pool.QueryRow(ctx, `SELECT id, kind, total_haler FROM invoice WHERE corrects_invoice_id = $1`, invID).
+		Scan(&corrID, &kind, &totalHaler); err != nil {
+		t.Fatalf("storno lookup: %v", err)
+	}
+	if kind != "storno" || totalHaler != -500000 {
+		t.Fatalf("correction: kind=%q total=%d, want storno -500000", kind, totalHaler)
+	}
+
+	AdjustAfterRefund(ctx, pool, bookingID, 5000, now)
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM invoice WHERE corrects_invoice_id = $1`, invID).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Fatalf("second AdjustAfterRefund created extra invoice: count=%d", n)
+	}
+	var audits int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit WHERE action = 'site_invoice_needs_correction'`).Scan(&audits); err != nil {
+		t.Fatal(err)
+	}
+	if audits < 1 {
+		t.Fatal("expected site_invoice_needs_correction audit after already-corrected retry")
+	}
+}
+
+func TestAdjustAfterRefundIssuesPartialCreditNote(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	now := time.Date(2026, 7, 15, 12, 0, 0, 0, time.UTC)
+	bookingID, _ := seedSiteBookingFixture(t, pool, true, "Prague 1, Na Prikope 1", "paid")
+	invID, ok, err := EnsureSiteBooking(ctx, pool, bookingID, now)
+	if err != nil || !ok || invID == 0 {
+		t.Fatalf("EnsureSiteBooking: id=%d ok=%v err=%v", invID, ok, err)
+	}
+
+	AdjustAfterRefund(ctx, pool, bookingID, 2000, now)
+
+	var kind string
+	var totalHaler int64
+	if err := pool.QueryRow(ctx, `SELECT kind, total_haler FROM invoice WHERE corrects_invoice_id = $1`, invID).
+		Scan(&kind, &totalHaler); err != nil {
+		t.Fatalf("credit note lookup: %v", err)
+	}
+	if (kind != "storno" && kind != "corrective") || totalHaler != -200000 {
+		t.Fatalf("partial correction: kind=%q total=%d, want storno/corrective -200000", kind, totalHaler)
+	}
+}

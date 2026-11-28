@@ -180,9 +180,8 @@ func GuestCancel(ctx context.Context, db DB, bookingID int64, now time.Time, ref
 			stampUTC(now), "site_booking_refunded", fmt.Sprintf("id=%d amount=%d", bookingID, amount), b.OwnerUserID); err != nil {
 			return cancelResult{}, err
 		}
-		if amount < b.TotalCZK && b.InvoiceID != nil {
-			_, _ = db.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1, '', $2, $3, $4)`,
-				stampUTC(now), "site_invoice_needs_correction", fmt.Sprintf("id=%d amount=%d", bookingID, amount), b.OwnerUserID)
+		if pool, ok := db.(*pgxpool.Pool); ok {
+			invoices.AdjustAfterRefund(ctx, pool, bookingID, amount, now)
 		}
 	}
 	_ = byHost
