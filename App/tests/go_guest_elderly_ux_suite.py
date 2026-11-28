@@ -11,8 +11,10 @@ import sys
 import tempfile
 import time
 import urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
+from zoneinfo import ZoneInfo
 
 import psycopg
 import pytest
@@ -62,7 +64,11 @@ AUDIT_JS = """() => {
 
 
 def _seed_guest_property(test_db: str, token: str) -> int:
-    now_iso = "2026-11-27T12:00:00+00:00"
+    prague_now = datetime.now(ZoneInfo("Europe/Prague"))
+    today = prague_now.date()
+    date_from = today.isoformat()
+    date_to = (today + timedelta(days=3)).isoformat()
+    now_iso = prague_now.isoformat(timespec="seconds")
     with psycopg.connect(test_db) as conn, conn.cursor() as cur:
         cur.execute(
             """INSERT INTO user_account (username, password_hash, role, active, session_version, created_at, email)
@@ -93,9 +99,9 @@ def _seed_guest_property(test_db: str, token: str) -> int:
         apt_id = cur.fetchone()[0]
         cur.execute(
             """INSERT INTO reservation (apartment_id, source, uid, date_from, date_to, status, created_at, updated_at)
-               VALUES (%s, 'manual', 'r-elderly-1', '2026-11-27', '2026-11-30', 'active', %s, %s)
+               VALUES (%s, 'manual', 'r-elderly-1', %s, %s, 'active', %s, %s)
                RETURNING id""",
-            (apt_id, now_iso, now_iso),
+            (apt_id, date_from, date_to, now_iso, now_iso),
         )
         res_id = cur.fetchone()[0]
         conn.commit()
