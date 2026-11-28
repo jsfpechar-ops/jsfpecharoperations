@@ -649,6 +649,20 @@ def test_a_new_phone_sees_and_keeps_the_reduction(stay, live, host_set):
     assert _expected(stay_id) == 2
 
 
+def test_claim_confirm_applies_pending_over_lead_reduction(stay, live):
+    """Guest party size on the claim must beat the lead's reduction (#1327)."""
+    token, stay_id = stay
+    db.update("reservation", stay_id, {"declared_guests": 4})
+    _reduce(stay_id, 2, 4)
+    assert _expected(stay_id) == 2
+    secret = p92._start(token, stay_id, 3)
+    assert claim.confirm(_row(stay_id), secret) is True
+    row = _row(stay_id)
+    assert row["declared_guests"] == 3
+    assert _no_reduction(stay_id)
+    assert reporting.expected_guest_count(row) == 3
+
+
 def test_add_another_person_raises_a_declared_count_and_leaves_a_host_count(stay, live):
     token, stay_id = stay
     browser = _declared_four(token, stay_id)
