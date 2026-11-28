@@ -62,3 +62,60 @@ func TestViewForStay(t *testing.T) {
 		t.Fatalf("ViewForStay != View:\nwant %+v\ngot  %+v", want, got)
 	}
 }
+
+func TestIssuedViewAcrossDST(t *testing.T) {
+	s := &Service{}
+	cin := int64(15)
+	cout := int64(11)
+	apt := Apartment{ID: 1, CheckinHour: &cin, CheckoutHour: &cout}
+
+	cases := []struct {
+		name           string
+		dateFrom       string
+		dateTo         string
+		validFrom      string
+		validTo        string
+		wantWorksFrom  string
+		wantWorksUntil string
+		wantFirstUseBy string
+	}{
+		{
+			name:           "spring forward (23h day: 14:00 CET + 24h = 15:00 CEST)",
+			dateFrom:       "2026-03-28",
+			dateTo:         "2026-03-30",
+			validFrom:      "2026-03-28T13:00:00+00:00",
+			validTo:        "2026-03-30T10:00:00+00:00",
+			wantWorksFrom:  "28.03.2026 14:00",
+			wantWorksUntil: "30.03.2026 12:00",
+			wantFirstUseBy: "29.03.2026 15:00",
+		},
+		{
+			name:           "fall back (25h day: 14:00 CEST + 24h = 13:00 CET)",
+			dateFrom:       "2026-10-24",
+			dateTo:         "2026-10-26",
+			validFrom:      "2026-10-24T12:00:00+00:00",
+			validTo:        "2026-10-26T11:00:00+00:00",
+			wantWorksFrom:  "24.10.2026 14:00",
+			wantWorksUntil: "26.10.2026 12:00",
+			wantFirstUseBy: "25.10.2026 13:00",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			vf, vt := tc.validFrom, tc.validTo
+			shown, err := s.issuedView(
+				Reservation{ID: 1, DateFrom: tc.dateFrom, DateTo: tc.dateTo},
+				apt,
+				&doorCode{ValidFrom: &vf, ValidTo: &vt},
+				"123456",
+			)
+			if err != nil {
+				t.Fatalf("issuedView: %v", err)
+			}
+			if shown.WorksFrom != tc.wantWorksFrom || shown.WorksUntil != tc.wantWorksUntil || shown.FirstUseBy != tc.wantFirstUseBy {
+				t.Fatalf("got %+v, want from=%q until=%q firstUse=%q", shown, tc.wantWorksFrom, tc.wantWorksUntil, tc.wantFirstUseBy)
+			}
+		})
+	}
+}
