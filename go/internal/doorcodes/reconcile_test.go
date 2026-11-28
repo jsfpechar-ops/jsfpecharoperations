@@ -247,10 +247,10 @@ func TestBudgetAlerts(t *testing.T) {
 	}
 }
 
-func TestCheckLockClocksAdjustsOnceAWeek(t *testing.T) {
+func TestCheckLockClocksAdjustsMonthlyAndOnDST(t *testing.T) {
 	f := newFixture(t)
 	r, locks, _ := recReconciler(f, &recFakeLifecycle{})
-	locks.remote = func() (int64, error) { return f.now.UnixMilli() + 200_000, nil }
+	locks.remote = func() (int64, error) { return f.clk.Now().UnixMilli() + 200_000, nil }
 
 	out, err := r.checkLockClocks(f.ctx)
 	if err != nil || out.checked != 1 || out.adjusted != 1 || locks.adjusts != 1 {
@@ -266,33 +266,78 @@ func TestCheckLockClocksAdjustsOnceAWeek(t *testing.T) {
 	}
 	out, err = r.checkLockClocks(f.ctx)
 	if err != nil || out.checked != 0 {
-		t.Fatalf("second check inside 7 days: %+v err=%v", out, err)
+		t.Fatalf("second check immediately: %+v err=%v", out, err)
 	}
+	// Still skipped after 7 days and 29 days (monthly cadence).
+	f.clk.t = f.now.Add(7 * 24 * time.Hour)
+	out, err = r.checkLockClocks(f.ctx)
+	if err != nil || out.checked != 0 {
+		t.Fatalf("check at 7 days: %+v err=%v", out, err)
+	}
+	f.clk.t = f.now.Add(29 * 24 * time.Hour)
+	out, err = r.checkLockClocks(f.ctx)
+	if err != nil || out.checked != 0 {
+		t.Fatalf("check at 29 days: %+v err=%v", out, err)
+	}
+	// Due at 30 days.
+	f.clk.t = f.now.Add(30 * 24 * time.Hour)
+	out, err = r.checkLockClocks(f.ctx)
+	if err != nil || out.checked != 1 || out.adjusted != 1 {
+		t.Fatalf("check at 30 days: %+v err=%v", out, err)
+	}
+	// Even if checked 5 days earlier, spring-forward (2027-03-28 01:00 UTC) triggers an immediate sweep.
+	if err := r.writeSetting(f.ctx, "ttlock_clock_checked:555", "2027-03-23T10:00:00+00:00"); err != nil {
+		t.Fatal(err)
+	}
+	f.clk.t = time.Date(2027, 3, 28, 1, 5, 0, 0, time.UTC)
+	locks.remote = func() (int64, error) { return f.clk.Now().UnixMilli() - 3_600_000, nil }
+	out, err = r.checkLockClocks(f.ctx)
+	if err != nil || out.checked != 1 || out.adjusted != 1 {
+		t.Fatalf("post-DST check: %+v err=%v", out, err)
+	}
+	// Once checked after the transition, the next tick is skipped again.
+	f.clk.t = f.clk.t.Add(5 * time.Minute)
+	out, err = r.checkLockClocks(f.ctx)
+	if err != nil || out.checked != 0 {
+		t.Fatalf("second post-DST check: %+v err=%v", out, err)
+	}
+	f.clk.t = f.now
 }
 
 func TestCheckLockClocksRetriesTransientNextTick(t *testing.T) {
 	f := newFixture(t)
 	r, locks, _ := recReconciler(f, &recFakeLifecycle{})
+	// Checked before spring-forward, now 5m after spring-forward, and lock is offline.
+	if err := r.writeSetting(f.ctx, "ttlock_clock_checked:555", "2027-03-23T10:00:00+00:00"); err != nil {
+		t.Fatal(err)
+	}
+	f.clk.t = time.Date(2027, 3, 28, 1, 5, 0, 0, time.UTC)
 	locks.remote = func() (int64, error) { return 0, &ttlock.TTLockError{Kind: ttlock.KindOffline} }
 	out, err := r.checkLockClocks(f.ctx)
 	if err != nil || out.checked != 1 {
 		t.Fatalf("offline: %+v err=%v", out, err)
 	}
-	// The stamp is six days back, so the 7-day gate is still closed a moment later...
+	// Backoff holds 5 minutes later even though last_checked is still before the DST transition.
+	f.clk.t = f.clk.t.Add(5 * time.Minute)
 	out, err = r.checkLockClocks(f.ctx)
 	if err != nil || out.checked != 0 {
 		t.Fatalf("offline must not be retried at once: %+v err=%v", out, err)
 	}
-	// ...and open a day later, as the Python -6 day stamp intends.
-	f.clk.t = f.now.Add(24 * time.Hour)
+	// Opens 24 hours after the failure and clears retry_after once it succeeds.
+	f.clk.t = time.Date(2027, 3, 29, 1, 5, 0, 0, time.UTC)
+	locks.remote = func() (int64, error) { return f.clk.Now().UnixMilli(), nil }
 	out, err = r.checkLockClocks(f.ctx)
 	if err != nil || out.checked != 1 {
 		t.Fatalf("offline must be retried one day later: %+v err=%v", out, err)
 	}
+	retryVal, err := r.readSetting(f.ctx, "ttlock_clock_retry_after:555")
+	if err != nil || retryVal != "" {
+		t.Fatalf("retry_after should be cleared on success, got %q err=%v", retryVal, err)
+	}
 	f.clk.t = f.now
 }
 
-func TestCheckLockClocksRaisesAlertOnHardError(t *testing.T) {
+func TestCheckLockClocksRaisesAlertOnHardErrorAndResolvesOnRecovery(t *testing.T) {
 	f := newFixture(t)
 	r, locks, _ := recReconciler(f, &recFakeLifecycle{})
 	locks.remote = func() (int64, error) { return 0, &ttlock.TTLockError{Kind: ttlock.KindLockSetup} }
@@ -303,6 +348,16 @@ func TestCheckLockClocksRaisesAlertOnHardError(t *testing.T) {
 		f.alerts.raised[0].ApartmentID != f.apt || f.alerts.raised[0].DedupeKey != "door_code_clock:555" {
 		t.Fatalf("raised %+v", f.alerts.raised)
 	}
+	// When the next scheduled check succeeds, the alert is resolved.
+	f.clk.t = f.now.Add(30 * 24 * time.Hour)
+	locks.remote = func() (int64, error) { return f.clk.Now().UnixMilli(), nil }
+	if _, err := r.checkLockClocks(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.alerts.resolved) != 1 || f.alerts.resolved[0] != "door_code_clock:555" {
+		t.Fatalf("resolved %+v, want [door_code_clock:555]", f.alerts.resolved)
+	}
+	f.clk.t = f.now
 }
 
 func TestOnRegistrationCompleteIssues(t *testing.T) {
