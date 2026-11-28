@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-27.
+Updated: 2026-11-28.
 
 ## Go cutover (11-25)
 - PR #1319: 2040–2085 done, `parity_gate.sh` PASS. Owner: merge #1319, deploy (autopurge off week 1).
@@ -12,7 +12,8 @@ Updated: 2026-11-27.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
-- Stay journey 5-step status (Go): [2097](../tasks/2097-go-stay-journey-5step-ses-and-manual-paths.md) done (SES email, link opened, form+housebook, TTLock-only, calm-blue auto-police + manual paths).
+- TTLock clock check (Go): 30d cadence + March/October DST sweep, 24h retry-after, alert auto-resolve; owner: add `door_codes` to `UBYHOST_GO_JOB_KINDS`.
+- Stay journey 5-step (Go): [2097](../tasks/2097-go-stay-journey-5step-ses-and-manual-paths.md) done.
 - Check-in auto-filing (Go): [plan](../plans/checkin-anchored-auto-filing.md), 2091–2096 done.
 - 2001: invoice Wolt-simple + stay header ([brief](../tasks/2001-invoice-wolt-simple.md)); 2000: no police nags on Overview without UbyPort login.
 - Comfy UX (Go): [plan](../plans/host-ux-comfy-refresh.md); 2087–2090 green (#1335).

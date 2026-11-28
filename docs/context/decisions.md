@@ -1,9 +1,6 @@
 # Decisions
 Append-only.
-- 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
-- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test; Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
-- 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
 - 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orch | 0462
 - 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
@@ -74,3 +71,4 @@ Append-only.
 - 2026-11-25 [workflow] Gemini 4 Neon briefs + medium executor for 2072–2076, 2085; closed superseded #1310, #1260 | owner
 - 2026-11-26 [ux] Comfy Go refresh: 4-step strip, phone prop cal index + per-prop rails, calm alerts (2087–2090) | owner
 - 2026-11-27 [ux] Stay journey upgraded to Option B 5-step funnel (Email SES, Link opened, Form+domovní kniha, TTLock-only Code, Police with calm-blue scheduled + manual-action overrides; zero DB migration) | owner | 2097
+- 2026-11-28 [door-codes] TTLock clock check cadence changed from 7 to 30 days in Go, plus immediate post-DST sweep (March/October `Europe/Prague` switches) with separate 24h retry-after key and alert auto-resolve | owner

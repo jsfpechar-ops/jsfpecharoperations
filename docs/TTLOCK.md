@@ -120,7 +120,7 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 - The lock checks every code against its own clock. A wrong clock can make a valid code fail [LT][FAQ 4.2].
 - `/v3/lock/queryDate` (`lockId`) returns the lock's time as `date` in ms. `/v3/lock/updateDate` (`lockId`, `date`) sets it and returns the new time. Both need a gateway or a Wi-Fi lock [LT], so they count as gateway calls (35 s, worker only).
-- Not in the allowlist yet. Proposed: one `queryDate` per lock per week, and `updateDate` only when the drift is over 2 minutes.
+- Routine cadence (Go `doorcodes`): one `queryDate` per lock every 30 days (~1 call/month/lock), plus one immediate sweep right after each `Europe/Prague` DST switch (last Sunday of March / October). `updateDate` is called only when drift exceeds 2 minutes. Transient failures retry after 24 h via `ttlock_clock_retry_after:<lock_id>`.
 
 ## Delete and change
 
